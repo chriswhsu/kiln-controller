@@ -8,7 +8,6 @@ import argparse
 
 
 def recordprofile(csvfile, targettemp):
-
     try:
         sys.dont_write_bytecode = True
         import config
@@ -50,7 +49,7 @@ def recordprofile(csvfile, targettemp):
 
         while True:
             temp = oven.board.temp_sensor.temperature + \
-                config.thermocouple_offset
+                   config.thermocouple_offset
 
             csvout.writerow([time.time(), temp])
             f.flush()
@@ -65,7 +64,7 @@ def recordprofile(csvfile, targettemp):
                 if temp < targettemp:
                     break
 
-            print("stage = %s, actual = %s, target = %s" % (stage,temp,targettemp))
+            print("stage = %s, actual = %s, target = %s" % (stage, temp, targettemp))
             time.sleep(1)
 
         f.close()
@@ -166,7 +165,6 @@ def calculate(filename, tangentdivisor, showplot):
     print("pid_ki = %s" % (1 / Ki))
     print("pid_kd = %s" % (Kd))
 
-
     if showplot:
         plot(xdata, ydata,
              tangent_min, tangent_max, tangent_slope, tangent_offset,
@@ -184,7 +182,8 @@ if __name__ == "__main__":
     parser_profile.set_defaults(mode='recordprofile')
 
     parser_zn = subparsers.add_parser('zn', help='Calculate Ziegler-Nicols parameters')
-    parser_zn.add_argument('csvfile', type=str, help="The CSV file to read from. Must contain two columns called time (time in seconds) and temperature (observed temperature)")
+    parser_zn.add_argument('csvfile', type=str,
+                           help="The CSV file to read from. Must contain two columns called time (time in seconds) and temperature (observed temperature)")
     parser_zn.add_argument('--showplot', action='store_true', help="If set, also plot results (requires pyplot to be pip installed)")
     parser_zn.add_argument('--tangentdivisor', type=float, default=8, help="Adjust the tangent calculation to fit better. Must be >= 2 (default 8).")
     parser_zn.set_defaults(mode='zn')

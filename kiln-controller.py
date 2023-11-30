@@ -16,10 +16,11 @@ from lib.ovenWatcher import OvenWatcher
 try:
     sys.dont_write_bytecode = True
     import config
+
     sys.dont_write_bytecode = False
 except:
-    print ("Could not import config file.")
-    print ("Copy config.py.EXAMPLE to config.py and adapt it for your setup.")
+    print("Could not import config file.")
+    print("Copy config.py.EXAMPLE to config.py and adapt it for your setup.")
     exit(1)
 
 logging.basicConfig(level=config.log_level, format=config.log_format)
@@ -29,8 +30,6 @@ log.info("Starting kiln controller")
 script_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, script_dir + '/lib/')
 profile_path = config.kiln_profiles_directory
-
-
 
 app = bottle.Bottle()
 
@@ -44,22 +43,23 @@ ovenWatcher = OvenWatcher(oven)
 # this ovenwatcher is used in the oven class for restarts
 oven.set_ovenwatcher(ovenWatcher)
 
+
 @app.route('/')
 def index():
     return bottle.redirect('/picoreflow/index.html')
 
+
 @app.get('/api/stats')
 def handle_api():
     log.info("/api/stats command received")
-    if hasattr(oven,'pid'):
-        if hasattr(oven.pid,'pidstats'):
+    if hasattr(oven, 'pid'):
+        if hasattr(oven.pid, 'pidstats'):
             return json.dumps(oven.pid.pidstats)
 
 
 @app.post('/api')
 def handle_api():
     log.info("/api is alive")
-
 
     # run a kiln schedule
     if bottle.request.json['cmd'] == 'run':
@@ -75,12 +75,12 @@ def handle_api():
         # get the wanted profile/kiln schedule
         profile = find_profile(wanted)
         if profile is None:
-            return { "success" : False, "error" : "profile %s not found" % wanted }
+            return {"success": False, "error": "profile %s not found" % wanted}
 
         # FIXME juggling of json should happen in the Profile class
         profile_json = json.dumps(profile)
         profile = Profile(profile_json)
-        oven.run_profile(profile,startat=startat)
+        oven.run_profile(profile, startat=startat)
         ovenWatcher.record(profile)
 
     if bottle.request.json['cmd'] == 'stop':
@@ -95,18 +95,19 @@ def handle_api():
     # get stats during a run
     if bottle.request.json['cmd'] == 'stats':
         log.info("api stats command received")
-        if hasattr(oven,'pid'):
-            if hasattr(oven.pid,'pidstats'):
+        if hasattr(oven, 'pid'):
+            if hasattr(oven.pid, 'pidstats'):
                 return json.dumps(oven.pid.pidstats)
 
-    return { "success" : True }
+    return {"success": True}
+
 
 def find_profile(wanted):
     '''
     given a wanted profile name, find it and return the parsed
     json profile object or None.
     '''
-    #load all profiles from disk
+    # load all profiles from disk
     profiles = get_profiles()
     json_profiles = json.loads(profiles)
 
@@ -115,6 +116,7 @@ def find_profile(wanted):
         if profile['name'] == wanted:
             return profile
     return None
+
 
 @app.route('/picoreflow/:filename#.*#')
 def send_static(filename):
@@ -150,15 +152,15 @@ def handle_control():
                     ovenWatcher.record(profile)
                 elif msgdict.get("cmd") == "SIMULATE":
                     log.info("SIMULATE command received")
-                    #profile_obj = msgdict.get('profile')
-                    #if profile_obj:
+                    # profile_obj = msgdict.get('profile')
+                    # if profile_obj:
                     #    profile_json = json.dumps(profile_obj)
                     #    profile = Profile(profile_json)
-                    #simulated_oven = Oven(simulate=True, time_step=0.05)
-                    #simulation_watcher = OvenWatcher(simulated_oven)
-                    #simulation_watcher.add_observer(wsock)
-                    #simulated_oven.run_profile(profile)
-                    #simulation_watcher.record(profile)
+                    # simulated_oven = Oven(simulate=True, time_step=0.05)
+                    # simulation_watcher = OvenWatcher(simulated_oven)
+                    # simulation_watcher.add_observer(wsock)
+                    # simulated_oven.run_profile(profile)
+                    # simulation_watcher.record(profile)
                 elif msgdict.get("cmd") == "STOP":
                     log.info("Stop command received")
                     oven.abort_run()
@@ -191,16 +193,16 @@ def handle_storage():
                 log.info("DELETE command received")
                 profile_obj = msgdict.get('profile')
                 if delete_profile(profile_obj):
-                  msgdict["resp"] = "OK"
+                    msgdict["resp"] = "OK"
                 wsock.send(json.dumps(msgdict))
-                #wsock.send(get_profiles())
+                # wsock.send(get_profiles())
             elif msgdict.get("cmd") == "PUT":
                 log.info("PUT command received")
                 profile_obj = msgdict.get('profile')
-                #force = msgdict.get('force', False)
+                # force = msgdict.get('force', False)
                 force = True
                 if profile_obj:
-                    #del msgdict["cmd"]
+                    # del msgdict["cmd"]
                     if save_profile(profile_obj, force):
                         msgdict["resp"] = "OK"
                     else:
@@ -255,7 +257,7 @@ def get_profiles():
 
 def save_profile(profile, force=False):
     profile_json = json.dumps(profile)
-    filename = profile['name']+".json"
+    filename = profile['name'] + ".json"
     filepath = os.path.join(profile_path, filename)
     if not force and os.path.exists(filepath):
         log.error("Could not write, %s already exists" % filepath)
@@ -266,9 +268,10 @@ def save_profile(profile, force=False):
     log.info("Wrote %s" % filepath)
     return True
 
+
 def delete_profile(profile):
     profile_json = json.dumps(profile)
-    filename = profile['name']+".json"
+    filename = profile['name'] + ".json"
     filepath = os.path.join(profile_path, filename)
     os.remove(filepath)
     log.info("Deleted %s" % filepath)
@@ -277,10 +280,10 @@ def delete_profile(profile):
 
 def get_config():
     return json.dumps({"temp_scale": config.temp_scale,
-        "time_scale_slope": config.time_scale_slope,
-        "time_scale_profile": config.time_scale_profile,
-        "kwh_rate": config.kwh_rate,
-        "currency_type": config.currency_type})    
+                       "time_scale_slope": config.time_scale_slope,
+                       "time_scale_profile": config.time_scale_profile,
+                       "kwh_rate": config.kwh_rate,
+                       "currency_type": config.currency_type})
 
 
 def main():

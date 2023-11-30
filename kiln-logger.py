@@ -7,7 +7,6 @@ import csv
 import argparse
 import sys
 
-
 STD_HEADER = [
     'stamp',
     'runtime',
@@ -18,7 +17,6 @@ STD_HEADER = [
     'totaltime',
     'profile',
 ]
-
 
 PID_HEADER = [
     'pid_time',

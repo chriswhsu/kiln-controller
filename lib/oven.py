@@ -9,6 +9,7 @@ import os
 
 log = logging.getLogger(__name__)
 
+
 class DupFilter(object):
     def __init__(self):
         self.msgs = set()
@@ -18,13 +19,16 @@ class DupFilter(object):
         self.msgs.add(record.msg)
         return rv
 
+
 class Duplogger():
     def __init__(self):
         self.log = logging.getLogger("%s.dupfree" % (__name__))
         dup_filter = DupFilter()
         self.log.addFilter(dup_filter)
+
     def logref(self):
         return self.log
+
 
 duplog = Duplogger().logref()
 
@@ -47,14 +51,15 @@ class Output(object):
             log.warning(msg)
             self.active = False
 
-    def heat(self,sleepfor):
+    def heat(self, sleepfor):
         self.GPIO.output(config.gpio_heat, self.GPIO.HIGH)
         time.sleep(sleepfor)
 
-    def cool(self,sleepfor):
+    def cool(self, sleepfor):
         '''no active cooling, so sleep'''
         self.GPIO.output(config.gpio_heat, self.GPIO.LOW)
         time.sleep(sleepfor)
+
 
 # FIX - Board class needs to be completely removed
 class Board(object):
@@ -70,8 +75,8 @@ class Board(object):
     def load_libs(self):
         if config.max31855:
             try:
-                #from max31855 import MAX31855, MAX31855Error
-                self.name='MAX31855'
+                # from max31855 import MAX31855, MAX31855Error
+                self.name = 'MAX31855'
                 self.active = True
                 log.info("import %s " % (self.name))
             except ImportError:
@@ -80,8 +85,8 @@ class Board(object):
 
         if config.max31856:
             try:
-                #from max31856 import MAX31856, MAX31856Error
-                self.name='MAX31856'
+                # from max31856 import MAX31856, MAX31856Error
+                self.name = 'MAX31856'
                 self.active = True
                 log.info("import %s " % (self.name))
             except ImportError:
@@ -94,9 +99,11 @@ class Board(object):
         else:
             self.temp_sensor = TempSensorReal()
 
+
 class BoardSimulated(object):
     def __init__(self):
         self.temp_sensor = TempSensorSimulated()
+
 
 class TempSensor(threading.Thread):
     def __init__(self):
@@ -107,14 +114,18 @@ class TempSensor(threading.Thread):
         self.time_step = config.sensor_time_wait
         self.noConnection = self.shortToGround = self.shortToVCC = self.unknownError = False
 
+
 class TempSensorSimulated(TempSensor):
     '''not much here, just need to be able to set the temperature'''
+
     def __init__(self):
         TempSensor.__init__(self)
+
 
 class TempSensorReal(TempSensor):
     '''real temperature sensor thread that takes N measurements
        during the time_step'''
+
     def __init__(self):
         TempSensor.__init__(self)
         self.sleeptime = self.time_step / float(config.temperature_average_samples)
@@ -126,21 +137,21 @@ class TempSensorReal(TempSensor):
             log.info("init MAX31855")
             from max31855 import MAX31855, MAX31855Error
             self.thermocouple = MAX31855(config.gpio_sensor_cs,
-                                     config.gpio_sensor_clock,
-                                     config.gpio_sensor_data,
-                                     config.temp_scale)
+                                         config.gpio_sensor_clock,
+                                         config.gpio_sensor_data,
+                                         config.temp_scale)
 
         if config.max31856:
             log.info("init MAX31856")
             from max31856 import MAX31856
-            software_spi = { 'cs': config.gpio_sensor_cs,
-                             'clk': config.gpio_sensor_clock,
-                             'do': config.gpio_sensor_data,
-                             'di': config.gpio_sensor_di }
+            software_spi = {'cs': config.gpio_sensor_cs,
+                            'clk': config.gpio_sensor_clock,
+                            'do': config.gpio_sensor_data,
+                            'di': config.gpio_sensor_di}
             self.thermocouple = MAX31856(tc_type=config.thermocouple_type,
-                                         software_spi = software_spi,
-                                         units = config.temp_scale,
-                                         ac_freq_50hz = config.ac_freq_50hz,
+                                         software_spi=software_spi,
+                                         units=config.temp_scale,
+                                         ac_freq_50hz=config.ac_freq_50hz,
                                          )
 
     def run(self):
@@ -174,7 +185,7 @@ class TempSensorReal(TempSensor):
                 self.ok_count += 1
 
             else:
-                log.error("Problem reading temp N/C:%s GND:%s VCC:%s ???:%s" % (self.noConnection,self.shortToGround,self.shortToVCC,self.unknownError))
+                log.error("Problem reading temp N/C:%s GND:%s VCC:%s ???:%s" % (self.noConnection, self.shortToGround, self.shortToVCC, self.unknownError))
                 self.bad_count += 1
 
             if len(temps):
@@ -189,13 +200,15 @@ class TempSensorReal(TempSensor):
         chop = chop / 100
         temps = sorted(temps)
         total = len(temps)
-        items = int(total*chop)
-        temps = temps[items:total-items]
+        items = int(total * chop)
+        temps = temps[items:total - items]
         return sum(temps) / len(temps)
+
 
 class Oven(threading.Thread):
     '''parent oven class. this has all the common code
        for either a real or simulated oven'''
+
     def __init__(self):
         threading.Thread.__init__(self)
         self.daemon = True
@@ -236,7 +249,7 @@ class Oven(threading.Thread):
         self.profile = profile
         self.totaltime = profile.get_duration()
         self.state = "RUNNING"
-        log.info("Running schedule %s starting at %d minutes" % (profile.name,startat))
+        log.info("Running schedule %s starting at %d minutes" % (profile.name, startat))
         log.info("Starting")
 
     def abort_run(self):
@@ -248,15 +261,15 @@ class Oven(threading.Thread):
         to wait for the kiln to catch up'''
         if config.kiln_must_catch_up == True:
             temp = self.board.temp_sensor.temperature + \
-                config.thermocouple_offset
+                   config.thermocouple_offset
             # kiln too cold, wait for it to heat up
             if self.target - temp > config.pid_control_window:
                 log.info("kiln must catch up, too cold, shifting schedule")
-                self.start_time = datetime.datetime.now() - datetime.timedelta(milliseconds = self.runtime * 1000)
+                self.start_time = datetime.datetime.now() - datetime.timedelta(milliseconds=self.runtime * 1000)
             # kiln too hot, wait for it to cool down
             if temp - self.target > config.pid_control_window:
                 log.info("kiln must catch up, too hot, shifting schedule")
-                self.start_time = datetime.datetime.now() - datetime.timedelta(milliseconds = self.runtime * 1000)
+                self.start_time = datetime.datetime.now() - datetime.timedelta(milliseconds=self.runtime * 1000)
 
     def update_runtime(self):
 
@@ -272,7 +285,7 @@ class Oven(threading.Thread):
     def reset_if_emergency(self):
         '''reset if the temperature is way TOO HOT, or other critical errors detected'''
         if (self.board.temp_sensor.temperature + config.thermocouple_offset >=
-            config.emergency_shutoff_temp):
+                config.emergency_shutoff_temp):
             log.info("emergency!!! temperature too high")
             if config.ignore_temp_too_high == False:
                 self.abort_run()
@@ -295,12 +308,12 @@ class Oven(threading.Thread):
     def reset_if_schedule_ended(self):
         if self.runtime > self.totaltime:
             log.info("schedule ended, shutting down")
-            log.info("total cost = %s%.2f" % (config.currency_type,self.cost))
+            log.info("total cost = %s%.2f" % (config.currency_type, self.cost))
             self.abort_run()
 
     def update_cost(self):
         if self.heat:
-            cost = (config.kwh_rate * config.kw_elements) * ((self.heat)/3600)
+            cost = (config.kwh_rate * config.kw_elements) * ((self.heat) / 3600)
         else:
             cost = 0
         self.cost = self.cost + cost
@@ -341,8 +354,8 @@ class Oven(threading.Thread):
         if os.path.isfile(config.automatic_restart_state_file):
             state_age = os.path.getmtime(config.automatic_restart_state_file)
             now = time.time()
-            minutes = (now - state_age)/60
-            if(minutes <= config.automatic_restart_window):
+            minutes = (now - state_age) / 60
+            if (minutes <= config.automatic_restart_window):
                 return False
         return True
 
@@ -369,20 +382,20 @@ class Oven(threading.Thread):
 
     def automatic_restart(self):
         with open(config.automatic_restart_state_file) as infile: d = json.load(infile)
-        startat = d["runtime"]/60
+        startat = d["runtime"] / 60
         filename = "%s.json" % (d["profile"])
-        profile_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'storage','profiles',filename))
+        profile_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'storage', 'profiles', filename))
 
-        log.info("automatically restarting profile = %s at minute = %d" % (profile_path,startat))
+        log.info("automatically restarting profile = %s at minute = %d" % (profile_path, startat))
         with open(profile_path) as infile:
             profile_json = json.dumps(json.load(infile))
         profile = Profile(profile_json)
-        self.run_profile(profile,startat=startat)
+        self.run_profile(profile, startat=startat)
         self.cost = d["cost"]
         time.sleep(1)
         self.ovenwatcher.record(profile)
 
-    def set_ovenwatcher(self,watcher):
+    def set_ovenwatcher(self, watcher):
         log.info("ovenwatcher set in oven class")
         self.ovenwatcher = watcher
 
@@ -403,6 +416,7 @@ class Oven(threading.Thread):
                 self.reset_if_emergency()
                 self.reset_if_schedule_ended()
 
+
 class SimulatedOven(Oven):
 
     def __init__(self):
@@ -416,8 +430,8 @@ class SimulatedOven(Oven):
         self.R_ho = self.R_ho_noair
 
         # set temps to the temp of the surrounding environment
-        self.t = self.t_env # deg C temp of oven
-        self.t_h = self.t_env #deg C temp of heating element
+        self.t = self.t_env  # deg C temp of oven
+        self.t_h = self.t_env  # deg C temp of heating element
 
         super().__init__()
 
@@ -425,23 +439,23 @@ class SimulatedOven(Oven):
         self.start()
         log.info("SimulatedOven started")
 
-    def heating_energy(self,pid):
+    def heating_energy(self, pid):
         # using pid here simulates the element being on for
         # only part of the time_step
         self.Q_h = self.p_heat * self.time_step * pid
 
     def temp_changes(self):
-        #temperature change of heat element by heating
+        # temperature change of heat element by heating
         self.t_h += self.Q_h / self.c_heat
 
-        #energy flux heat_el -> oven
+        # energy flux heat_el -> oven
         self.p_ho = (self.t_h - self.t) / self.R_ho
 
-        #temperature change of oven and heating element
+        # temperature change of oven and heating element
         self.t += self.p_ho * self.time_step / self.c_oven
         self.t_h -= self.p_ho * self.time_step / self.c_heat
 
-        #temperature change of oven by cooling to environment
+        # temperature change of oven by cooling to environment
         self.p_env = (self.t - self.t_env) / self.R_o_nocool
         self.t -= self.p_env * self.time_step / self.c_oven
         self.temperature = self.t
@@ -462,28 +476,29 @@ class SimulatedOven(Oven):
         if heat_on > 0:
             self.heat = heat_on
 
-        log.info("simulation: -> %dW heater: %.0f -> %dW oven: %.0f -> %dW env"            % (int(self.p_heat * pid),
-            self.t_h,
-            int(self.p_ho),
-            self.t,
-            int(self.p_env)))
+        log.info("simulation: -> %dW heater: %.0f -> %dW oven: %.0f -> %dW env" % (int(self.p_heat * pid),
+                                                                                   self.t_h,
+                                                                                   int(self.p_ho),
+                                                                                   self.t,
+                                                                                   int(self.p_env)))
 
         time_left = self.totaltime - self.runtime
 
         try:
-            log.info("temp=%.2f, target=%.2f, error=%.2f, pid=%.2f, p=%.2f, i=%.2f, d=%.2f, heat_on=%.2f, heat_off=%.2f, run_time=%d, total_time=%d, time_left=%d" %
+            log.info(
+                "temp=%.2f, target=%.2f, error=%.2f, pid=%.2f, p=%.2f, i=%.2f, d=%.2f, heat_on=%.2f, heat_off=%.2f, run_time=%d, total_time=%d, time_left=%d" %
                 (self.pid.pidstats['ispoint'],
-                self.pid.pidstats['setpoint'],
-                self.pid.pidstats['err'],
-                self.pid.pidstats['pid'],
-                self.pid.pidstats['p'],
-                self.pid.pidstats['i'],
-                self.pid.pidstats['d'],
-                heat_on,
-                heat_off,
-                self.runtime,
-                self.totaltime,
-                time_left))
+                 self.pid.pidstats['setpoint'],
+                 self.pid.pidstats['err'],
+                 self.pid.pidstats['pid'],
+                 self.pid.pidstats['p'],
+                 self.pid.pidstats['i'],
+                 self.pid.pidstats['d'],
+                 heat_on,
+                 heat_off,
+                 self.runtime,
+                 self.totaltime,
+                 time_left))
         except KeyError:
             pass
 
@@ -527,21 +542,23 @@ class RealOven(Oven):
             self.output.cool(heat_off)
         time_left = self.totaltime - self.runtime
         try:
-            log.info("temp=%.2f, target=%.2f, error=%.2f, pid=%.2f, p=%.2f, i=%.2f, d=%.2f, heat_on=%.2f, heat_off=%.2f, run_time=%d, total_time=%d, time_left=%d" %
+            log.info(
+                "temp=%.2f, target=%.2f, error=%.2f, pid=%.2f, p=%.2f, i=%.2f, d=%.2f, heat_on=%.2f, heat_off=%.2f, run_time=%d, total_time=%d, time_left=%d" %
                 (self.pid.pidstats['ispoint'],
-                self.pid.pidstats['setpoint'],
-                self.pid.pidstats['err'],
-                self.pid.pidstats['pid'],
-                self.pid.pidstats['p'],
-                self.pid.pidstats['i'],
-                self.pid.pidstats['d'],
-                heat_on,
-                heat_off,
-                self.runtime,
-                self.totaltime,
-                time_left))
+                 self.pid.pidstats['setpoint'],
+                 self.pid.pidstats['err'],
+                 self.pid.pidstats['pid'],
+                 self.pid.pidstats['p'],
+                 self.pid.pidstats['i'],
+                 self.pid.pidstats['d'],
+                 heat_on,
+                 heat_off,
+                 self.runtime,
+                 self.totaltime,
+                 time_left))
         except KeyError:
             pass
+
 
 class Profile():
     def __init__(self, json_data):
@@ -561,7 +578,7 @@ class Profile():
 
         for i in range(len(self.data)):
             if time < self.data[i][0]:
-                prev_point = self.data[i-1]
+                prev_point = self.data[i - 1]
                 next_point = self.data[i]
                 break
 
@@ -619,14 +636,14 @@ class PID():
             log.info("kiln outside pid control window, max heating")
             output = 1
         else:
-            icomp = (error * timeDelta * (1/self.ki))
-            self.iterm += (error * timeDelta * (1/self.ki))
+            icomp = (error * timeDelta * (1 / self.ki))
+            self.iterm += (error * timeDelta * (1 / self.ki))
             dErr = (error - self.lastErr) / timeDelta
             output = self.kp * error + self.iterm + self.kd * dErr
             output = sorted([-1 * window_size, output, window_size])[1]
             out4logs = output
             output = float(output / window_size)
-            
+
         self.lastErr = error
         self.lastNow = now
 
