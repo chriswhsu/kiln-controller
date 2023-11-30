@@ -8,11 +8,12 @@ import os
 #
 #   General options
 
-### Logging
+# Logging
 log_level = logging.INFO
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 
-### Server
+# Server
+ip_address = "127.0.0.1"
 listening_port = 8081
 
 ########################################################################
@@ -22,8 +23,8 @@ listening_port = 8081
 # to produce the actual cost during a run. My kiln has three
 # elements that when my switches are set to high, consume 9460 watts.
 
-kwh_rate = 0.1319  # cost per kilowatt hour per currency_type to calculate cost to run job
-kw_elements = 9.460  # if the kiln elements are on, the wattage in kilowatts
+kwh_rate = 0.20  # cost per kilowatt hour per currency_type to calculate cost to run job
+kw_elements = 1.460  # if the kiln elements are on, the wattage in kilowatts
 currency_type = "$"  # Currency Symbol to show when calculating cost to run job
 
 ########################################################################
@@ -35,10 +36,10 @@ currency_type = "$"  # Currency Symbol to show when calculating cost to run job
 #   These were tested on a Pi B Rev2 but of course you
 #   can use whichever GPIO you prefer/have available.
 
-### Outputs
+# Outputs
 gpio_heat = 23  # Switches zero-cross solid-state-relay
 
-### Thermocouple Adapter selection:
+# Thermocouple Adapter selection:
 #   max31855 - bitbang SPI interface
 #   max31856 - bitbang SPI interface. must specify thermocouple_type.
 max31855 = 1
@@ -47,7 +48,7 @@ max31856 = 0
 # uncomment this if using MAX-31856
 # thermocouple_type = MAX31856.MAX31856_S_TYPE
 
-### Thermocouple Connection (using bitbang interfaces)
+# Thermocouple Connection (using bitbang interfaces)
 gpio_sensor_cs = 27
 gpio_sensor_clock = 22
 gpio_sensor_data = 17
@@ -114,7 +115,7 @@ time_scale_profile = "m"  # s = Seconds | m = Minutes | h = Hours - Enter and vi
 emergency_shutoff_temp = 2264  # cone 7
 
 # If the current temperature is outside the pid control window,
-# delay the schedule until it does back inside. This allows for heating
+# delay the schedule until it goes back inside. This allows for heating
 # and cooling as fast as possible and not continuing until temp is reached.
 kiln_must_catch_up = True
 

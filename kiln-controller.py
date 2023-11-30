@@ -14,10 +14,7 @@ from lib.oven import SimulatedOven, RealOven, Profile
 from lib.ovenWatcher import OvenWatcher
 
 try:
-    sys.dont_write_bytecode = True
     import config
-
-    sys.dont_write_bytecode = False
 except Exception as e:
     logging.error(f"Error: {e}")
     logging.error("Could not import config file.")
@@ -169,8 +166,8 @@ def handle_control():
                 elif msgdict.get("cmd") == "STOP":
                     log.info("Stop command received")
                     oven.abort_run()
-        except WebSocketError as e:
-            log.error(e)
+        except WebSocketError as wse:
+            log.error(wse)
             break
     log.info("websocket (control) closed")
 
@@ -188,8 +185,8 @@ def handle_storage():
 
             try:
                 msgdict = json.loads(message)
-            except Exception as e:
-                log.error(f"Error loading message {e}")
+            except Exception as error:
+                log.error(f"Error loading message {error}")
                 msgdict = {}
 
             if message == "GET":
@@ -251,8 +248,8 @@ def handle_status():
 def get_profiles():
     try:
         profile_files = os.listdir(profile_path)
-    except Exception as e:
-        log.error(f"Error loading profile path: {e}")
+    except Exception as error:
+        log.error(f"Error loading profile path: {error}")
         profile_files = []
     profiles = []
     for filename in profile_files:
@@ -292,7 +289,7 @@ def get_config():
 
 
 def main():
-    ip = "0.0.0.0"
+    ip = config.ip_address
     port = config.listening_port
     log.info("listening on %s:%d" % (ip, port))
 
