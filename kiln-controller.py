@@ -37,9 +37,9 @@ if config.simulate:
 else:
     log.info("this is a real kiln")
     oven = RealOven()
-ovenWatcher = OvenWatcher(oven)
+oven_watcher = OvenWatcher(oven)
 # this ovenwatcher is used in the oven class for restarts
-oven.set_ovenwatcher(ovenWatcher)
+oven.set_ovenwatcher(oven_watcher)
 
 
 @app.route('/')
@@ -79,7 +79,7 @@ def handle_api():
         profile_json = json.dumps(profile)
         profile = Profile(profile_json)
         oven.run_profile(profile, startat=startat)
-        ovenWatcher.record(profile)
+        oven_watcher.record(profile)
 
     if bottle.request.json['cmd'] == 'stop':
         log.info("api stop command received")
@@ -147,7 +147,7 @@ def handle_control():
                         profile_json = json.dumps(profile_obj)
                         profile = Profile(profile_json)
                         oven.run_profile(profile)
-                        ovenWatcher.record(profile)
+                        oven_watcher.record(profile)
                     else:
                         log.error("No profile defined.  Aborting.")
                         bottle.abort()
@@ -234,7 +234,7 @@ def handle_config():
 @app.route('/status')
 def handle_status():
     wsock = get_websocket_from_request()
-    ovenWatcher.add_observer(wsock)
+    oven_watcher.add_observer(wsock)
     log.info("websocket (status) opened")
     while True:
         try:
@@ -293,8 +293,7 @@ def main():
     port = config.listening_port
     log.info("listening on %s:%d" % (ip, port))
 
-    server = WSGIServer((ip, port), app,
-                        handler_class=WebSocketHandler)
+    server = WSGIServer((ip, port), app, handler_class=WebSocketHandler)
     server.serve_forever()
 
 

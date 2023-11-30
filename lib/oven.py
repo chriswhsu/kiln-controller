@@ -153,7 +153,7 @@ class TempSensorReal(TempSensor):
                                          )
 
     def run(self):
-        '''use a moving average of config.temperature_average_samples across the time_step'''
+        # use a moving average of config.temperature_average_samples across the time_step
         temps = []
         while True:
             # reset error counter if time is up
@@ -191,10 +191,9 @@ class TempSensorReal(TempSensor):
             time.sleep(self.sleeptime)
 
     def get_avg_temp(self, temps, chop=25):
-        '''
-        strip off chop percent from the beginning and end of the sorted temps
-        then return the average of what is left
-        '''
+
+        # strip off chop percent from the beginning and end of the sorted temps then return the average of what is left
+
         chop = chop / 100
         temps = sorted(temps)
         total = len(temps)
@@ -204,11 +203,22 @@ class TempSensorReal(TempSensor):
 
 
 class Oven(threading.Thread):
-    '''parent oven class. this has all the common code
-       for either a real or simulated oven'''
+    # parent oven class. this has all the common code for either a real or simulated oven
 
     def __init__(self):
         threading.Thread.__init__(self)
+        self.board = None #defined in child classes
+        self.startat = None
+        self.ovenwatcher = None
+        self.pid = None
+        self.heat = None
+        self.target = None
+        self.totaltime = None
+        self.runtime = None
+        self.start_time = None
+        self.profile = None
+        self.state = None
+        self.cost = None
         self.daemon = True
         self.temperature = 0
         self.time_step = config.sensor_time_wait
@@ -255,11 +265,9 @@ class Oven(threading.Thread):
         self.save_automatic_restart_state()
 
     def kiln_must_catch_up(self):
-        '''shift the whole schedule forward in time by one time_step
-        to wait for the kiln to catch up'''
-        if config.kiln_must_catch_up == True:
-            temp = self.board.temp_sensor.temperature + \
-                   config.thermocouple_offset
+        # shift the whole schedule forward in time by one time_step to wait for the kiln to catch up
+        if config.kiln_must_catch_up:
+            temp = self.board.temp_sensor.temperature + config.thermocouple_offset
             # kiln too cold, wait for it to heat up
             if self.target - temp > config.pid_control_window:
                 log.info("kiln must catch up, too cold, shifting schedule")
@@ -400,7 +408,7 @@ class Oven(threading.Thread):
     def run(self):
         while True:
             if self.state == "IDLE":
-                if self.should_i_automatic_restart() == True:
+                if self.should_i_automatic_restart():
                     self.automatic_restart()
                 time.sleep(1)
                 continue
@@ -418,6 +426,10 @@ class Oven(threading.Thread):
 class SimulatedOven(Oven):
 
     def __init__(self):
+        self.heat = None
+        self.p_env = None
+        self.p_ho = None
+        self.Q_h = None
         self.board = BoardSimulated()
         self.t_env = config.sim_t_env
         self.c_heat = config.sim_c_heat
