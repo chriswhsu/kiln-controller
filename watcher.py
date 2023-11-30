@@ -2,7 +2,6 @@
 import requests
 import json
 import time
-import datetime
 import logging
 
 # this monitors your kiln stats every N seconds
@@ -39,7 +38,7 @@ class Watcher(object):
 
     def send_alert(self,msg):
         log.error("sending alert: %s" % msg)
-        try: 
+        try:
             r = requests.post(self.slack_hook_url, json={'text': msg })
         except:
             pass
@@ -52,7 +51,7 @@ class Watcher(object):
             if abs(self.stats['err']) > self.temp_error_limit:
                 log.error("temp out of whack %0.2f" % self.stats['err'])
                 return True
-        return False 
+        return False
 
     def run(self):
         log.info("started watching %s" % self.kiln_url)
@@ -70,7 +69,7 @@ class Watcher(object):
                 msg = "error kiln needs help. %s" % json.dumps(self.stats,indent=2, sort_keys=True)
                 self.send_alert(msg)
                 self.bad_checks = 0
-            
+
             time.sleep(self.sleepfor)
 
 if __name__ == "__main__":
