@@ -18,9 +18,10 @@ try:
     import config
 
     sys.dont_write_bytecode = False
-except:
-    print("Could not import config file.")
-    print("Copy config.py.EXAMPLE to config.py and adapt it for your setup.")
+except Exception as e:
+    logging.error(f"Error: {e}")
+    logging.error("Could not import config file.")
+    logging.error("Copy config.py.EXAMPLE to config.py and adapt it for your setup.")
     exit(1)
 
 logging.basicConfig(level=config.log_level, format=config.log_format)
@@ -33,7 +34,7 @@ profile_path = config.kiln_profiles_directory
 
 app = bottle.Bottle()
 
-if config.simulate == True:
+if config.simulate:
     log.info("this is a simulation")
     oven = SimulatedOven()
 else:
@@ -90,7 +91,7 @@ def handle_api():
     if bottle.request.json['cmd'] == 'memo':
         log.info("api memo command received")
         memo = bottle.request.json['memo']
-        log.info("memo=%s" % (memo))
+        log.info(f"memo={memo}")
 
     # get stats during a run
     if bottle.request.json['cmd'] == 'stats':
@@ -103,10 +104,10 @@ def handle_api():
 
 
 def find_profile(wanted):
-    '''
-    given a wanted profile name, find it and return the parsed
-    json profile object or None.
-    '''
+
+    # given a wanted profile name, find it and return the parsed
+    # json profile object or None.
+
     # load all profiles from disk
     profiles = get_profiles()
     json_profiles = json.loads(profiles)
@@ -148,8 +149,12 @@ def handle_control():
                     if profile_obj:
                         profile_json = json.dumps(profile_obj)
                         profile = Profile(profile_json)
-                    oven.run_profile(profile)
-                    ovenWatcher.record(profile)
+                        oven.run_profile(profile)
+                        ovenWatcher.record(profile)
+                    else:
+                        log.error("No profile defined.  Aborting.")
+                        bottle.abort()
+
                 elif msgdict.get("cmd") == "SIMULATE":
                     log.info("SIMULATE command received")
                     # profile_obj = msgdict.get('profile')
@@ -183,7 +188,8 @@ def handle_storage():
 
             try:
                 msgdict = json.loads(message)
-            except:
+            except Exception as e:
+                log.error(f"Error loading message {e}")
                 msgdict = {}
 
             if message == "GET":
@@ -222,7 +228,6 @@ def handle_config():
     log.info("websocket (config) opened")
     while True:
         try:
-            message = wsock.receive()
             wsock.send(get_config())
         except WebSocketError:
             break
@@ -246,7 +251,8 @@ def handle_status():
 def get_profiles():
     try:
         profile_files = os.listdir(profile_path)
-    except:
+    except Exception as e:
+        log.error(f"Error loading profile path: {e}")
         profile_files = []
     profiles = []
     for filename in profile_files:
@@ -270,7 +276,6 @@ def save_profile(profile, force=False):
 
 
 def delete_profile(profile):
-    profile_json = json.dumps(profile)
     filename = profile['name'] + ".json"
     filepath = os.path.join(profile_path, filename)
     os.remove(filepath)

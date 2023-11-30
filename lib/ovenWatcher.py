@@ -1,5 +1,8 @@
-import threading, logging, json, time, datetime
-from oven import Oven
+import threading
+import logging
+import json
+import time
+import datetime
 
 log = logging.getLogger(__name__)
 
@@ -37,9 +40,9 @@ class OvenWatcher(threading.Thread):
             time.sleep(self.oven.time_step)
 
     def lastlog_subset(self, maxpts=50):
-        '''send about maxpts from lastlog by skipping unwanted data'''
+        # send about maxpts from lastlog by skipping unwanted data
         totalpts = len(self.last_log)
-        if (totalpts <= maxpts):
+        if totalpts <= maxpts:
             return self.last_log
         every_nth = int(totalpts / (maxpts - 1))
         return self.last_log[::every_nth]
@@ -73,7 +76,8 @@ class OvenWatcher(threading.Thread):
         try:
             print(backlog_json)
             observer.send(backlog_json)
-        except:
+        except Exception as e:
+            log.error(f"An error occurred: {e}")
             log.error("Could not send backlog to new observer")
 
         self.observers.append(observer)
