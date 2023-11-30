@@ -1,6 +1,5 @@
 import threading
 import time
-import random
 import datetime
 import logging
 import json
@@ -35,6 +34,7 @@ duplog = Duplogger().logref()
 
 class Output(object):
     def __init__(self):
+        self.GPIO = None
         self.active = False
         self.load_libs()
 
@@ -46,19 +46,18 @@ class Output(object):
             GPIO.setup(config.gpio_heat, GPIO.OUT)
             self.active = True
             self.GPIO = GPIO
-        except:
-            msg = "Could not initialize GPIOs, oven operation will only be simulated!"
-            log.warning(msg)
+        except Exception as e:
+            log.warning(f"Could not initialize GPIOs, oven operation will only be simulated: {e}")
             self.active = False
 
-    def heat(self, sleepfor):
+    def heat(self, sleep_for):
         self.GPIO.output(config.gpio_heat, self.GPIO.HIGH)
-        time.sleep(sleepfor)
+        time.sleep(sleep_for)
 
-    def cool(self, sleepfor):
-        '''no active cooling, so sleep'''
+    def cool(self, sleep_for):
+        # no active cooling, so sleep
         self.GPIO.output(config.gpio_heat, self.GPIO.LOW)
-        time.sleep(sleepfor)
+        time.sleep(sleep_for)
 
 
 # FIX - Board class needs to be completely removed
@@ -116,15 +115,14 @@ class TempSensor(threading.Thread):
 
 
 class TempSensorSimulated(TempSensor):
-    '''not much here, just need to be able to set the temperature'''
+    # not much here, just need to be able to set the temperature
 
     def __init__(self):
         TempSensor.__init__(self)
 
 
 class TempSensorReal(TempSensor):
-    '''real temperature sensor thread that takes N measurements
-       during the time_step'''
+    # real temperature sensor thread that takes N measurements during the time_step
 
     def __init__(self):
         TempSensor.__init__(self)
@@ -287,22 +285,22 @@ class Oven(threading.Thread):
         if (self.board.temp_sensor.temperature + config.thermocouple_offset >=
                 config.emergency_shutoff_temp):
             log.info("emergency!!! temperature too high")
-            if config.ignore_temp_too_high == False:
+            if not config.ignore_temp_too_high:
                 self.abort_run()
 
         if self.board.temp_sensor.noConnection:
             log.info("emergency!!! lost connection to thermocouple")
-            if config.ignore_lost_connection_tc == False:
+            if not config.ignore_lost_connection_tc:
                 self.abort_run()
 
         if self.board.temp_sensor.unknownError:
             log.info("emergency!!! unknown thermocouple error")
-            if config.ignore_unknown_tc_error == False:
+            if not config.ignore_unknown_tc_error:
                 self.abort_run()
 
         if self.board.temp_sensor.bad_percent > 30:
             log.info("emergency!!! too many errors in a short period")
-            if config.ignore_too_many_tc_errors == False:
+            if not config.ignore_too_many_tc_errors:
                 self.abort_run()
 
     def reset_if_schedule_ended(self):
@@ -486,19 +484,20 @@ class SimulatedOven(Oven):
 
         try:
             log.info(
-                "temp=%.2f, target=%.2f, error=%.2f, pid=%.2f, p=%.2f, i=%.2f, d=%.2f, heat_on=%.2f, heat_off=%.2f, run_time=%d, total_time=%d, time_left=%d" %
-                (self.pid.pidstats['ispoint'],
-                 self.pid.pidstats['setpoint'],
-                 self.pid.pidstats['err'],
-                 self.pid.pidstats['pid'],
-                 self.pid.pidstats['p'],
-                 self.pid.pidstats['i'],
-                 self.pid.pidstats['d'],
-                 heat_on,
-                 heat_off,
-                 self.runtime,
-                 self.totaltime,
-                 time_left))
+                    "temp=%.2f, target=%.2f, error=%.2f, pid=%.2f, p=%.2f, i=%.2f, d=%.2f, heat_on=%.2f, heat_off=%.2f, run_time=%d, total_time=%d, "
+                    "time_left=%d" %
+                    (self.pid.pidstats['ispoint'],
+                     self.pid.pidstats['setpoint'],
+                     self.pid.pidstats['err'],
+                     self.pid.pidstats['pid'],
+                     self.pid.pidstats['p'],
+                     self.pid.pidstats['i'],
+                     self.pid.pidstats['d'],
+                     heat_on,
+                     heat_off,
+                     self.runtime,
+                     self.totaltime,
+                     time_left))
         except KeyError:
             pass
 
@@ -543,19 +542,20 @@ class RealOven(Oven):
         time_left = self.totaltime - self.runtime
         try:
             log.info(
-                "temp=%.2f, target=%.2f, error=%.2f, pid=%.2f, p=%.2f, i=%.2f, d=%.2f, heat_on=%.2f, heat_off=%.2f, run_time=%d, total_time=%d, time_left=%d" %
-                (self.pid.pidstats['ispoint'],
-                 self.pid.pidstats['setpoint'],
-                 self.pid.pidstats['err'],
-                 self.pid.pidstats['pid'],
-                 self.pid.pidstats['p'],
-                 self.pid.pidstats['i'],
-                 self.pid.pidstats['d'],
-                 heat_on,
-                 heat_off,
-                 self.runtime,
-                 self.totaltime,
-                 time_left))
+                    "temp=%.2f, target=%.2f, error=%.2f, pid=%.2f, p=%.2f, i=%.2f, d=%.2f, heat_on=%.2f, heat_off=%.2f, run_time=%d, total_time=%d, "
+                    "time_left=%d" %
+                    (self.pid.pidstats['ispoint'],
+                     self.pid.pidstats['setpoint'],
+                     self.pid.pidstats['err'],
+                     self.pid.pidstats['pid'],
+                     self.pid.pidstats['p'],
+                     self.pid.pidstats['i'],
+                     self.pid.pidstats['d'],
+                     heat_on,
+                     heat_off,
+                     self.runtime,
+                     self.totaltime,
+                     time_left))
         except KeyError:
             pass
 
