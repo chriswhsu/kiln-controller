@@ -6,12 +6,12 @@ import logging
 import json
 
 import bottle
-import gevent
-import geventwebsocket
-#from bottle import post, get
 from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket import WebSocketError
+
+from lib.oven import SimulatedOven, RealOven, Profile
+from lib.ovenWatcher import OvenWatcher
 
 try:
     sys.dont_write_bytecode = True
@@ -30,8 +30,7 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, script_dir + '/lib/')
 profile_path = config.kiln_profiles_directory
 
-from oven import SimulatedOven, RealOven, Profile
-from ovenWatcher import OvenWatcher
+
 
 app = bottle.Bottle()
 
@@ -69,7 +68,7 @@ def handle_api():
 
         # start at a specific minute in the schedule
         # for restarting and skipping over early parts of a schedule
-        startat = 0;      
+        startat = 0
         if 'startat' in bottle.request.json:
             startat = bottle.request.json['startat']
 
@@ -127,7 +126,7 @@ def get_websocket_from_request():
     env = bottle.request.environ
     wsock = env.get('wsgi.websocket')
     if not wsock:
-        abort(400, 'Expected WebSocket request.')
+        bottle.abort(400, 'Expected WebSocket request.')
     return wsock
 
 
