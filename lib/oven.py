@@ -207,18 +207,6 @@ class Oven(threading.Thread):
 
     def __init__(self):
         threading.Thread.__init__(self)
-        self.board = None #defined in child classes
-        self.startat = None
-        self.ovenwatcher = None
-        self.pid = None
-        self.heat = None
-        self.target = None
-        self.totaltime = None
-        self.runtime = None
-        self.start_time = None
-        self.profile = None
-        self.state = None
-        self.cost = None
         self.daemon = True
         self.temperature = 0
         self.time_step = config.sensor_time_wait
@@ -426,10 +414,6 @@ class Oven(threading.Thread):
 class SimulatedOven(Oven):
 
     def __init__(self):
-        self.heat = None
-        self.p_env = None
-        self.p_ho = None
-        self.Q_h = None
         self.board = BoardSimulated()
         self.t_env = config.sim_t_env
         self.c_heat = config.sim_c_heat
