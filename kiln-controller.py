@@ -26,7 +26,6 @@ log = logging.getLogger("kiln-controller")
 log.info("Starting kiln controller")
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, script_dir + '/lib/')
 profile_path = config.kiln_profiles_directory
 
 app = bottle.Bottle()
