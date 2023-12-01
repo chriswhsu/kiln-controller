@@ -25,11 +25,11 @@ class Duplogger():
         dup_filter = DupFilter()
         self.log.addFilter(dup_filter)
 
-    def logref(self):
+    def log_ref(self):
         return self.log
 
 
-duplog = Duplogger().logref()
+dup_log = Duplogger().log_ref()
 
 
 class Output(object):
@@ -277,7 +277,7 @@ class Oven(threading.Thread):
         self.target = self.profile.get_target_temperature(self.runtime)
 
     def reset_if_emergency(self):
-        '''reset if the temperature is way TOO HOT, or other critical errors detected'''
+        # reset if the temperature is way TOO HOT, or other critical errors detected
         if (self.board.temp_sensor.temperature + config.thermocouple_offset >=
                 config.emergency_shutoff_temp):
             log.info("emergency!!! temperature too high")
@@ -364,13 +364,13 @@ class Oven(threading.Thread):
         if not config.automatic_restarts == True:
             return False
         if self.state_file_is_old():
-            duplog.info("automatic restart not possible. state file does not exist or is too old.")
+            dup_log.info("automatic restart not possible. state file does not exist or is too old.")
             return False
 
         with open(config.automatic_restart_state_file) as infile:
             d = json.load(infile)
         if d["state"] != "RUNNING":
-            duplog.info("automatic restart not possible. state = %s" % (d["state"]))
+            dup_log.info("automatic restart not possible. state = %s" % (d["state"]))
             return False
         return True
 
