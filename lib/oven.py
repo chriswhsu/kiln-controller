@@ -60,50 +60,6 @@ class Output(object):
         time.sleep(sleep_for)
 
 
-# FIX - Board class needs to be completely removed
-class Board(object):
-    def __init__(self):
-        self.name = None
-        self.active = False
-        self.temp_sensor = None
-        self.gpio_active = False
-        self.load_libs()
-        self.create_temp_sensor()
-        self.temp_sensor.start()
-
-    def load_libs(self):
-        if config.max31855:
-            try:
-                # from max31855 import MAX31855, MAX31855Error
-                self.name = 'MAX31855'
-                self.active = True
-                log.info("import %s " % (self.name))
-            except ImportError:
-                msg = "max31855 config set, but import failed"
-                log.warning(msg)
-
-        if config.max31856:
-            try:
-                # from max31856 import MAX31856, MAX31856Error
-                self.name = 'MAX31856'
-                self.active = True
-                log.info("import %s " % (self.name))
-            except ImportError:
-                msg = "max31856 config set, but import failed"
-                log.warning(msg)
-
-    def create_temp_sensor(self):
-        if config.simulate == True:
-            self.temp_sensor = TempSensorSimulate()
-        else:
-            self.temp_sensor = TempSensorReal()
-
-
-class BoardSimulated(object):
-    def __init__(self):
-        self.temp_sensor = TempSensorSimulated()
-
-
 class TempSensor(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
@@ -226,19 +182,6 @@ class Oven(threading.Thread):
     def run_profile(self, profile, startat=0):
         self.reset()
 
-        if self.board.temp_sensor.noConnection:
-            log.info("Refusing to start profile - thermocouple not connected")
-            return
-        if self.board.temp_sensor.shortToGround:
-            log.info("Refusing to start profile - thermocouple short to ground")
-            return
-        if self.board.temp_sensor.shortToVCC:
-            log.info("Refusing to start profile - thermocouple short to VCC")
-            return
-        if self.board.temp_sensor.unknownError:
-            log.info("Refusing to start profile - thermocouple unknown error")
-            return
-
         self.startat = startat * 60
         self.runtime = self.startat
         self.start_time = datetime.datetime.now() - datetime.timedelta(seconds=self.startat)
@@ -255,7 +198,7 @@ class Oven(threading.Thread):
     def kiln_must_catch_up(self):
         # shift the whole schedule forward in time by one time_step to wait for the kiln to catch up
         if config.kiln_must_catch_up:
-            temp = self.board.temp_sensor.temperature + config.thermocouple_offset
+            temp = self.temperature + config.thermocouple_offset
             # kiln too cold, wait for it to heat up
             if self.target - temp > config.pid_control_window:
                 log.info("kiln must catch up, too cold, shifting schedule")
@@ -278,25 +221,10 @@ class Oven(threading.Thread):
 
     def reset_if_emergency(self):
         # reset if the temperature is way TOO HOT, or other critical errors detected
-        if (self.board.temp_sensor.temperature + config.thermocouple_offset >=
+        if (self.temperature + config.thermocouple_offset >=
                 config.emergency_shutoff_temp):
             log.info("emergency!!! temperature too high")
             if not config.ignore_temp_too_high:
-                self.abort_run()
-
-        if self.board.temp_sensor.noConnection:
-            log.info("emergency!!! lost connection to thermocouple")
-            if not config.ignore_lost_connection_tc:
-                self.abort_run()
-
-        if self.board.temp_sensor.unknownError:
-            log.info("emergency!!! unknown thermocouple error")
-            if not config.ignore_unknown_tc_error:
-                self.abort_run()
-
-        if self.board.temp_sensor.bad_percent > 30:
-            log.info("emergency!!! too many errors in a short period")
-            if not config.ignore_too_many_tc_errors:
                 self.abort_run()
 
     def reset_if_schedule_ended(self):
@@ -414,7 +342,6 @@ class Oven(threading.Thread):
 class SimulatedOven(Oven):
 
     def __init__(self):
-        self.board = BoardSimulated()
         self.t_env = config.sim_t_env
         self.c_heat = config.sim_c_heat
         self.c_oven = config.sim_c_oven
@@ -453,12 +380,10 @@ class SimulatedOven(Oven):
         self.p_env = (self.t - self.t_env) / self.R_o_nocool
         self.t -= self.p_env * self.time_step / self.c_oven
         self.temperature = self.t
-        self.board.temp_sensor.temperature = self.t
+        self.temperature = self.t
 
     def heat_then_cool(self):
-        pid = self.pid.compute(self.target,
-                               self.board.temp_sensor.temperature +
-                               config.thermocouple_offset)
+        pid = self.pid.compute(self.target, self.temperature + config.thermocouple_offset)
         heat_on = float(self.time_step * pid)
         heat_off = float(self.time_step * (1 - pid))
 
@@ -505,7 +430,6 @@ class SimulatedOven(Oven):
 class RealOven(Oven):
 
     def __init__(self):
-        self.board = Board()
         self.output = Output()
         self.reset()
 
@@ -520,9 +444,7 @@ class RealOven(Oven):
         self.output.cool(0)
 
     def heat_then_cool(self):
-        pid = self.pid.compute(self.target,
-                               self.board.temp_sensor.temperature +
-                               config.thermocouple_offset)
+        pid = self.pid.compute(self.target, self.temperature + config.thermocouple_offset)
         heat_on = float(self.time_step * pid)
         heat_off = float(self.time_step * (1 - pid))
 
