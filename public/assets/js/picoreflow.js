@@ -1,31 +1,26 @@
-var state = "IDLE";
-var state_last = "";
-var graph = [ 'profile', 'live'];
-var points = [];
-var profiles = [];
-var time_mode = 0;
-var selected_profile = 0;
-var selected_profile_name = 'cone-05-long-bisque.json';
-var temp_scale = "c";
-var time_scale_slope = "s";
-var time_scale_profile = "s";
-var time_scale_long = "Seconds";
-var temp_scale_display = "C";
-var kwh_rate = 0.26;
-var currency_type = "EUR";
+let state = "IDLE";
+let state_last = "";
+let graph = [ 'profile', 'live'];
+let profiles = [];
+let selected_profile = 0;
+let selected_profile_name = 'cone-05-long-bisque.json';
+let temp_scale = "c";
+let time_scale_slope = "s";
+let time_scale_profile = "s";
+let time_scale_long = "Seconds";
+let temp_scale_display = "C";
+let kwh_rate = 0.26;
+let currency_type = "EUR";
 
-var protocol = 'ws:';
-if (window.location.protocol == 'https:') {
+let protocol = 'ws:';
+if (window.location.protocol === 'https:') {
     protocol = 'wss:';
 }
-var host = "" + protocol + "//" + window.location.hostname + ":" + window.location.port;
-var ws_status = new WebSocket(host+"/status");
-var ws_control = new WebSocket(host+"/control");
-var ws_config = new WebSocket(host+"/config");
-var ws_storage = new WebSocket(host+"/storage");
-
-
-if(window.webkitRequestAnimationFrame) window.requestAnimationFrame = window.webkitRequestAnimationFrame;
+let host = "" + protocol + "//" + window.location.hostname + ":" + window.location.port;
+let ws_status = new WebSocket(host+"/status");
+let ws_control = new WebSocket(host+"/control");
+let ws_config = new WebSocket(host+"/config");
+let ws_storage = new WebSocket(host+"/storage");
 
 graph.profile =
 {
@@ -50,10 +45,10 @@ function updateProfile(id)
 {
     selected_profile = id;
     selected_profile_name = profiles[id].name;
-    var job_seconds = profiles[id].data.length === 0 ? 0 : parseInt(profiles[id].data[profiles[id].data.length-1][0]);
-    var kwh = (3850*job_seconds/3600/1000).toFixed(2);
-    var cost =  (kwh*kwh_rate).toFixed(2);
-    var job_time = new Date(job_seconds * 1000).toISOString().substr(11, 8);
+    let job_seconds = profiles[id].data.length === 0 ? 0 : parseInt(profiles[id].data[profiles[id].data.length-1][0]);
+    let kwh = (3850*job_seconds/3600/1000).toFixed(2);
+    let cost =  (kwh*kwh_rate).toFixed(2);
+    let job_time = new Date(job_seconds * 1000).toISOString().slice(11, 19);
     $('#sel_prof').html(profiles[id].name);
     $('#sel_prof_eta').html(job_time);
     $('#sel_prof_cost').html(kwh + ' kWh ('+ currency_type +': '+ cost +')');
@@ -63,10 +58,10 @@ function updateProfile(id)
 
 function deleteProfile()
 {
-    var profile = { "type": "profile", "data": "", "name": selected_profile_name };
-    var delete_struct = { "cmd": "DELETE", "profile": profile };
+    let profile = { "type": "profile", "data": "", "name": selected_profile_name };
+    let delete_struct = { "cmd": "DELETE", "profile": profile };
 
-    var delete_cmd = JSON.stringify(delete_struct);
+    let delete_cmd = JSON.stringify(delete_struct);
     console.log("Delete profile:" + selected_profile_name);
 
     ws_storage.send(delete_cmd);
@@ -89,35 +84,37 @@ function deleteProfile()
 
 function updateProgress(percentage)
 {
-    if(state=="RUNNING")
+    let progressBar = $('#progressBar');
+    if(state==="RUNNING")
     {
+
         if(percentage > 100) percentage = 100;
-        $('#progressBar').css('width', percentage+'%');
-        if(percentage>5) $('#progressBar').html(parseInt(percentage)+'%');
+        progressBar.css('width', percentage+'%');
+        if(percentage>5) progressBar.html(parseInt(percentage)+'%');
     }
     else
     {
-        $('#progressBar').css('width', 0+'%');
-        $('#progressBar').html('');
+        progressBar.css('width', 0+'%');
+        progressBar.html('');
     }
 }
 
 function updateProfileTable()
 {
-    var dps = 0;
-    var slope = "";
-    var color = "";
+    let dps = 0;
+    let slope = "";
+    let color = "";
 
-    var html = '<h3>Schedule Points</h3><div class="table-responsive" style="scroll: none"><table class="table table-striped">';
+    let html = '<h3>Schedule Points</h3><div class="table-responsive" style="overflow: hidden"><table class="table table-striped">';
         html += '<tr><th style="width: 50px">#</th><th>Target Time in ' + time_scale_long+ '</th><th>Target Temperature in °'+temp_scale_display+'</th><th>Slope in &deg;'+temp_scale_display+'/'+time_scale_slope+'</th><th></th></tr>';
 
-    for(var i=0; i<graph.profile.data.length;i++)
+    for(let i=0; i<graph.profile.data.length;i++)
     {
 
         if (i>=1) dps =  ((graph.profile.data[i][1]-graph.profile.data[i-1][1])/(graph.profile.data[i][0]-graph.profile.data[i-1][0]) * 10) / 10;
         if (dps  > 0) { slope = "up";     color="rgba(206, 5, 5, 1)"; } else
         if (dps  < 0) { slope = "down";   color="rgba(23, 108, 204, 1)"; dps *= -1; } else
-        if (dps == 0) { slope = "right";  color="grey"; }
+        if (dps === 0) { slope = "right";  color="grey"; }
 
         html += '<tr><td><h4>' + (i+1) + '</h4></td>';
         html += '<td><input type="text" class="form-control" id="profiletable-0-'+i+'" value="'+ timeProfileFormatter(graph.profile.data[i][0],true) + '" style="width: 60px" /></td>';
@@ -131,16 +128,16 @@ function updateProfileTable()
     $('#profile_table').html(html);
 
     //Link table to graph
-    $(".form-control").change(function(e)
+    $(".form-control").change(function()
         {
-            var id = $(this)[0].id; //e.currentTarget.attributes.id
-            var value = parseInt($(this)[0].value);
-            var fields = id.split("-");
-            var col = parseInt(fields[1]);
-            var row = parseInt(fields[2]);
+            let id = $(this)[0].id; //e.currentTarget.attributes.id
+            let value = parseInt($(this)[0].value);
+            let fields = id.split("-");
+            let col = parseInt(fields[1]);
+            let row = parseInt(fields[2]);
 
             if (graph.profile.data.length > 0) {
-            if (col == 0) {
+            if (col === 0) {
                 graph.profile.data[row][col] = timeProfileFormatter(value,false);
             }
             else {
@@ -155,7 +152,7 @@ function updateProfileTable()
 }
 
 function timeProfileFormatter(val, down) {
-    var rval = val
+    let rval = val
     switch(time_scale_profile){
         case "m":
             if (down) {rval = val / 60;} else {rval = val * 60;}
@@ -168,11 +165,11 @@ function timeProfileFormatter(val, down) {
 }
 
 function formatDPS(val) {
-    var tval = val;
-    if (time_scale_slope == "m") {
+    let tval = val;
+    if (time_scale_slope === "m") {
         tval = val * 60;
     }
-    if (time_scale_slope == "h") {
+    if (time_scale_slope === "h") {
         tval = (val * 60) * 60;
     }
     return Math.round(tval);
@@ -180,7 +177,7 @@ function formatDPS(val) {
 
 function hazardTemp(){
 
-    if (temp_scale == "f") {
+    if (temp_scale === "f") {
         return (1500 * 9 / 5) + 32
     }
     else {
@@ -192,7 +189,7 @@ function timeTickFormatter(val,axis)
 {
 // hours
 if(axis.max>3600) {
-  //var hours = Math.floor(val / (3600));
+  //let hours = Math.floor(val / (3600));
   //return hours;
   return Math.floor(val/3600);
   }
@@ -210,7 +207,7 @@ if(axis.max<=60) {
 
 function runTask()
 {
-    var cmd =
+    let cmd =
     {
         "cmd": "RUN",
         "profile": profiles[selected_profile]
@@ -225,7 +222,7 @@ function runTask()
 
 function runTaskSimulation()
 {
-    var cmd =
+    let cmd =
     {
         "cmd": "SIMULATE",
         "profile": profiles[selected_profile]
@@ -241,7 +238,7 @@ function runTaskSimulation()
 
 function abortTask()
 {
-    var cmd = {"cmd": "STOP"};
+    let cmd = {"cmd": "STOP"};
     ws_control.send(JSON.stringify(cmd));
 }
 
@@ -252,8 +249,7 @@ function enterNewMode()
     $('#edit').show();
     $('#profile_selector').hide();
     $('#btn_controls').hide();
-    $('#form_profile_name').attr('value', '');
-    $('#form_profile_name').attr('placeholder', 'Please enter a name');
+    $('#form_profile_name').attr('value', '').attr('placeholder', 'Please enter a name');
     graph.profile.points.show = true;
     graph.profile.draggable = true;
     graph.profile.data = [];
@@ -291,20 +287,17 @@ function leaveEditMode()
     graph.plot = $.plot("#graph_container", [ graph.profile, graph.live ], getOptions());
 }
 
-function newPoint()
-{
-    if(graph.profile.data.length > 0)
-    {
-        var pointx = parseInt(graph.profile.data[graph.profile.data.length-1][0])+15;
+function newPoint() {
+    let pointx = 0;
+    if (graph.profile.data.length > 0) {
+        pointx = parseInt(graph.profile.data[graph.profile.data.length - 1][0]) + 15;
     }
-    else
-    {
-        var pointx = 0;
-    }
-    graph.profile.data.push([pointx, Math.floor((Math.random()*230)+25)]);
-    graph.plot = $.plot("#graph_container", [ graph.profile, graph.live ], getOptions());
+
+    graph.profile.data.push([pointx, Math.floor((Math.random() * 230) + 25)]);
+    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
     updateProfileTable();
 }
+
 
 function delPoint()
 {
@@ -313,26 +306,19 @@ function delPoint()
     updateProfileTable();
 }
 
-function toggleTable()
-{
-    if($('#profile_table').css('display') == 'none')
-    {
-        $('#profile_table').slideDown();
-    }
-    else
-    {
-        $('#profile_table').slideUp();
-    }
+function toggleTable() {
+    $('#profile_table').slideToggle();
 }
+
 
 function saveProfile()
 {
     name = $('#form_profile_name').val();
-    var rawdata = graph.plot.getData()[0].data
-    var data = [];
-    var last = -1;
+    let rawdata = graph.plot.getData()[0].data
+    let data = [];
+    let last = -1;
 
-    for(var i=0; i<rawdata.length;i++)
+    for(let i=0; i<rawdata.length;i++)
     {
         if(rawdata[i][0] > last)
         {
@@ -357,10 +343,10 @@ function saveProfile()
         last = rawdata[i][0];
     }
 
-    var profile = { "type": "profile", "data": data, "name": name }
-    var put = { "cmd": "PUT", "profile": profile }
+    let profile = { "type": "profile", "data": data, "name": name }
+    let put = { "cmd": "PUT", "profile": profile }
 
-    var put_cmd = JSON.stringify(put);
+    let put_cmd = JSON.stringify(put);
 
     ws_storage.send(put_cmd);
 
@@ -382,75 +368,72 @@ return 3600;
 function getOptions()
 {
 
-  var options =
-  {
+  return {
 
-    series:
-    {
-        lines:
-        {
-            show: true
-        },
+      series:
+          {
+              lines:
+                  {
+                      show: true
+                  },
 
-        points:
-        {
-            show: true,
-            radius: 5,
-            symbol: "circle"
-        },
+              points:
+                  {
+                      show: true,
+                      radius: 5,
+                      symbol: "circle"
+                  },
 
-        shadowSize: 3
+              shadowSize: 3
 
-    },
+          },
 
-	xaxis:
-    {
-      min: 0,
-      tickColor: 'rgba(216, 211, 197, 0.2)',
-      tickFormatter: timeTickFormatter,
-      tickSize: get_tick_size(),
-      font:
-      {
-        size: 14,
-        lineHeight: 14,        weight: "normal",
-        family: "Digi",
-        variant: "small-caps",
-        color: "rgba(216, 211, 197, 0.85)"
-      }
-	},
+      xaxis:
+          {
+              min: 0,
+              tickColor: 'rgba(216, 211, 197, 0.2)',
+              tickFormatter: timeTickFormatter,
+              tickSize: get_tick_size(),
+              font:
+                  {
+                      size: 14,
+                      lineHeight: 14, weight: "normal",
+                      family: "Digi",
+                      variant: "small-caps",
+                      color: "rgba(216, 211, 197, 0.85)"
+                  }
+          },
 
-	yaxis:
-    {
-      min: 0,
-      tickDecimals: 0,
-      draggable: false,
-      tickColor: 'rgba(216, 211, 197, 0.2)',
-      font:
-      {
-        size: 14,
-        lineHeight: 14,
-        weight: "normal",
-        family: "Digi",
-        variant: "small-caps",
-        color: "rgba(216, 211, 197, 0.85)"
-      }
-	},
+      yaxis:
+          {
+              min: 0,
+              tickDecimals: 0,
+              draggable: false,
+              tickColor: 'rgba(216, 211, 197, 0.2)',
+              font:
+                  {
+                      size: 14,
+                      lineHeight: 14,
+                      weight: "normal",
+                      family: "Digi",
+                      variant: "small-caps",
+                      color: "rgba(216, 211, 197, 0.85)"
+                  }
+          },
 
-	grid:
-    {
-	  color: 'rgba(216, 211, 197, 0.55)',
-      borderWidth: 1,
-      labelMargin: 10,
-      mouseActiveRadius: 50
-	},
+      grid:
+          {
+              color: 'rgba(216, 211, 197, 0.55)',
+              borderWidth: 1,
+              labelMargin: 10,
+              mouseActiveRadius: 50
+          },
 
-    legend:
-    {
-      show: false
-    }
-  }
-
-  return options;
+      legend:
+          {
+              show: false
+          }
+  };
 
 }
 
@@ -462,7 +445,7 @@ $(document).ready(function()
     if(!("WebSocket" in window))
     {
         $('#chatLog, input, button, #examples').fadeOut("fast");
-        $('<p>Oh no, you need a browser that supports WebSockets. How about <a href="http://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');
+        $('<p>Oh no, you need a browser that supports WebSockets. How about <a href="https://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');
     }
     else
     {
@@ -505,14 +488,14 @@ $(document).ready(function()
             console.log("received status data")
             console.log(e.data);
 
-            x = JSON.parse(e.data);
-            if (x.type == "backlog")
+            let x = JSON.parse(e.data);
+            if (x.type === "backlog")
             {
                 if (x.profile)
                 {
                     selected_profile_name = x.profile.name;
                     $.each(profiles,  function(i,v) {
-                        if(v.name == x.profile.name) {
+                        if(v.name === x.profile.name) {
                             updateProfile(i);
                             $('#e2').select2('val', i);
                         }
@@ -525,13 +508,13 @@ $(document).ready(function()
                 });
             }
 
-            if(state!="EDIT")
+            if(state!=="EDIT")
             {
                 state = x.state;
 
-                if (state!=state_last)
+                if (state!==state_last)
                 {
-                    if(state_last == "RUNNING")
+                    if(state_last === "RUNNING")
                     {
                         $('#target_temp').html('---');
                         updateProgress(0);
@@ -548,7 +531,7 @@ $(document).ready(function()
                     }
                 }
 
-                if(state=="RUNNING")
+                if(state==="RUNNING")
                 {
                     $("#nav_start").hide();
                     $("#nav_stop").show();
@@ -579,7 +562,7 @@ $(document).ready(function()
                 if (x.cool > 0.5) { $('#cool').addClass("ds-led-cool-active"); } else { $('#cool').removeClass("ds-led-cool-active"); }
                 if (x.air > 0.5) { $('#air').addClass("ds-led-air-active"); } else { $('#air').removeClass("ds-led-air-active"); }
                 if (x.temperature > hazardTemp()) { $('#hazard').addClass("ds-led-hazard-active"); } else { $('#hazard').removeClass("ds-led-hazard-active"); }
-                if ((x.door == "OPEN") || (x.door == "UNKNOWN")) { $('#door').addClass("ds-led-door-open"); } else { $('#door').removeClass("ds-led-door-open"); }
+                if ((x.door === "OPEN") || (x.door === "UNKNOWN")) { $('#door').addClass("ds-led-door-open"); } else { $('#door').removeClass("ds-led-door-open"); }
 
                 state_last = state;
 
@@ -679,7 +662,7 @@ $(document).ready(function()
             $('#e2').find('option').remove().end();
             // check if current selected value is a valid profile name
             // if not, update with first available profile name
-            var valid_profile_names = profiles.map(function(a) {return a.name;});
+            let valid_profile_names = profiles.map(function(a) {return a.name;});
             if (
               valid_profile_names.length > 0 &&
               $.inArray(selected_profile_name, valid_profile_names) === -1
@@ -689,9 +672,9 @@ $(document).ready(function()
             }
 
             // fill select with new options from websocket
-            for (var i=0; i<profiles.length; i++)
+            for (let i=0; i<profiles.length; i++)
             {
-                var profile = profiles[i];
+                let profile = profiles[i];
                 //console.log(profile.name);
                 $('#e2').append('<option value="'+i+'">'+profile.name+'</option>');
 
