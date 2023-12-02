@@ -518,7 +518,8 @@ $(document).ready(function()
                     {
                         $('#target_temp').html('---');
                         updateProgress(0);
-                        $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>Run completed</b>", {
+                        $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>Run completed. New State: " + state + "</b>", {
+
                         ele: 'body', // which element to append to
                         type: 'success', // (null, 'info', 'error', 'success')
                         offset: {from: 'top', amount: 250}, // 'top', or 'bottom'
@@ -546,7 +547,7 @@ $(document).ready(function()
                     $('#state').html('<span class="glyphicon glyphicon-time" style="font-size: 22px; font-weight: normal"></span><span style="font-family: Digi; font-size: 40px;">' + eta + '</span>');
                     $('#target_temp').html(parseInt(x.target));
                     $('#cost').html(x.currency_type + parseFloat(x.cost).toFixed(2));
-                  
+
 
 
                 }
@@ -606,6 +607,8 @@ $(document).ready(function()
 
         }
 
+        let e2 = $('#e2');
+
         // Control Socket ////////////////////////////////
 
         ws_control.onopen = function()
@@ -638,7 +641,7 @@ $(document).ready(function()
 
             if(message.resp)
             {
-                if(message.resp == "FAIL")
+                if(message.resp === "FAIL")
                 {
                     if (confirm('Overwrite?'))
                     {
@@ -659,7 +662,7 @@ $(document).ready(function()
             //FIXME: this should be better, maybe a {"profiles": ...} container?
             profiles = message;
             //delete old options in select
-            $('#e2').find('option').remove().end();
+            e2.find('option').remove().end();
             // check if current selected value is a valid profile name
             // if not, update with first available profile name
             let valid_profile_names = profiles.map(function(a) {return a.name;});
@@ -676,19 +679,19 @@ $(document).ready(function()
             {
                 let profile = profiles[i];
                 //console.log(profile.name);
-                $('#e2').append('<option value="'+i+'">'+profile.name+'</option>');
+                e2.append('<option value="'+i+'">'+profile.name+'</option>');
 
-                if (profile.name == selected_profile_name)
+                if (profile.name === selected_profile_name)
                 {
                     selected_profile = i;
-                    $('#e2').select2('val', i);
+                    e2.select2('val', i);
                     updateProfile(i);
                 }
             }
         };
 
 
-        $("#e2").select2(
+        e2.select2(
         {
             placeholder: "Select Profile",
             allowClear: true,
@@ -696,7 +699,7 @@ $(document).ready(function()
         });
 
 
-        $("#e2").on("change", function(e)
+        e2.on("change", function(e)
         {
             updateProfile(e.val);
         });
