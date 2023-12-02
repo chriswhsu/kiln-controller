@@ -9,30 +9,44 @@ import os
 log = logging.getLogger(__name__)
 
 
-class DupFilter(object):
+class DupLogger:
+    """ A logger class with an integrated duplicate message filter. """
+
     def __init__(self):
+        """ Initializes the logger with an integrated duplicate filter. """
         self.msgs = set()
+        self.log = logging.getLogger(f"{__name__}.duplicateFree")
+        self.log.addFilter(self.filter)
 
     def filter(self, record):
-        rv = record.msg not in self.msgs
-        self.msgs.add(record.msg)
-        return rv
+        """
+        Filters the log record for duplicates.
 
+        Args:
+            record: The log record to be filtered.
 
-class Duplogger():
-    def __init__(self):
-        self.log = logging.getLogger("%s.dupfree" % __name__)
-        dup_filter = DupFilter()
-        self.log.addFilter(dup_filter)
+        Returns:
+            bool: True if the message is not a duplicate, False otherwise.
+        """
+        if record.msg not in self.msgs:
+            self.msgs.add(record.msg)
+            return True
+        return False
 
-    def log_ref(self):
+    def get_logger(self):
+        """
+        Returns a reference to the logger.
+
+        Returns:
+            logging.Logger: The logger instance with an integrated duplicate filter.
+        """
         return self.log
 
 
-dup_log = Duplogger().log_ref()
+dup_log = DupLogger().get_logger()
 
 
-class Output(object):
+class Output:
     def __init__(self):
         self.GPIO = None
         self.active = False
