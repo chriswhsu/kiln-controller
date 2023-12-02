@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-
 import os
 import sys
 import logging
 import json
-
 import bottle
+
 from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket import WebSocketError
@@ -36,21 +35,22 @@ if config.simulate:
 else:
     log.info("this is a real kiln")
     oven = RealOven()
+
 oven_watcher = OvenWatcher(oven)
-# this ovenwatcher is used in the oven class for restarts
+# this OvenWatcher is used in the oven class for restarts
 oven.set_ovenwatcher(oven_watcher)
 
 
 @app.route('/')
 def index():
-    return bottle.redirect('/picoreflow/index.html')
+    return bottle.redirect('/pico_reflow/index.html')
 
 
 @app.get('/api/stats')
 def handle_api():
     log.info("/api/stats command received")
     if hasattr(oven, 'pid'):
-        if hasattr(oven.pid, 'pidstats'):
+        if hasattr(oven.pid, 'pid_stats'):
             return json.dumps(oven.pid.pidstats)
 
 
@@ -93,7 +93,7 @@ def handle_api():
     if bottle.request.json['cmd'] == 'stats':
         log.info("api stats command received")
         if hasattr(oven, 'pid'):
-            if hasattr(oven.pid, 'pidstats'):
+            if hasattr(oven.pid, 'pid_stats'):
                 return json.dumps(oven.pid.pidstats)
 
     return {"success": True}
@@ -115,7 +115,7 @@ def find_profile(wanted):
     return None
 
 
-@app.route('/picoreflow/:filename#.*#')
+@app.route('/pico_reflow/:filename#.*#')
 def send_static(filename):
     log.debug("serving %s" % filename)
     return bottle.static_file(filename, root=os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "public"))

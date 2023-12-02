@@ -78,7 +78,6 @@ function deleteProfile() {
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 }
 
-
 function updateProgress(percentage) {
     let progressBar = $('#progressBar');
     if (state === "RUNNING") {
@@ -306,7 +305,6 @@ function toggleTable() {
     $('#profile_table').slideToggle();
 }
 
-
 function saveProfile() {
     name = $('#form_profile_name').val();
     let rawdata = graph.plot.getData()[0].data
@@ -424,9 +422,7 @@ function getOptions() {
                 show: false
             }
     };
-
 }
-
 
 $(document).ready(function () {
 
@@ -440,17 +436,17 @@ $(document).ready(function () {
         ws_status.onopen = function () {
             console.log("Status Socket has been opened");
 
-//            $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span>Getting data from server",
-//            {
-//            ele: 'body', // which element to append to
-//            type: 'success', // (null, 'info', 'error', 'success')
-//            offset: {from: 'top', amount: 250}, // 'top', or 'bottom'
-//            align: 'center', // ('left', 'right', or 'center')
-//            width: 385, // (integer, or 'auto')
-//            delay: 2500,
-//            allow_dismiss: true,
-//            stackup_spacing: 10 // spacing between consecutively stacked growls.
-//            });
+           $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span>Getting data from server",
+           {
+           ele: 'body', // which element to append to
+           type: 'success', // (null, 'info', 'error', 'success')
+           offset: {from: 'top', amount: 250}, // 'top', or 'bottom'
+           align: 'center', // ('left', 'right', or 'center')
+           width: 385, // (integer, or 'auto')
+           delay: 2500,
+           allow_dismiss: true,
+           stackup_spacing: 10 // spacing between consecutively stacked growls.
+           });
         };
 
         ws_status.onclose = function () {
@@ -533,29 +529,20 @@ $(document).ready(function () {
 
                 $('#act_temp').html(parseInt(x.temperature));
                 $('#heat').html('<div class="bar"></div>')
+
                 if (x.cool > 0.5) {
                     $('#cool').addClass("ds-led-cool-active");
                 } else {
                     $('#cool').removeClass("ds-led-cool-active");
                 }
-                if (x.air > 0.5) {
-                    $('#air').addClass("ds-led-air-active");
-                } else {
-                    $('#air').removeClass("ds-led-air-active");
-                }
+
                 if (x.temperature > hazardTemp()) {
                     $('#hazard').addClass("ds-led-hazard-active");
                 } else {
                     $('#hazard').removeClass("ds-led-hazard-active");
                 }
-                if ((x.door === "OPEN") || (x.door === "UNKNOWN")) {
-                    $('#door').addClass("ds-led-door-open");
-                } else {
-                    $('#door').removeClass("ds-led-door-open");
-                }
 
                 state_last = state;
-
             }
         };
 

@@ -248,20 +248,19 @@ class Oven(threading.Thread):
         except AttributeError as error:
             # this happens at start-up with a simulated oven
             temp = 0
-            pass
 
         state = {
-            'cost': self.cost,
-            'runtime': self.runtime,
-            'temperature': temp,
-            'target': self.target,
+            'cost': round(self.cost, 2),
+            'runtime': round(self.runtime, 2),
+            'temperature': round(temp, 2),
+            'target': round(self.target, 2),
             'state': self.state,
             'heat': self.heat,
             'totaltime': self.totaltime,
             'kwh_rate': config.kwh_rate,
             'currency_type': config.currency_type,
             'profile': self.profile.name if self.profile else None,
-            'pidstats': self.pid.pidstats,
+            'pid_stats': self.pid.pidstats,
         }
         return state
 
@@ -269,28 +268,28 @@ class Oven(threading.Thread):
         with open(config.automatic_restart_state_file, 'w', encoding='utf-8') as f:
             json.dump(self.get_state(), f, ensure_ascii=False, indent=4)
 
-    def state_file_is_old(self):
-        '''returns True is state files is older than 15 mins default
-                   False if younger
-                   True if state file cannot be opened or does not exist
-        '''
+    @staticmethod
+    def state_file_is_old():
+        # returns True is state files is older than 15 mins default
+        #         False if younger
+        #         True if state file cannot be opened or does not exist
+
         if os.path.isfile(config.automatic_restart_state_file):
             state_age = os.path.getmtime(config.automatic_restart_state_file)
             now = time.time()
             minutes = (now - state_age) / 60
-            if (minutes <= config.automatic_restart_window):
+            if minutes <= config.automatic_restart_window:
                 return False
         return True
 
     def save_automatic_restart_state(self):
         # only save state if the feature is enabled
-        if not config.automatic_restarts == True:
-            return False
-        self.save_state()
+        if config.automatic_restarts:
+            self.save_state()
 
     def should_i_automatic_restart(self):
         # only automatic restart if the feature is enabled
-        if not config.automatic_restarts == True:
+        if not config.automatic_restarts:
             return False
         if self.state_file_is_old():
             dup_log.info("automatic restart not possible. state file does not exist or is too old.")

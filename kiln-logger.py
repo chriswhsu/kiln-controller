@@ -7,6 +7,7 @@ import csv
 import argparse
 import sys
 
+# Define standard and PID headers for CSV file
 STD_HEADER = [
     'stamp',
     'runtime',
@@ -36,65 +37,60 @@ PID_HEADER = [
 ]
 
 
-def logger(hostname, csvfile, noprofilestats, pidstats, stdout):
+def logger(hostname, csv_file, no_profile_stats, pid_stats, stdout):
     status_ws = websocket.WebSocket()
 
-    csv_fields = []
-    if not noprofilestats:
-        csv_fields += STD_HEADER
-    if pidstats:
-        csv_fields += PID_HEADER
+    # Determine CSV fields based on flags
+    csv_fields = STD_HEADER if not no_profile_stats else []
+    csv_fields += PID_HEADER if pid_stats else []
 
-    out = open(csvfile, 'w')
-    csv_out = csv.DictWriter(out, csv_fields, extrasaction='ignore')
-    csv_out.writeheader()
+    # Setup CSV writer for file output
+    with open(csv_file, 'w', newline='') as output_file:
+        csv_writer = csv.DictWriter(output_file, csv_fields, extrasaction='ignore')
+        csv_writer.writeheader()
 
-    if stdout:
-        csv_stdout = csv.DictWriter(sys.stdout, csv_fields, extrasaction='ignore', delimiter='\t')
-        csv_stdout.writeheader()
-    else:
-        csv_stdout = None
-
-    while True:
-        try:
-            msg = json.loads(status_ws.recv())
-
-        except websocket.WebSocketException:
-            try:
-                status_ws.connect(f'ws://{hostname}/status')
-            except Exception:
-                time.sleep(5)
-
-            continue
-
-        if msg.get('type') == 'backlog':
-            continue
-
-        if not noprofilestats:
-            msg['stamp'] = time.time()
-        if pidstats and 'pidstats' in msg:
-            for k, v in msg.get('pidstats', {}).items():
-                msg[f"pid_{k}"] = v
-
-        csv_out.writerow(msg)
-        out.flush()
-
+        # Setup CSV writer for standard output if required
+        csv_stdout = csv.DictWriter(sys.stdout, csv_fields, extrasaction='ignore', delimiter='\t') if stdout else None
         if stdout:
-            for k in list(msg.keys()):
-                v = msg[k]
-                if isinstance(v, float):
-                    msg[k] = '{:5.3f}'.format(v)
-            csv_stdout.writerow(msg)
-            sys.stdout.flush()
+            csv_stdout.writeheader()
+
+        # Main data logging loop
+        while True:
+            try:
+                msg = json.loads(status_ws.recv())
+            except websocket.WebSocketException:
+                try:
+                    status_ws.connect(f'ws://{hostname}/status')
+                except Exception:
+                    time.sleep(5)
+                continue
+
+            # Skip backlog messages
+            if msg.get('type') == 'backlog':
+                continue
+
+            # Process message for CSV output
+            if not no_profile_stats:
+                msg['stamp'] = time.time()
+            if pid_stats and 'pid_stats' in msg:
+                msg.update({f"pid_{k}": v for k, v in msg['pid_stats'].items()})
+
+            csv_writer.writerow(msg)
+            output_file.flush()
+
+            # Process message for standard output
+            if stdout:
+                csv_stdout.writerow({k: '{:5.3f}'.format(v) if isinstance(v, float) else v for k, v in msg.items()})
+                sys.stdout.flush()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Log kiln data for analysis.')
     parser.add_argument('--hostname', type=str, default="localhost:8081", help="The kiln-controller hostname:port")
-    parser.add_argument('--csvfile', type=str, default="/tmp/kilnstats.csv", help="Where to write the kiln stats to")
-    parser.add_argument('--pidstats', action='store_true', help="Include PID stats")
-    parser.add_argument('--noprofilestats', action='store_true', help="Do not store profile stats (default is to store them)")
+    parser.add_argument('--csv_file', type=str, default="/tmp/kiln_stats.csv", help="Where to write the kiln stats to")
+    parser.add_argument('--pid_stats', action='store_true', help="Include PID stats")
+    parser.add_argument('--no_profile_stats', action='store_true', help="Do not store profile stats (default is to store them)")
     parser.add_argument('--stdout', action='store_true', help="Also print to stdout")
     args = parser.parse_args()
 
-    logger(args.hostname, args.csvfile, args.noprofilestats, args.pidstats, args.stdout)
+    logger(args.hostname, args.csv_file, args.no_profile_stats, args.pid_stats, args.stdout)
