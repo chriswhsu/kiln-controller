@@ -21,7 +21,7 @@ class DupFilter(object):
 
 class Duplogger():
     def __init__(self):
-        self.log = logging.getLogger("%s.dupfree" % (__name__))
+        self.log = logging.getLogger("%s.dupfree" % __name__)
         dup_filter = DupFilter()
         self.log.addFilter(dup_filter)
 
@@ -82,14 +82,14 @@ class TempSensorReal(TempSensor):
 
     def __init__(self):
         TempSensor.__init__(self)
-        self.sleeptime = self.time_step / float(config.temperature_average_samples)
+        self.sleep_time = self.time_step / float(config.temperature_average_samples)
         self.bad_count = 0
         self.ok_count = 0
         self.bad_stamp = 0
 
         if config.max31855:
             log.info("init MAX31855")
-            from max31855 import MAX31855, MAX31855Error
+            from max31855 import MAX31855
             self.thermocouple = MAX31855(config.gpio_sensor_cs,
                                          config.gpio_sensor_clock,
                                          config.gpio_sensor_data,
@@ -144,9 +144,10 @@ class TempSensorReal(TempSensor):
 
             if len(temps):
                 self.temperature = self.get_avg_temp(temps)
-            time.sleep(self.sleeptime)
+            time.sleep(self.sleep_time)
 
-    def get_avg_temp(self, temps, chop=25):
+    @staticmethod
+    def get_avg_temp(temps, chop=25):
 
         # strip off chop percent from the beginning and end of the sorted temps then return the average of what is left
 
@@ -243,7 +244,7 @@ class Oven(threading.Thread):
     def get_state(self):
         temp = 0
         try:
-            temp = self.board.temp_sensor.temperature + config.thermocouple_offset
+            temp = self.temperature + config.thermocouple_offset
         except AttributeError as error:
             # this happens at start-up with a simulated oven
             temp = 0
