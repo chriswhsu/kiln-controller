@@ -15,12 +15,12 @@ log = logging.getLogger(__name__)
 
 class Watcher(object):
 
-    def __init__(self, kiln_url, slack_hook_url, bad_check_limit=6, temp_error_limit=10, sleepfor=10):
+    def __init__(self, kiln_url, slack_hook_url, bad_check_limit=6, temp_error_limit=10, sleep_for=10):
         self.kiln_url = kiln_url
         self.slack_hook_url = slack_hook_url
         self.bad_check_limit = bad_check_limit
         self.temp_error_limit = temp_error_limit
-        self.sleepfor = sleepfor
+        self.sleep_for = sleep_for
         self.bad_checks = 0
         self.stats = {}
 
@@ -71,7 +71,7 @@ class Watcher(object):
                 self.send_alert(msg)
                 self.bad_checks = 0
 
-            time.sleep(self.sleepfor)
+            time.sleep(self.sleep_for)
 
 
 if __name__ == "__main__":
@@ -80,6 +80,6 @@ if __name__ == "__main__":
             slack_hook_url="you must add this",
             bad_check_limit=6,
             temp_error_limit=10,
-            sleepfor=10)
+            sleep_for=10)
 
     watcher.run()
