@@ -1,6 +1,6 @@
 let state = "IDLE";
 let state_last = "";
-let graph = [ 'profile', 'live'];
+let graph = ['profile', 'live'];
 let profiles = [];
 let selected_profile = 0;
 let selected_profile_name = 'cone-05-long-bisque.json';
@@ -17,49 +17,46 @@ if (window.location.protocol === 'https:') {
     protocol = 'wss:';
 }
 let host = "" + protocol + "//" + window.location.hostname + ":" + window.location.port;
-let ws_status = new WebSocket(host+"/status");
-let ws_control = new WebSocket(host+"/control");
-let ws_config = new WebSocket(host+"/config");
-let ws_storage = new WebSocket(host+"/storage");
+let ws_status = new WebSocket(host + "/status");
+let ws_control = new WebSocket(host + "/control");
+let ws_config = new WebSocket(host + "/config");
+let ws_storage = new WebSocket(host + "/storage");
 
 graph.profile =
-{
-    label: "Profile",
-    data: [],
-    points: { show: false },
-    color: "#75890c",
-    draggable: false
-};
+    {
+        label: "Profile",
+        data: [],
+        points: {show: false},
+        color: "#75890c",
+        draggable: false
+    };
 
 graph.live =
-{
-    label: "Live",
-    data: [],
-    points: { show: false },
-    color: "#d8d3c5",
-    draggable: false
-};
+    {
+        label: "Live",
+        data: [],
+        points: {show: false},
+        color: "#d8d3c5",
+        draggable: false
+    };
 
-
-function updateProfile(id)
-{
+function updateProfile(id) {
     selected_profile = id;
     selected_profile_name = profiles[id].name;
-    let job_seconds = profiles[id].data.length === 0 ? 0 : parseInt(profiles[id].data[profiles[id].data.length-1][0]);
-    let kwh = (3850*job_seconds/3600/1000).toFixed(2);
-    let cost =  (kwh*kwh_rate).toFixed(2);
+    let job_seconds = profiles[id].data.length === 0 ? 0 : parseInt(profiles[id].data[profiles[id].data.length - 1][0]);
+    let kwh = (3850 * job_seconds / 3600 / 1000).toFixed(2);
+    let cost = (kwh * kwh_rate).toFixed(2);
     let job_time = new Date(job_seconds * 1000).toISOString().slice(11, 19);
     $('#sel_prof').html(profiles[id].name);
     $('#sel_prof_eta').html(job_time);
-    $('#sel_prof_cost').html(kwh + ' kWh ('+ currency_type +': '+ cost +')');
+    $('#sel_prof_cost').html(kwh + ' kWh (' + currency_type + ': ' + cost + ')');
     graph.profile.data = profiles[id].data;
-    graph.plot = $.plot("#graph_container", [ graph.profile, graph.live ] , getOptions());
+    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 }
 
-function deleteProfile()
-{
-    let profile = { "type": "profile", "data": "", "name": selected_profile_name };
-    let delete_struct = { "cmd": "DELETE", "profile": profile };
+function deleteProfile() {
+    let profile = {"type": "profile", "data": "", "name": selected_profile_name};
+    let delete_struct = {"cmd": "DELETE", "profile": profile};
 
     let delete_cmd = JSON.stringify(delete_struct);
     console.log("Delete profile:" + selected_profile_name);
@@ -69,7 +66,7 @@ function deleteProfile()
     ws_storage.send('GET');
     selected_profile_name = profiles[0].name;
 
-    state="IDLE";
+    state = "IDLE";
     $('#edit').hide();
     $('#profile_selector').show();
     $('#btn_controls').show();
@@ -78,48 +75,50 @@ function deleteProfile()
     $('#e2').select2('val', 0);
     graph.profile.points.show = false;
     graph.profile.draggable = false;
-    graph.plot = $.plot("#graph_container", [ graph.profile, graph.live ], getOptions());
+    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 }
 
 
-function updateProgress(percentage)
-{
+function updateProgress(percentage) {
     let progressBar = $('#progressBar');
-    if(state==="RUNNING")
-    {
+    if (state === "RUNNING") {
 
-        if(percentage > 100) percentage = 100;
-        progressBar.css('width', percentage+'%');
-        if(percentage>5) progressBar.html(parseInt(percentage)+'%');
-    }
-    else
-    {
-        progressBar.css('width', 0+'%');
+        if (percentage > 100) percentage = 100;
+        progressBar.css('width', percentage + '%');
+        if (percentage > 5) progressBar.html(parseInt(percentage) + '%');
+    } else {
+        progressBar.css('width', 0 + '%');
         progressBar.html('');
     }
 }
 
-function updateProfileTable()
-{
+function updateProfileTable() {
     let dps = 0;
     let slope = "";
     let color = "";
 
     let html = '<h3>Schedule Points</h3><div class="table-responsive" style="overflow: hidden"><table class="table table-striped">';
-        html += '<tr><th style="width: 50px">#</th><th>Target Time in ' + time_scale_long+ '</th><th>Target Temperature in °'+temp_scale_display+'</th><th>Slope in &deg;'+temp_scale_display+'/'+time_scale_slope+'</th><th></th></tr>';
+    html += '<tr><th style="width: 50px">#</th><th>Target Time in ' + time_scale_long + '</th><th>Target Temperature in °' + temp_scale_display + '</th><th>Slope in &deg;' + temp_scale_display + '/' + time_scale_slope + '</th><th></th></tr>';
 
-    for(let i=0; i<graph.profile.data.length;i++)
-    {
+    for (let i = 0; i < graph.profile.data.length; i++) {
 
-        if (i>=1) dps =  ((graph.profile.data[i][1]-graph.profile.data[i-1][1])/(graph.profile.data[i][0]-graph.profile.data[i-1][0]) * 10) / 10;
-        if (dps  > 0) { slope = "up";     color="rgba(206, 5, 5, 1)"; } else
-        if (dps  < 0) { slope = "down";   color="rgba(23, 108, 204, 1)"; dps *= -1; } else
-        if (dps === 0) { slope = "right";  color="grey"; }
+        if (i >= 1) dps = ((graph.profile.data[i][1] - graph.profile.data[i - 1][1]) / (graph.profile.data[i][0] - graph.profile.data[i - 1][0]) * 10) / 10;
+        if (dps > 0) {
+            slope = "up";
+            color = "rgba(206, 5, 5, 1)";
+        } else if (dps < 0) {
+            slope = "down";
+            color = "rgba(23, 108, 204, 1)";
+            dps *= -1;
+        } else if (dps === 0) {
+            slope = "right";
+            color = "grey";
+        }
 
-        html += '<tr><td><h4>' + (i+1) + '</h4></td>';
-        html += '<td><input type="text" class="form-control" id="profiletable-0-'+i+'" value="'+ timeProfileFormatter(graph.profile.data[i][0],true) + '" style="width: 60px" /></td>';
-        html += '<td><input type="text" class="form-control" id="profiletable-1-'+i+'" value="'+ graph.profile.data[i][1] + '" style="width: 60px" /></td>';
-        html += '<td><div class="input-group"><span class="glyphicon glyphicon-circle-arrow-' + slope + ' input-group-addon ds-trend" style="background: '+color+'"></span><input type="text" class="form-control ds-input" readonly value="' + formatDPS(dps) + '" style="width: 100px" /></div></td>';
+        html += '<tr><td><h4>' + (i + 1) + '</h4></td>';
+        html += '<td><input type="text" class="form-control" id="profiletable-0-' + i + '" value="' + timeProfileFormatter(graph.profile.data[i][0], true) + '" style="width: 60px" /></td>';
+        html += '<td><input type="text" class="form-control" id="profiletable-1-' + i + '" value="' + graph.profile.data[i][1] + '" style="width: 60px" /></td>';
+        html += '<td><div class="input-group"><span class="glyphicon glyphicon-circle-arrow-' + slope + ' input-group-addon ds-trend" style="background: ' + color + '"></span><input type="text" class="form-control ds-input" readonly value="' + formatDPS(dps) + '" style="width: 100px" /></div></td>';
         html += '<td>&nbsp;</td></tr>';
     }
 
@@ -128,37 +127,43 @@ function updateProfileTable()
     $('#profile_table').html(html);
 
     //Link table to graph
-    $(".form-control").change(function()
-        {
-            let id = $(this)[0].id; //e.currentTarget.attributes.id
-            let value = parseInt($(this)[0].value);
-            let fields = id.split("-");
-            let col = parseInt(fields[1]);
-            let row = parseInt(fields[2]);
+    $(".form-control").change(function () {
+        let id = $(this)[0].id; //e.currentTarget.attributes.id
+        let value = parseInt($(this)[0].value);
+        let fields = id.split("-");
+        let col = parseInt(fields[1]);
+        let row = parseInt(fields[2]);
 
-            if (graph.profile.data.length > 0) {
+        if (graph.profile.data.length > 0) {
             if (col === 0) {
-                graph.profile.data[row][col] = timeProfileFormatter(value,false);
-            }
-            else {
+                graph.profile.data[row][col] = timeProfileFormatter(value, false);
+            } else {
                 graph.profile.data[row][col] = value;
             }
 
-            graph.plot = $.plot("#graph_container", [ graph.profile, graph.live ], getOptions());
-            }
-            updateProfileTable();
+            graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+        }
+        updateProfileTable();
 
-        });
+    });
 }
 
 function timeProfileFormatter(val, down) {
     let rval = val
-    switch(time_scale_profile){
+    switch (time_scale_profile) {
         case "m":
-            if (down) {rval = val / 60;} else {rval = val * 60;}
+            if (down) {
+                rval = val / 60;
+            } else {
+                rval = val * 60;
+            }
             break;
         case "h":
-            if (down) {rval = val / 3600;} else {rval = val * 3600;}
+            if (down) {
+                rval = val / 3600;
+            } else {
+                rval = val * 3600;
+            }
             break;
     }
     return Math.round(rval);
@@ -175,76 +180,70 @@ function formatDPS(val) {
     return Math.round(tval);
 }
 
-function hazardTemp(){
+function hazardTemp() {
 
     if (temp_scale === "f") {
         return (1500 * 9 / 5) + 32
-    }
-    else {
+    } else {
         return 1500
     }
 }
 
-function timeTickFormatter(val,axis)
-{
+function timeTickFormatter(val, axis) {
 // hours
-if(axis.max>3600) {
-  //let hours = Math.floor(val / (3600));
-  //return hours;
-  return Math.floor(val/3600);
-  }
+    if (axis.max > 3600) {
+        //let hours = Math.floor(val / (3600));
+        //return hours;
+        return Math.floor(val / 3600);
+    }
 
 // minutes
-if(axis.max<=3600) {
-  return Math.floor(val/60);
-  }
+    if (axis.max <= 3600) {
+        return Math.floor(val / 60);
+    }
 
 // seconds
-if(axis.max<=60) {
-  return val;
-  }
+    if (axis.max <= 60) {
+        return val;
+    }
 }
 
-function runTask()
-{
+function runTask() {
     let cmd =
-    {
-        "cmd": "RUN",
-        "profile": profiles[selected_profile]
-    }
+        {
+            "cmd": "RUN",
+            "profile": profiles[selected_profile]
+        }
 
     graph.live.data = [];
-    graph.plot = $.plot("#graph_container", [ graph.profile, graph.live ] , getOptions());
+    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 
     ws_control.send(JSON.stringify(cmd));
 
 }
 
-function runTaskSimulation()
-{
+function runTaskSimulation() {
     let cmd =
-    {
-        "cmd": "SIMULATE",
-        "profile": profiles[selected_profile]
-    }
+        {
+            "cmd": "SIMULATE",
+            "profile": profiles[selected_profile]
+        }
 
     graph.live.data = [];
-    graph.plot = $.plot("#graph_container", [ graph.profile, graph.live ] , getOptions());
+    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 
     ws_control.send(JSON.stringify(cmd));
 
 }
 
 
-function abortTask()
-{
+function abortTask() {
     let cmd = {"cmd": "STOP"};
     ws_control.send(JSON.stringify(cmd));
 }
 
-function enterNewMode()
-{
-    state="EDIT"
+function enterNewMode() {
+    state = "EDIT"
     $('#status').slideUp();
     $('#edit').show();
     $('#profile_selector').hide();
@@ -253,13 +252,12 @@ function enterNewMode()
     graph.profile.points.show = true;
     graph.profile.draggable = true;
     graph.profile.data = [];
-    graph.plot = $.plot("#graph_container", [ graph.profile, graph.live ], getOptions());
+    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
     updateProfileTable();
 }
 
-function enterEditMode()
-{
-    state="EDIT"
+function enterEditMode() {
+    state = "EDIT"
     $('#status').slideUp();
     $('#edit').show();
     $('#profile_selector').hide();
@@ -268,15 +266,14 @@ function enterEditMode()
     $('#form_profile_name').val(profiles[selected_profile].name);
     graph.profile.points.show = true;
     graph.profile.draggable = true;
-    graph.plot = $.plot("#graph_container", [ graph.profile, graph.live ], getOptions());
+    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
     updateProfileTable();
 }
 
-function leaveEditMode()
-{
+function leaveEditMode() {
     selected_profile_name = $('#form_profile_name').val();
     ws_storage.send('GET');
-    state="IDLE";
+    state = "IDLE";
     $('#edit').hide();
     $('#profile_selector').show();
     $('#btn_controls').show();
@@ -284,7 +281,7 @@ function leaveEditMode()
     $('#profile_table').slideUp();
     graph.profile.points.show = false;
     graph.profile.draggable = false;
-    graph.plot = $.plot("#graph_container", [ graph.profile, graph.live ], getOptions());
+    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 }
 
 function newPoint() {
@@ -299,10 +296,9 @@ function newPoint() {
 }
 
 
-function delPoint()
-{
-    graph.profile.data.splice(-1,1)
-    graph.plot = $.plot("#graph_container", [ graph.profile, graph.live ], getOptions());
+function delPoint() {
+    graph.profile.data.splice(-1, 1)
+    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
     updateProfileTable();
 }
 
@@ -311,40 +307,35 @@ function toggleTable() {
 }
 
 
-function saveProfile()
-{
+function saveProfile() {
     name = $('#form_profile_name').val();
     let rawdata = graph.plot.getData()[0].data
     let data = [];
     let last = -1;
 
-    for(let i=0; i<rawdata.length;i++)
-    {
-        if(rawdata[i][0] > last)
-        {
-          data.push([rawdata[i][0], rawdata[i][1]]);
-        }
-        else
-        {
-          $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>ERROR 88:</b><br/>An oven is not a time-machine", {
-            ele: 'body', // which element to append to
-            type: 'alert', // (null, 'info', 'error', 'success')
-            offset: {from: 'top', amount: 250}, // 'top', or 'bottom'
-            align: 'center', // ('left', 'right', or 'center')
-            width: 385, // (integer, or 'auto')
-            delay: 5000,
-            allow_dismiss: true,
-            stackup_spacing: 10 // spacing between consecutively stacked growls.
-          });
+    for (let i = 0; i < rawdata.length; i++) {
+        if (rawdata[i][0] > last) {
+            data.push([rawdata[i][0], rawdata[i][1]]);
+        } else {
+            $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>ERROR 88:</b><br/>An oven is not a time-machine", {
+                ele: 'body', // which element to append to
+                type: 'alert', // (null, 'info', 'error', 'success')
+                offset: {from: 'top', amount: 250}, // 'top', or 'bottom'
+                align: 'center', // ('left', 'right', or 'center')
+                width: 385, // (integer, or 'auto')
+                delay: 5000,
+                allow_dismiss: true,
+                stackup_spacing: 10 // spacing between consecutively stacked growls.
+            });
 
-          return false;
+            return false;
         }
 
         last = rawdata[i][0];
     }
 
-    let profile = { "type": "profile", "data": data, "name": name }
-    let put = { "cmd": "PUT", "profile": profile }
+    let profile = {"type": "profile", "data": data, "name": name}
+    let put = {"cmd": "PUT", "profile": profile}
 
     let put_cmd = JSON.stringify(put);
 
@@ -362,98 +353,91 @@ function get_tick_size() {
 //  case "h":
 //    return 3600;
 //  }
-return 3600;
+    return 3600;
 }
 
-function getOptions()
-{
+function getOptions() {
 
-  return {
+    return {
 
-      series:
-          {
-              lines:
-                  {
-                      show: true
-                  },
+        series:
+            {
+                lines:
+                    {
+                        show: true
+                    },
 
-              points:
-                  {
-                      show: true,
-                      radius: 5,
-                      symbol: "circle"
-                  },
+                points:
+                    {
+                        show: true,
+                        radius: 5,
+                        symbol: "circle"
+                    },
 
-              shadowSize: 3
+                shadowSize: 3
 
-          },
+            },
 
-      xaxis:
-          {
-              min: 0,
-              tickColor: 'rgba(216, 211, 197, 0.2)',
-              tickFormatter: timeTickFormatter,
-              tickSize: get_tick_size(),
-              font:
-                  {
-                      size: 14,
-                      lineHeight: 14, weight: "normal",
-                      family: "Digi",
-                      variant: "small-caps",
-                      color: "rgba(216, 211, 197, 0.85)"
-                  }
-          },
+        xaxis:
+            {
+                min: 0,
+                tickColor: 'rgba(216, 211, 197, 0.2)',
+                tickFormatter: timeTickFormatter,
+                tickSize: get_tick_size(),
+                font:
+                    {
+                        size: 14,
+                        lineHeight: 14, weight: "normal",
+                        family: "Digi",
+                        variant: "small-caps",
+                        color: "rgba(216, 211, 197, 0.85)"
+                    }
+            },
 
-      yaxis:
-          {
-              min: 0,
-              tickDecimals: 0,
-              draggable: false,
-              tickColor: 'rgba(216, 211, 197, 0.2)',
-              font:
-                  {
-                      size: 14,
-                      lineHeight: 14,
-                      weight: "normal",
-                      family: "Digi",
-                      variant: "small-caps",
-                      color: "rgba(216, 211, 197, 0.85)"
-                  }
-          },
+        yaxis:
+            {
+                min: 0,
+                tickDecimals: 0,
+                draggable: false,
+                tickColor: 'rgba(216, 211, 197, 0.2)',
+                font:
+                    {
+                        size: 14,
+                        lineHeight: 14,
+                        weight: "normal",
+                        family: "Digi",
+                        variant: "small-caps",
+                        color: "rgba(216, 211, 197, 0.85)"
+                    }
+            },
 
-      grid:
-          {
-              color: 'rgba(216, 211, 197, 0.55)',
-              borderWidth: 1,
-              labelMargin: 10,
-              mouseActiveRadius: 50
-          },
+        grid:
+            {
+                color: 'rgba(216, 211, 197, 0.55)',
+                borderWidth: 1,
+                labelMargin: 10,
+                mouseActiveRadius: 50
+            },
 
-      legend:
-          {
-              show: false
-          }
-  };
+        legend:
+            {
+                show: false
+            }
+    };
 
 }
 
 
+$(document).ready(function () {
 
-$(document).ready(function()
-{
-
-    if(!("WebSocket" in window))
-    {
+    if (!("WebSocket" in window)) {
         $('#chatLog, input, button, #examples').fadeOut("fast");
         $('<p>Oh no, you need a browser that supports WebSockets. How about <a href="https://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');
-    }
-    else
-    {
+    } else {
 
         // Status Socket ////////////////////////////////
 
-        ws_status.onopen = function()
-        {
+        ws_status.onopen = function () {
             console.log("Status Socket has been opened");
 
 //            $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span>Getting data from server",
@@ -469,101 +453,106 @@ $(document).ready(function()
 //            });
         };
 
-        ws_status.onclose = function()
-        {
+        ws_status.onclose = function () {
             $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>ERROR 1:</b><br/>Status Websocket not available", {
-            ele: 'body', // which element to append to
-            type: 'error', // (null, 'info', 'error', 'success')
-            offset: {from: 'top', amount: 250}, // 'top', or 'bottom'
-            align: 'center', // ('left', 'right', or 'center')
-            width: 385, // (integer, or 'auto')
-            delay: 5000,
-            allow_dismiss: true,
-            stackup_spacing: 10 // spacing between consecutively stacked growls.
-          });
+                ele: 'body', // which element to append to
+                type: 'error', // (null, 'info', 'error', 'success')
+                offset: {from: 'top', amount: 250}, // 'top', or 'bottom'
+                align: 'center', // ('left', 'right', or 'center')
+                width: 385, // (integer, or 'auto')
+                delay: 5000,
+                allow_dismiss: true,
+                stackup_spacing: 10 // spacing between consecutively stacked growls.
+            });
         };
 
-        ws_status.onmessage = function(e)
-        {
+        ws_status.onmessage = function (e) {
             console.log("received status data")
             console.log(e.data);
 
             let x = JSON.parse(e.data);
-            if (x.type === "backlog")
-            {
-                if (x.profile)
-                {
+            if (x.type === "backlog") {
+                if (x.profile) {
                     selected_profile_name = x.profile.name;
-                    $.each(profiles,  function(i,v) {
-                        if(v.name === x.profile.name) {
+                    $.each(profiles, function (i, v) {
+                        if (v.name === x.profile.name) {
                             updateProfile(i);
                             $('#e2').select2('val', i);
                         }
                     });
                 }
 
-                $.each(x.log, function(i,v) {
+                $.each(x.log, function (i, v) {
                     graph.live.data.push([v.runtime, v.temperature]);
-                    graph.plot = $.plot("#graph_container", [ graph.profile, graph.live ] , getOptions());
+                    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
                 });
             }
 
-            if(state!=="EDIT")
-            {
+            if (state !== "EDIT") {
                 state = x.state;
 
-                if (state!==state_last)
-                {
-                    if(state_last === "RUNNING")
-                    {
+                if (state !== state_last) {
+                    if (state_last === "RUNNING") {
                         $('#target_temp').html('---');
                         updateProgress(0);
                         $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>Run completed. New State: " + state + "</b>", {
 
-                        ele: 'body', // which element to append to
-                        type: 'success', // (null, 'info', 'error', 'success')
-                        offset: {from: 'top', amount: 250}, // 'top', or 'bottom'
-                        align: 'center', // ('left', 'right', or 'center')
-                        width: 385, // (integer, or 'auto')
-                        delay: 0,
-                        allow_dismiss: true,
-                        stackup_spacing: 10 // spacing between consecutively stacked growls.
+                            ele: 'body', // which element to append to
+                            type: 'success', // (null, 'info', 'error', 'success')
+                            offset: {from: 'top', amount: 250}, // 'top', or 'bottom'
+                            align: 'center', // ('left', 'right', or 'center')
+                            width: 385, // (integer, or 'auto')
+                            delay: 0,
+                            allow_dismiss: true,
+                            stackup_spacing: 10 // spacing between consecutively stacked growls.
                         });
                     }
                 }
 
-                if(state==="RUNNING")
-                {
+                if (state === "RUNNING") {
                     $("#nav_start").hide();
                     $("#nav_stop").show();
 
                     graph.live.data.push([x.runtime, x.temperature]);
-                    graph.plot = $.plot("#graph_container", [ graph.profile, graph.live ] , getOptions());
+                    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 
-                    left = parseInt(x.totaltime-x.runtime);
+                    left = parseInt(x.totaltime - x.runtime);
                     eta = new Date(left * 1000).toISOString().substr(11, 8);
 
-                    updateProgress(parseFloat(x.runtime)/parseFloat(x.totaltime)*100);
+                    updateProgress(parseFloat(x.runtime) / parseFloat(x.totaltime) * 100);
                     $('#state').html('<span class="glyphicon glyphicon-time" style="font-size: 22px; font-weight: normal"></span><span style="font-family: Digi; font-size: 40px;">' + eta + '</span>');
                     $('#target_temp').html(parseInt(x.target));
                     $('#cost').html(x.currency_type + parseFloat(x.cost).toFixed(2));
 
 
-
-                }
-                else
-                {
+                } else {
                     $("#nav_start").show();
                     $("#nav_stop").hide();
-                    $('#state').html('<p class="ds-text">'+state+'</p>');
+                    $('#state').html('<p class="ds-text">' + state + '</p>');
                 }
 
                 $('#act_temp').html(parseInt(x.temperature));
-                $('#heat').html('<div class="bar" style="height:'+x.pidstats.out*70+'%;"></div>')
-                if (x.cool > 0.5) { $('#cool').addClass("ds-led-cool-active"); } else { $('#cool').removeClass("ds-led-cool-active"); }
-                if (x.air > 0.5) { $('#air').addClass("ds-led-air-active"); } else { $('#air').removeClass("ds-led-air-active"); }
-                if (x.temperature > hazardTemp()) { $('#hazard').addClass("ds-led-hazard-active"); } else { $('#hazard').removeClass("ds-led-hazard-active"); }
-                if ((x.door === "OPEN") || (x.door === "UNKNOWN")) { $('#door').addClass("ds-led-door-open"); } else { $('#door').removeClass("ds-led-door-open"); }
+                $('#heat').html('<div class="bar"></div>')
+                if (x.cool > 0.5) {
+                    $('#cool').addClass("ds-led-cool-active");
+                } else {
+                    $('#cool').removeClass("ds-led-cool-active");
+                }
+                if (x.air > 0.5) {
+                    $('#air').addClass("ds-led-air-active");
+                } else {
+                    $('#air').removeClass("ds-led-air-active");
+                }
+                if (x.temperature > hazardTemp()) {
+                    $('#hazard').addClass("ds-led-hazard-active");
+                } else {
+                    $('#hazard').removeClass("ds-led-hazard-active");
+                }
+                if ((x.door === "OPEN") || (x.door === "UNKNOWN")) {
+                    $('#door').addClass("ds-led-door-open");
+                } else {
+                    $('#door').removeClass("ds-led-door-open");
+                }
 
                 state_last = state;
 
@@ -572,14 +561,12 @@ $(document).ready(function()
 
         // Config Socket /////////////////////////////////
 
-        ws_config.onopen = function()
-        {
+        ws_config.onopen = function () {
             ws_config.send('GET');
         };
 
-        ws_config.onmessage = function(e)
-        {
-            console.log (e.data);
+        ws_config.onmessage = function (e) {
+            console.log(e.data);
             x = JSON.parse(e.data);
             temp_scale = x.temp_scale;
             time_scale_slope = x.time_scale_slope;
@@ -587,13 +574,17 @@ $(document).ready(function()
             kwh_rate = x.kwh_rate;
             currency_type = x.currency_type;
 
-            if (temp_scale == "c") {temp_scale_display = "C";} else {temp_scale_display = "F";}
+            if (temp_scale === "c") {
+                temp_scale_display = "C";
+            } else {
+                temp_scale_display = "F";
+            }
 
 
-            $('#act_temp_scale').html('º'+temp_scale_display);
-            $('#target_temp_scale').html('º'+temp_scale_display);
+            $('#act_temp_scale').html('º' + temp_scale_display);
+            $('#target_temp_scale').html('º' + temp_scale_display);
 
-            switch(time_scale_profile){
+            switch (time_scale_profile) {
                 case "s":
                     time_scale_long = "Seconds";
                     break;
@@ -604,57 +595,44 @@ $(document).ready(function()
                     time_scale_long = "Hours";
                     break;
             }
-
         }
 
         let e2 = $('#e2');
 
         // Control Socket ////////////////////////////////
 
-        ws_control.onopen = function()
-        {
+        ws_control.onopen = function () {
 
         };
 
-        ws_control.onmessage = function(e)
-        {
+        ws_control.onmessage = function (e) {
             //Data from Simulation
-            console.log ("control socket has been opened")
-            console.log (e.data);
+            console.log("control socket has been opened")
+            console.log(e.data);
             x = JSON.parse(e.data);
             graph.live.data.push([x.runtime, x.temperature]);
-            graph.plot = $.plot("#graph_container", [ graph.profile, graph.live ] , getOptions());
+            graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 
         }
 
         // Storage Socket ///////////////////////////////
 
-        ws_storage.onopen = function()
-        {
+        ws_storage.onopen = function () {
             ws_storage.send('GET');
         };
 
 
-        ws_storage.onmessage = function(e)
-        {
-            message = JSON.parse(e.data);
+        ws_storage.onmessage = function (e) {
+            let message = JSON.parse(e.data);
 
-            if(message.resp)
-            {
-                if(message.resp === "FAIL")
-                {
-                    if (confirm('Overwrite?'))
-                    {
-                        message.force=true;
+            if (message.resp) {
+                if (message.resp === "FAIL") {
+                    if (confirm('Overwrite?')) {
+                        message.force = true;
                         console.log("Sending: " + JSON.stringify(message));
                         ws_storage.send(JSON.stringify(message));
                     }
-                    else
-                    {
-                        //do nothing
-                    }
                 }
-
                 return;
             }
 
@@ -665,24 +643,24 @@ $(document).ready(function()
             e2.find('option').remove().end();
             // check if current selected value is a valid profile name
             // if not, update with first available profile name
-            let valid_profile_names = profiles.map(function(a) {return a.name;});
+            let valid_profile_names = profiles.map(function (a) {
+                return a.name;
+            });
             if (
-              valid_profile_names.length > 0 &&
-              $.inArray(selected_profile_name, valid_profile_names) === -1
+                valid_profile_names.length > 0 &&
+                $.inArray(selected_profile_name, valid_profile_names) === -1
             ) {
-              selected_profile = 0;
-              selected_profile_name = valid_profile_names[0];
+                selected_profile = 0;
+                selected_profile_name = valid_profile_names[0];
             }
 
             // fill select with new options from websocket
-            for (let i=0; i<profiles.length; i++)
-            {
+            for (let i = 0; i < profiles.length; i++) {
                 let profile = profiles[i];
                 //console.log(profile.name);
-                e2.append('<option value="'+i+'">'+profile.name+'</option>');
+                e2.append('<option value="' + i + '">' + profile.name + '</option>');
 
-                if (profile.name === selected_profile_name)
-                {
+                if (profile.name === selected_profile_name) {
                     selected_profile = i;
                     e2.select2('val', i);
                     updateProfile(i);
@@ -690,19 +668,15 @@ $(document).ready(function()
             }
         };
 
-
         e2.select2(
-        {
-            placeholder: "Select Profile",
-            allowClear: true,
-            minimumResultsForSearch: -1
-        });
+            {
+                placeholder: "Select Profile",
+                allowClear: true,
+                minimumResultsForSearch: -1
+            });
 
-
-        e2.on("change", function(e)
-        {
+        e2.on("change", function (e) {
             updateProfile(e.val);
         });
-
     }
 });
