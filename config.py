@@ -5,7 +5,6 @@ import os
 # from lib.max31856 import MAX31856
 
 ########################################################################
-#
 #   General options
 
 # Logging
@@ -28,7 +27,6 @@ kw_elements = 1.460  # if the kiln elements are on, the wattage in kilowatts
 currency_type = "$"  # Currency Symbol to show when calculating cost to run job
 
 ########################################################################
-#
 #   GPIO Setup (BCM SoC Numbering Schema)
 #
 #   Check the RasPi docs to see where these GPIOs are
@@ -84,20 +82,16 @@ pid_kd = 200  # Derivative
 stop_integral_windup = True
 
 ########################################################################
-#
 #   Simulation parameters
 simulate = True
-sim_t_env = 60.0  # deg C
-sim_c_heat = 500.0  # J/K  heat capacity of heat element
-sim_c_oven = 5000.0  # J/K  heat capacity of oven
-sim_p_heat = 5450.0  # W    heating power of oven
-sim_R_o_nocool = 0.5  # K/W  thermal resistance oven -> environment
-sim_R_o_cool = 0.05  # K/W  " with cooling
-sim_R_ho_noair = 0.1  # K/W  thermal resistance heat element -> oven
-sim_R_ho_air = 0.05  # K/W  " with internal air circulation
+sim_t_env = 70.0  # deg F
+element_heat_capacity = 500.0  # J/K  heat capacity of heat element
+oven_heat_capacity = 5000.0  # J/K  heat capacity of oven
+oven_heating_power = 5450.0  # W    heating power of oven
+thermal_res_oven_to_environ = 0.5  # K/W  thermal resistance oven -> environment
+thermal_res_element_to_oven = 0.1  # K/W  thermal resistance heat element -> oven
 
 ########################################################################
-#
 #   Time and Temperature parameters
 #
 # If you change the temp_scale, all settings in this file are assumed to

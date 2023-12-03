@@ -390,16 +390,15 @@ class SimulatedOven(Oven):
 
     def __init__(self):
         self.t_env = config.sim_t_env
-        self.c_heat = config.sim_c_heat
-        self.c_oven = config.sim_c_oven
-        self.p_heat = config.sim_p_heat
-        self.R_o_nocool = config.sim_R_o_nocool
-        self.R_ho_noair = config.sim_R_ho_noair
-        self.R_ho = self.R_ho_noair
+        self.elem_heat_capacity = config.element_heat_capacity
+        self.c_oven = config.oven_heat_capacity
+        self.p_heat = config.oven_heating_power
+        self.res_oven = config.thermal_res_oven_to_environ
+        self.res_element = config.thermal_res_element_to_oven
 
         # set temps to the temp of the surrounding environment
-        self.t = self.t_env  # deg C temp of oven
-        self.t_h = self.t_env  # deg C temp of heating element
+        self.t = self.t_env  # deg F temp of oven
+        self.t_h = self.t_env  # deg F temp of heating element
 
         super().__init__()
 
@@ -432,17 +431,17 @@ class SimulatedOven(Oven):
 
     def temp_changes(self):
         # temperature change of heat element by heating
-        self.t_h += self.Q_h / self.c_heat
+        self.t_h += self.Q_h / self.elem_heat_capacity
 
         # energy flux heat_el -> oven
-        self.p_ho = (self.t_h - self.t) / self.R_ho
+        self.p_ho = (self.t_h - self.t) / self.res_element
 
         # temperature change of oven and heating element
         self.t += self.p_ho * self.time_step / self.c_oven
-        self.t_h -= self.p_ho * self.time_step / self.c_heat
+        self.t_h -= self.p_ho * self.time_step / self.elem_heat_capacity
 
         # temperature change of oven by cooling to environment
-        self.p_env = (self.t - self.t_env) / self.R_o_nocool
+        self.p_env = (self.t - self.t_env) / self.res_oven
         self.t -= self.p_env * self.time_step / self.c_oven
         self.temperature = self.t
         self.temperature = self.t
