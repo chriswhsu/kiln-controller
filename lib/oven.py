@@ -178,10 +178,21 @@ class Oven(threading.Thread):
 
     def __init__(self):
         threading.Thread.__init__(self)
+        self.pid = PID(ki=config.pid_ki, kd=config.pid_kd, kp=config.pid_kp)
+        # heating or not?
+        self.heat = 0
+        self.target = 0
+        self.start_time = 0
+        self.runtime = 0
+        self.total_time = 0
+        self.profile = None
+        self.state = "IDLE"
+        self.cost = 0
+        self.temp_sensor = None
         self.daemon = True
         self.temperature = 0
         self.time_step = config.sensor_time_wait
-        self.reset()
+        self.create_temp_sensor()
 
     def reset(self):
         self.cost = 0
@@ -189,10 +200,16 @@ class Oven(threading.Thread):
         self.profile = None
         self.start_time = 0
         self.runtime = 0
-        self.totaltime = 0
+        self.total_time = 0
         self.target = 0
         self.heat = 0
         self.pid = PID(ki=config.pid_ki, kd=config.pid_kd, kp=config.pid_kp)
+
+    def create_temp_sensor(self):
+        if config.simulate:
+            self.temp_sensor = TempSensorSimulated()
+        else:
+            self.temp_sensor = TempSensorReal()
 
     def run_profile(self, profile, startat=0):
         self.reset()
@@ -201,7 +218,7 @@ class Oven(threading.Thread):
         self.runtime = self.startat
         self.start_time = datetime.datetime.now() - datetime.timedelta(seconds=self.startat)
         self.profile = profile
-        self.totaltime = profile.get_duration()
+        self.total_time = profile.get_duration()
         self.state = "RUNNING"
         log.info("Running schedule %s starting at %d minutes" % (profile.name, startat))
         log.info("Starting")
@@ -210,16 +227,20 @@ class Oven(threading.Thread):
         self.reset()
         self.save_automatic_restart_state()
 
+    def heat_then_cool(self):
+        # This is a placeholder method that should be overridden in child classes.
+        pass
+
+
     def kiln_must_catch_up(self):
         # shift the whole schedule forward in time by one time_step to wait for the kiln to catch up
         if config.kiln_must_catch_up:
-            temp = self.temperature + config.thermocouple_offset
             # kiln too cold, wait for it to heat up
-            if self.target - temp > config.pid_control_window:
+            if self.target - self.temperature > config.pid_control_window:
                 log.info("kiln must catch up, too cold, shifting schedule")
                 self.start_time = datetime.datetime.now() - datetime.timedelta(milliseconds=self.runtime * 1000)
             # kiln too hot, wait for it to cool down
-            if temp - self.target > config.pid_control_window:
+            if self.temperature - self.target > config.pid_control_window:
                 log.info("kiln must catch up, too hot, shifting schedule")
                 self.start_time = datetime.datetime.now() - datetime.timedelta(milliseconds=self.runtime * 1000)
 
@@ -236,14 +257,13 @@ class Oven(threading.Thread):
 
     def reset_if_emergency(self):
         # reset if the temperature is way TOO HOT, or other critical errors detected
-        if (self.temperature + config.thermocouple_offset >=
-                config.emergency_shutoff_temp):
+        if self.temperature >= config.emergency_shutoff_temp:
             log.info("emergency!!! temperature too high")
             if not config.ignore_temp_too_high:
                 self.abort_run()
 
     def reset_if_schedule_ended(self):
-        if self.runtime > self.totaltime:
+        if self.runtime > self.total_time:
             log.info("schedule ended, shutting down")
             log.info("total cost = %s%.2f" % (config.currency_type, self.cost))
             self.abort_run()
@@ -256,21 +276,15 @@ class Oven(threading.Thread):
         self.cost = self.cost + cost
 
     def get_state(self):
-        temp = 0
-        try:
-            temp = self.temperature + config.thermocouple_offset
-        except AttributeError as error:
-            # this happens at start-up with a simulated oven
-            temp = 0
 
         state = {
             'cost': round(self.cost, 2),
             'runtime': round(self.runtime, 2),
-            'temperature': round(temp, 2),
+            'temperature': round(self.temperature, 2),
             'target': round(self.target, 2),
             'state': self.state,
             'heat': self.heat,
-            'totaltime': self.totaltime,
+            'total_time': self.total_time,
             'kwh_rate': config.kwh_rate,
             'currency_type': config.currency_type,
             'profile': self.profile.name if self.profile else None,
@@ -335,6 +349,9 @@ class Oven(threading.Thread):
         log.info("ovenwatcher set in oven class")
         self.ovenwatcher = watcher
 
+    def update_temperature(self):
+        self.temperature = self.temp_sensor.temperature + config.thermocouple_offset
+
     def run(self):
         while True:
             if self.state == "IDLE":
@@ -343,6 +360,7 @@ class Oven(threading.Thread):
                 time.sleep(1)
                 continue
             if self.state == "RUNNING":
+                self.update_temperature()
                 self.update_cost()
                 self.save_automatic_restart_state()
                 self.kiln_must_catch_up()
@@ -397,7 +415,7 @@ class SimulatedOven(Oven):
         self.temperature = self.t
 
     def heat_then_cool(self):
-        pid = self.pid.compute(self.target, self.temperature + config.thermocouple_offset)
+        pid = self.pid.compute(self.target, self.temperature)
         heat_on = float(self.time_step * pid)
         heat_off = float(self.time_step * (1 - pid))
 
@@ -415,7 +433,7 @@ class SimulatedOven(Oven):
                                                                                    self.t,
                                                                                    int(self.p_env)))
 
-        time_left = self.totaltime - self.runtime
+        time_left = self.total_time - self.runtime
 
         try:
             log.info(
@@ -431,7 +449,7 @@ class SimulatedOven(Oven):
                      heat_on,
                      heat_off,
                      self.runtime,
-                     self.totaltime,
+                     self.total_time,
                      time_left))
         except KeyError:
             pass
@@ -458,7 +476,7 @@ class RealOven(Oven):
         self.output.cool(0)
 
     def heat_then_cool(self):
-        pid = self.pid.compute(self.target, self.temperature + config.thermocouple_offset)
+        pid = self.pid.compute(self.target, self.temperature)
         heat_on = float(self.time_step * pid)
         heat_off = float(self.time_step * (1 - pid))
 
@@ -471,7 +489,7 @@ class RealOven(Oven):
             self.output.heat(heat_on)
         if heat_off:
             self.output.cool(heat_off)
-        time_left = self.totaltime - self.runtime
+        time_left = self.total_time - self.runtime
         try:
             log.info(
                     "temp=%.2f, target=%.2f, error=%.2f, pid=%.2f, p=%.2f, i=%.2f, d=%.2f, heat_on=%.2f, heat_off=%.2f, run_time=%d, total_time=%d, "
@@ -486,7 +504,7 @@ class RealOven(Oven):
                      heat_on,
                      heat_off,
                      self.runtime,
-                     self.totaltime,
+                     self.total_time,
                      time_left))
         except KeyError:
             pass

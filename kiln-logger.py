@@ -15,7 +15,7 @@ STD_HEADER = [
     'target',
     'state',
     'heat',
-    'totaltime',
+    'total_time',
     'profile',
 ]
 
