@@ -224,11 +224,10 @@ def handle_storage():
 def handle_config():
     wsock = get_websocket_from_request()
     log.info("websocket (config) opened")
-    while True:
-        try:
-            wsock.send(get_config())
-        except WebSocketError:
-            break
+    try:
+        wsock.send(get_config())
+    except WebSocketError:
+        log.error("Error with Websocket in Config")
     log.info("websocket (config) closed")
 
 
