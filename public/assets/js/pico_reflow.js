@@ -512,10 +512,10 @@ $(document).ready(function () {
                     graph.live.data.push([x.runtime, x.temperature]);
                     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 
-                    left = parseInt(x.totaltime - x.runtime);
+                    left = parseInt(x.total_time - x.runtime);
                     eta = new Date(left * 1000).toISOString().substr(11, 8);
 
-                    updateProgress(parseFloat(x.runtime) / parseFloat(x.totaltime) * 100);
+                    updateProgress(parseFloat(x.runtime) / parseFloat(x.total_time) * 100);
                     $('#state').html('<span class="glyphicon glyphicon-time" style="font-size: 22px; font-weight: normal"></span><span style="font-family: Digi; font-size: 40px;">' + eta + '</span>');
                     $('#target_temp').html(parseInt(x.target));
                     $('#cost').html(x.currency_type + parseFloat(x.cost).toFixed(2));

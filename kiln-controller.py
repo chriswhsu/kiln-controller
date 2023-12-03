@@ -183,7 +183,9 @@ def handle_storage():
             log.debug("websocket (storage) received: %s" % message)
 
             try:
+                log.info(f"message: {message}")
                 msgdict = json.loads(message)
+
             except Exception as error:
                 log.error(f"Error loading message {error}")
                 msgdict = {}
