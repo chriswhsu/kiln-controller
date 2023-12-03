@@ -178,11 +178,12 @@ class Oven(threading.Thread):
 
     def __init__(self):
         threading.Thread.__init__(self)
+        self.startat = 0
         self.pid = PID(ki=config.pid_ki, kd=config.pid_kd, kp=config.pid_kp)
         # heating or not?
         self.heat = 0
         self.target = 0
-        self.start_time = 0
+        self.start_time = None
         self.runtime = 0
         self.total_time = 0
         self.profile = None
@@ -238,9 +239,6 @@ class Oven(threading.Thread):
         # Log the heating or cooling process
         self.log_heating_cooling(pid_output)
 
-        # Additional actions after heating/cooling, if any
-        self.post_heat_actions(pid_output)
-
     def apply_heat(self, pid_output):
         # Placeholder method - should be overridden in child classes
         raise NotImplementedError("This method should be overridden in child classes")
@@ -256,29 +254,18 @@ class Oven(threading.Thread):
                 (self.temperature, self.target, pid_output, heat_on, heat_off, self.runtime)
         )
 
-    def post_heat_actions(self, pid_output):
-        # Placeholder for any additional actions after heating/cooling
-        pass
-
     def kiln_must_catch_up(self):
-        # shift the whole schedule forward in time by one time_step to wait for the kiln to catch up
         if config.kiln_must_catch_up:
-            # kiln too cold, wait for it to heat up
-            if self.target - self.temperature > config.pid_control_window:
-                log.info("kiln must catch up, too cold, shifting schedule")
-                self.start_time = datetime.datetime.now() - datetime.timedelta(milliseconds=self.runtime * 1000)
-            # kiln too hot, wait for it to cool down
-            if self.temperature - self.target > config.pid_control_window:
-                log.info("kiln must catch up, too hot, shifting schedule")
+            temperature_difference = self.temperature - self.target
+            if abs(temperature_difference) > config.pid_control_window:
+                log_info = "kiln must catch up, too {}"
+                log_message = "cold" if temperature_difference > 0 else "hot"
+                log.info(log_info.format(log_message))
                 self.start_time = datetime.datetime.now() - datetime.timedelta(milliseconds=self.runtime * 1000)
 
     def update_runtime(self):
-
         runtime_delta = datetime.datetime.now() - self.start_time
-        if runtime_delta.total_seconds() < 0:
-            runtime_delta = datetime.timedelta(0)
-
-        self.runtime = runtime_delta.total_seconds()
+        self.runtime = max(0.0, runtime_delta.total_seconds())
 
     def update_target_temp(self):
         self.target = self.profile.get_target_temperature(self.runtime)
@@ -298,10 +285,10 @@ class Oven(threading.Thread):
 
     def update_cost(self):
         if self.heat:
-            cost = (config.kwh_rate * config.kw_elements) * ((self.heat) / 3600)
+            cost = (config.kwh_rate * config.kw_elements) * (self.heat / 3600)
         else:
             cost = 0
-        self.cost = self.cost + cost
+        self.cost += cost
 
     def get_state(self):
 
@@ -421,13 +408,10 @@ class SimulatedOven(Oven):
         log.info("SimulatedOven started")
 
     def apply_heat(self, pid):
-
         self.heat = max(0.0, float(self.time_step * pid))
 
         self.heating_energy(pid)
         self.temp_changes()
-
-
 
         log.info("simulation: -> %dW heater: %.0f -> %dW oven: %.0f -> %dW env" % (int(self.p_heat * pid),
                                                                                    self.t_h,
@@ -462,8 +446,6 @@ class SimulatedOven(Oven):
         self.t -= self.p_env * self.time_step / self.c_oven
         self.temperature = self.t
         self.temperature = self.t
-
-
 
 
 class RealOven(Oven):
