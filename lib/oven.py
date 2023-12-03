@@ -228,9 +228,37 @@ class Oven(threading.Thread):
         self.save_automatic_restart_state()
 
     def heat_then_cool(self):
-        # This is a placeholder method that should be overridden in child classes.
-        pass
+        # Compute the PID output for the current target and temperature
+        pid_output = self.pid.compute(self.target, self.temperature)
 
+        # Apply heating or cooling based on PID output.
+        # This method will be overridden in child classes.
+        self.apply_heat(pid_output)
+
+        # Log the heating or cooling process
+        self.log_heating_cooling(pid_output)
+
+        # Additional actions after heating/cooling, if any
+        self.post_heat_actions(pid_output)
+
+    def apply_heat(self, pid_output):
+        # Placeholder method - should be overridden in child classes
+        raise NotImplementedError("This method should be overridden in child classes")
+
+    def log_heating_cooling(self, pid_output):
+        # Log the details of the heating/cooling process
+        # This is a common method that might be same for both simulated and real ovens
+        heat_on = float(self.time_step * pid_output)
+        heat_off = float(self.time_step * (1 - pid_output))
+
+        log.info(
+                "temp=%.2f, target=%.2f, pid_output=%.2f, heat_on=%.2f, heat_off=%.2f, run_time=%d" %
+                (self.temperature, self.target, pid_output, heat_on, heat_off, self.runtime)
+        )
+
+    def post_heat_actions(self, pid_output):
+        # Placeholder for any additional actions after heating/cooling
+        pass
 
     def kiln_must_catch_up(self):
         # shift the whole schedule forward in time by one time_step to wait for the kiln to catch up
@@ -392,6 +420,23 @@ class SimulatedOven(Oven):
         self.start()
         log.info("SimulatedOven started")
 
+    def apply_heat(self, pid):
+
+        self.heat = max(0.0, float(self.time_step * pid))
+
+        self.heating_energy(pid)
+        self.temp_changes()
+
+
+
+        log.info("simulation: -> %dW heater: %.0f -> %dW oven: %.0f -> %dW env" % (int(self.p_heat * pid),
+                                                                                   self.t_h,
+                                                                                   int(self.p_ho),
+                                                                                   self.t,
+                                                                                   int(self.p_env)))
+
+        time.sleep(self.time_step)
+
     def update_temperature(self):
         # temperature is set directly on member variable, no need to query temp sensor.
         pass
@@ -418,49 +463,7 @@ class SimulatedOven(Oven):
         self.temperature = self.t
         self.temperature = self.t
 
-    def heat_then_cool(self):
-        pid = self.pid.compute(self.target, self.temperature)
-        heat_on = float(self.time_step * pid)
-        heat_off = float(self.time_step * (1 - pid))
 
-        self.heating_energy(pid)
-        self.temp_changes()
-
-        # self.heat is for the front end to display if the heat is on
-        self.heat = 0.0
-        if heat_on > 0:
-            self.heat = heat_on
-
-        log.info("simulation: -> %dW heater: %.0f -> %dW oven: %.0f -> %dW env" % (int(self.p_heat * pid),
-                                                                                   self.t_h,
-                                                                                   int(self.p_ho),
-                                                                                   self.t,
-                                                                                   int(self.p_env)))
-
-        time_left = self.total_time - self.runtime
-
-        try:
-            log.info(
-                    "temp=%.2f, target=%.2f, error=%.2f, pid=%.2f, p=%.2f, i=%.2f, d=%.2f, heat_on=%.2f, heat_off=%.2f, run_time=%d, total_time=%d, "
-                    "time_left=%d" %
-                    (self.pid.pidstats['current_value'],
-                     self.pid.pidstats['setpoint'],
-                     self.pid.pidstats['err'],
-                     self.pid.pidstats['pid'],
-                     self.pid.pidstats['p'],
-                     self.pid.pidstats['i'],
-                     self.pid.pidstats['d'],
-                     heat_on,
-                     heat_off,
-                     self.runtime,
-                     self.total_time,
-                     time_left))
-        except KeyError:
-            pass
-
-        # we don't actually spend time heating & cooling during
-        # a simulation, so sleep.
-        time.sleep(self.time_step)
 
 
 class RealOven(Oven):
@@ -483,12 +486,10 @@ class RealOven(Oven):
     def update_temperature(self):
         self.temperature = self.temp_sensor.temperature + config.thermocouple_offset
 
-    def heat_then_cool(self):
-        pid = self.pid.compute(self.target, self.temperature)
+    def apply_heat(self, pid):
         heat_on = float(self.time_step * pid)
         heat_off = float(self.time_step * (1 - pid))
 
-        # self.heat is for the front end to display if the heat is on
         self.heat = 0.0
         if heat_on > 0:
             self.heat = 1.0
@@ -497,25 +498,6 @@ class RealOven(Oven):
             self.output.heat(heat_on)
         if heat_off:
             self.output.cool(heat_off)
-        time_left = self.total_time - self.runtime
-        try:
-            log.info(
-                    "temp=%.2f, target=%.2f, error=%.2f, pid=%.2f, p=%.2f, i=%.2f, d=%.2f, heat_on=%.2f, heat_off=%.2f, run_time=%d, total_time=%d, "
-                    "time_left=%d" %
-                    (self.pid.pidstats['current_value'],
-                     self.pid.pidstats['setpoint'],
-                     self.pid.pidstats['err'],
-                     self.pid.pidstats['pid'],
-                     self.pid.pidstats['p'],
-                     self.pid.pidstats['i'],
-                     self.pid.pidstats['d'],
-                     heat_on,
-                     heat_off,
-                     self.runtime,
-                     self.total_time,
-                     time_left))
-        except KeyError:
-            pass
 
 
 class Profile():
@@ -553,9 +535,6 @@ class Profile():
         return temp
 
 
-log = logging.getLogger(__name__)
-
-
 class PID():
     def __init__(self, ki=1, kp=1, kd=1):
         # Initialize PID coefficients
@@ -591,10 +570,10 @@ class PID():
         # Check if error is outside the PID control window
         if error < (-1 * config.pid_control_window):
             log.info("Outside PID control window, max cooling")
-            output = 0
+            computed_output = 0
         elif error > (1 * config.pid_control_window):
             log.info("Outside PID control window, max heating")
-            output = 1
+            computed_output = 1
         else:
             # Compute integral component
             integral_component = (error * time_delta * (1 / self.ki))
@@ -604,18 +583,18 @@ class PID():
             error_derivative = (error - self.last_error) / time_delta
 
             # Compute total output
-            output = self.kp * error + self.iterm + self.kd * error_derivative
-            output = sorted([-1 * window_size, output, window_size])[1]  # Clamp output within window
-            out4logs = output
-            output = float(output / window_size)  # Scale output
+            computed_output = self.kp * error + self.iterm + self.kd * error_derivative
+            computed_output = sorted([-1 * window_size, computed_output, window_size])[1]  # Clamp output within window
+            out4logs = computed_output
+            computed_output = float(computed_output / window_size)  # Scale output
 
         # Update last error and time for next iteration
         self.last_error = error
         self.last_now = now
 
         # Ensure no negative output (active cooling disabled)
-        if output < 0:
-            output = 0
+        if computed_output < 0:
+            computed_output = 0
 
         # Update PID statistics
         self.pidstats = {
@@ -632,8 +611,8 @@ class PID():
             'ki': self.ki,
             'kd': self.kd,
             'pid': out4logs,
-            'out': output,
+            'out': computed_output,
         }
 
         # Return PID output
-        return output
+        return computed_output
