@@ -350,7 +350,7 @@ class Oven(threading.Thread):
         self.ovenwatcher = watcher
 
     def update_temperature(self):
-        self.temperature = self.temp_sensor.temperature + config.thermocouple_offset
+        pass
 
     def run(self):
         while True:
@@ -391,6 +391,10 @@ class SimulatedOven(Oven):
         # start thread
         self.start()
         log.info("SimulatedOven started")
+
+    def update_temperature(self):
+        # temperature is set directly on member variable, no need to query temp sensor.
+        pass
 
     def heating_energy(self, pid):
         # using pid here simulates the element being on for
@@ -474,6 +478,10 @@ class RealOven(Oven):
     def reset(self):
         super().reset()
         self.output.cool(0)
+
+    # get actual temperature from sensor.
+    def update_temperature(self):
+        self.temperature = self.temp_sensor.temperature + config.thermocouple_offset
 
     def heat_then_cool(self):
         pid = self.pid.compute(self.target, self.temperature)
