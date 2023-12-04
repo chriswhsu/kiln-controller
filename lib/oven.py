@@ -256,11 +256,9 @@ class Oven(threading.Thread):
 
     def kiln_must_catch_up(self):
         if config.kiln_must_catch_up:
-            temperature_difference = self.temperature - self.target
-            if abs(temperature_difference) > config.pid_control_window:
-                log_info = "kiln must catch up, too {}"
-                log_message = "cold" if temperature_difference > 0 else "hot"
-                log.info(log_info.format(log_message))
+            temperature_difference = self.target - self.temperature
+            if temperature_difference > config.pid_control_window:
+                log.info("kiln must catch up, too cold")
                 self.start_time = datetime.datetime.now() - datetime.timedelta(milliseconds=self.runtime * 1000)
 
     def update_runtime(self):
