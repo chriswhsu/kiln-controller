@@ -263,10 +263,10 @@ class Oven(threading.Thread):
 
     def update_runtime(self):
         runtime_delta = datetime.datetime.now() - self.start_time
-        self.runtime = max(0.0, runtime_delta.total_seconds())
+        self.runtime = max(0.0, round(runtime_delta.total_seconds(), 2))
 
     def update_target_temp(self):
-        self.target = self.profile.get_target_temperature(self.runtime)
+        self.target = round(self.profile.get_target_temperature(self.runtime), 2)
 
     def reset_if_emergency(self):
         # reset if the temperature is way TOO HOT, or other critical errors detected
@@ -293,8 +293,8 @@ class Oven(threading.Thread):
         state = {
             'cost': round(self.cost, 2),
             'runtime': round(self.runtime, 2),
-            'temperature': round(self.temperature, 2),
-            'target': round(self.target, 2),
+            'temperature': self.temperature,
+            'target': self.target,
             'state': self.state,
             'heat': self.heat,
             'total_time': self.total_time,
@@ -441,8 +441,7 @@ class SimulatedOven(Oven):
         # temperature change of oven by cooling to environment
         self.p_env = (self.t - self.t_env) / self.res_oven
         self.t -= self.p_env * self.time_step / self.c_oven
-        self.temperature = self.t
-        self.temperature = self.t
+        self.temperature = round(self.t, 2)
 
 
 class RealOven(Oven):
@@ -534,13 +533,13 @@ class PID():
 
         # Calculate time elapsed since last computation
         now = datetime.datetime.now()
-        time_delta = (now - self.last_now).total_seconds()
+        time_delta = round((now - self.last_now).total_seconds())
 
         # Define window size for PID control
         window_size = 100
 
         # Calculate error between setpoint and current value
-        error = float(setpoint - current_value)
+        error = round(float(setpoint - current_value), 2)
 
         # Initialize variables for PID computation
         out4logs = 0
@@ -582,15 +581,15 @@ class PID():
             'setpoint': setpoint,
             'current_value': current_value,
             'err': error,
-            'errDelta': error_derivative,
-            'p': self.kp * error,
-            'i': self.iterm,
-            'd': self.kd * error_derivative,
+            'errDelta': round(error_derivative, 3),
+            'p': round(self.kp * error, 3),
+            'i': round(self.iterm, 3),
+            'd': round(self.kd * error_derivative, 3),
             'kp': self.kp,
             'ki': self.ki,
             'kd': self.kd,
-            'pid': out4logs,
-            'out': computed_output,
+            'pid': round(out4logs, 3),
+            'out': round(computed_output, 3),
         }
 
         # Return PID output
