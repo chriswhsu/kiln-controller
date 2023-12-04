@@ -100,9 +100,9 @@ time_scale_profile = "m"  # s = Seconds | m = Minutes | h = Hours - Enter and vi
 # this should not replace you watching your kiln or use of a kiln-sitter
 emergency_shutoff_temp = 2264  # cone 7
 
-# If the current temperature is outside the pid control window,
+# If the current temperature is below the pid control window,
 # delay the schedule until it goes back inside. This allows for heating
-# and cooling as fast as possible and not continuing until temp is reached.
+# as fast as possible and not continuing until temp is reached.
 kiln_must_catch_up = True
 
 # This setting is required. 
@@ -112,7 +112,7 @@ kiln_must_catch_up = True
 # or 100% off because the kiln is too hot. No integral builds up
 # outside the window. The bigger you make the window, the more
 # integral you will accumulate. This should be a positive integer.
-pid_control_window = 5  # degrees
+pid_control_window = 10  # degrees
 
 # thermocouple offset
 # If you put your thermocouple in ice water and it reads 36F, you can
@@ -160,7 +160,7 @@ ignore_tc_short_errors = False
 # The state file is written to disk every sensor_time_wait seconds (2s by default)
 # and is written in the same directory as config.py.
 automatic_restarts = True
-automatic_restart_window = 15  # max minutes since power outage
+automatic_restart_window = 5  # max minutes since power outage
 automatic_restart_state_file = os.path.abspath(os.path.join(os.path.dirname(__file__), 'state.json'))
 
 ########################################################################
