@@ -405,7 +405,7 @@ class SimulatedOven(Oven):
         log.info("SimulatedOven started")
 
     def apply_heat(self, pid):
-        self.heat = max(0.0, float(self.time_step * pid))
+        self.heat = max(0.0, round(float(self.time_step * pid), 2))
 
         self.heating_energy(pid)
         self.temp_changes()
