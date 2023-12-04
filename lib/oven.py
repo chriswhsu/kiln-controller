@@ -534,6 +534,8 @@ class PID():
         # Calculate time elapsed since last computation
         now = datetime.datetime.now()
         time_delta = round((now - self.last_now).total_seconds())
+        # Ensure time_delta is not zero to avoid division by zero
+        time_delta = max(float(time_delta), 0.0001)
 
         # Define window size for PID control
         window_size = 100
