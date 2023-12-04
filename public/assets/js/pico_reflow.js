@@ -479,82 +479,118 @@ $(document).ready(function () {
     }
 });
 
+
 function handleStatusMessage(data) {
     if (data.type === "backlog") {
-        if (data.profile) {
-            selected_profile_name = data.profile.name;
-            $.each(profiles, function (i, v) {
-                if (v.name === data.profile.name) {
-                    updateProfile(i);
-                    $('#e2').select2('val', i);
-                }
-            });
-        }
-
-        $.each(data.log, function (i, v) {
-            graph.live.data.push([v.runtime, v.temperature]);
-            graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
-        });
+        handleBacklogData(data);
     }
 
     if (state !== "EDIT") {
-        state = data.state;
-
-        if (state !== state_last) {
-            if (state_last === "RUNNING") {
-                $('#target_temp').html('---');
-                updateProgress(0);
-                $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>Run completed. New State: " + state + "</b>", {
-                    ele: 'body',
-                    type: 'success',
-                    offset: {from: 'top', amount: 250},
-                    align: 'center',
-                    width: 385,
-                    delay: 0,
-                    allow_dismiss: true,
-                    stackup_spacing: 10
-                });
-            }
-        }
-
-        if (state === "RUNNING") {
-            $("#nav_start").hide();
-            $("#nav_stop").show();
-
-            graph.live.data.push([data.runtime, data.temperature]);
-            graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
-
-            let left = parseInt(data.total_time - data.runtime);
-            let eta = new Date(left * 1000).toISOString().substr(11, 8);
-
-            updateProgress(parseFloat(data.runtime) / parseFloat(data.total_time) * 100);
-            $('#state').html('<span class="glyphicon glyphicon-time" style="font-size: 22px; font-weight: normal"></span><span style="font-family: Digi; font-size: 40px;">' + eta + '</span>');
-            $('#target_temp').html(parseInt(data.target));
-            $('#cost').html(data.currency_type + parseFloat(data.cost).toFixed(2));
-        } else {
-            $("#nav_start").show();
-            $("#nav_stop").hide();
-            $('#state').html('<p class="ds-text">' + state + '</p>');
-        }
-
-        $('#act_temp').html(parseInt(data.temperature));
-        $('#heat').html('<div class="bar"></div>');
-
-        if (data.cool > 0.5) {
-            $('#cool').addClass("ds-led-cool-active");
-        } else {
-            $('#cool').removeClass("ds-led-cool-active");
-        }
-
-        if (data.temperature > hazardTemp()) {
-            $('#hazard').addClass("ds-led-hazard-active");
-        } else {
-            $('#hazard').removeClass("ds-led-hazard-active");
-        }
-
-        state_last = state;
+        updateApplicationState(data);
     }
 }
+
+function handleBacklogData(data) {
+    updateSelectedProfile(data.profile);
+    updateGraphWithLogData(data.log);
+}
+
+function updateSelectedProfile(profileData) {
+    if (profileData) {
+        selected_profile_name = profileData.name;
+        $.each(profiles, function (i, profile) {
+            if (profile.name === profileData.name) {
+                updateProfile(i);
+                $('#e2').select2('val', i);
+            }
+        });
+    }
+}
+
+function updateGraphWithLogData(logData) {
+    $.each(logData, function (i, logEntry) {
+        graph.live.data.push([logEntry.runtime, logEntry.temperature]);
+    });
+    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+}
+
+function updateApplicationState(data) {
+    state = data.state;
+    handleStateChange(data);
+    updateUIElements(data);
+}
+
+function handleStateChange(data) {
+    if (state !== state_last) {
+        if (state_last === "RUNNING") {
+            notifyRunCompleted(state);
+        }
+    }
+
+    if (state === "RUNNING") {
+        updateForRunningState(data);
+    } else {
+        updateForNonRunningState();
+    }
+
+    state_last = state;
+}
+
+function notifyRunCompleted(newState) {
+    $('#target_temp').html('---');
+    updateProgress(0);
+    $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>Run completed. New State: " + newState + "</b>", {
+        ele: 'body', type: 'success', offset: {from: 'top', amount: 250},
+        align: 'center', width: 385, delay: 0, allow_dismiss: true, stackup_spacing: 10
+    });
+}
+
+function updateForRunningState(data) {
+    $("#nav_start").hide();
+    $("#nav_stop").show();
+
+    graph.live.data.push([data.runtime, data.temperature]);
+    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+
+    let left = parseInt(data.total_time - data.runtime);
+    let eta = new Date(left * 1000).toISOString().substr(11, 8);
+
+    updateProgress(parseFloat(data.runtime) / parseFloat(data.total_time) * 100);
+    $('#state').html('<span class="glyphicon glyphicon-time" style="font-size: 22px; font-weight: normal"></span><span style="font-family: Digi; font-size: 40px;">' + eta + '</span>');
+    $('#target_temp').html(parseInt(data.target));
+    $('#cost').html(data.currency_type + parseFloat(data.cost).toFixed(2));
+}
+
+function updateForNonRunningState() {
+    $("#nav_start").show();
+    $("#nav_stop").hide();
+    $('#state').html('<p class="ds-text">' + state + '</p>');
+}
+
+function updateUIElements(data) {
+    $('#act_temp').html(parseInt(data.temperature));
+    $('#heat').html('<div class="bar"></div>');
+
+    updateCoolingIndicator(data.cool);
+    updateHazardIndicator(data.temperature);
+}
+
+function updateCoolingIndicator(coolValue) {
+    if (coolValue > 0.5) {
+        $('#cool').addClass("ds-led-cool-active");
+    } else {
+        $('#cool').removeClass("ds-led-cool-active");
+    }
+}
+
+function updateHazardIndicator(temperature) {
+    if (temperature > hazardTemp()) {
+        $('#hazard').addClass("ds-led-hazard-active");
+    } else {
+        $('#hazard').removeClass("ds-led-hazard-active");
+    }
+}
+
 
 function setupConfigWebSocket() {
     ws_config.onopen = function () {
