@@ -1,17 +1,18 @@
 // Global Variables
-let state = "IDLE";
+let state = "----";
 let state_last = "";
 let graph = {profile: {}, live: {}};
 let profiles = [];
 let selected_profile = 0;
-let selected_profile_name = 'cone-05-long-bisque.json';
-let temp_scale = "c";
+let selected_profile_name = "";
+// F or C
+let temp_scale = "";
 let time_scale_slope = "s";
 let time_scale_profile = "s";
 let time_scale_long = "Seconds";
-let temp_scale_display = "C";
-let kwh_rate = 0.26;
-let currency_type = "EUR";
+let temp_scale_display = "";
+let kwh_rate = 0.0;
+let currency_type = "";
 
 // WebSocket Initialization
 let protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -48,7 +49,7 @@ function updateProfile(id) {
     let job_time = new Date(job_seconds * 1000).toISOString().slice(11, 19);
     $('#sel_prof').html(profiles[id].name);
     $('#sel_prof_eta').html(job_time);
-    $('#sel_prof_cost').html(kwh + ' kWh (' + currency_type + ': ' + cost + ')');
+    $('#sel_prof_cost').html(kwh + ' kWh (' + currency_type + cost + ')');
     graph.profile.data = profiles[id].data;
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 }
@@ -556,9 +557,9 @@ function updateForRunningState(data) {
     let eta = new Date(left * 1000).toISOString().substr(11, 8);
 
     updateProgress(parseFloat(data.runtime) / parseFloat(data.total_time) * 100);
-    $('#state').html('<span class="glyphicon glyphicon-time" style="font-size: 22px; font-weight: normal"></span><span style="font-family: Digi; font-size: 40px;">' + eta + '</span>');
+    $('#state').html('<span class="glyphicon glyphicon-time" style="font-size: 22px; font-weight: normal"></span><span> </span><span style="font-family: Digi; font-size: 40px;">' + eta + '</span>');
     $('#target_temp').html(parseInt(data.target));
-    $('#cost').html(data.currency_type + parseFloat(data.cost).toFixed(2));
+    $('#cost').html(currency_type + parseFloat(data.cost).toFixed(2));
 }
 
 function updateForNonRunningState() {
