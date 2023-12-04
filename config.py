@@ -68,9 +68,9 @@ sensor_time_wait = 2
 # These parameters control kiln temperature change. These settings work
 # well with the simulated oven. You must tune them to work well with 
 # your specific kiln.
-pid_kp = 5  # Proportional
-pid_ki = .1  # Integral
-pid_kd = .1  # Derivative
+pid_kp = 5.0  # Proportional
+pid_ki = 0.1  # Integral
+pid_kd = 0.1  # Derivative
 
 ########################################################################
 #   Simulation parameters
