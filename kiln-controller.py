@@ -223,10 +223,8 @@ class KilnController:
 
     def find_profile(self, selected_profile):
 
-        # given a selected_profile profile name, find it and return the parsed
-        # json profile object or None.
+        # given a selected_profile profile name, find it and return the parsed json profile object or None.
 
-        # load all profiles from disk
         profiles = self.get_profiles()
         json_profiles = json.loads(profiles)
 
@@ -235,6 +233,18 @@ class KilnController:
             if profile['name'] == selected_profile:
                 return profile
         return None
+
+    def get_profiles(self):
+        try:
+            profile_files = os.listdir(self.profile_path)
+        except Exception as error:
+            self.log.error(f"Error loading profile path: {error}")
+            profile_files = []
+        profiles = []
+        for filename in profile_files:
+            with open(os.path.join(self.profile_path, filename), 'r') as f:
+                profiles.append(json.load(f))
+        return json.dumps(profiles)
 
     def process_storage_command(self, msgdict, websocket):
         cmd = msgdict.get("cmd")
@@ -260,18 +270,6 @@ class KilnController:
         self.log.debug(f"WebSocket (storage) sent: {json.dumps(msgdict)}")
         websocket.send(json.dumps(msgdict))
         websocket.send(self.get_profiles())
-
-    def get_profiles(self):
-        try:
-            profile_files = os.listdir(self.profile_path)
-        except Exception as error:
-            self.log.error(f"Error loading profile path: {error}")
-            profile_files = []
-        profiles = []
-        for filename in profile_files:
-            with open(os.path.join(self.profile_path, filename), 'r') as f:
-                profiles.append(json.load(f))
-        return json.dumps(profiles)
 
     def save_profile(self, profile, force=False):
         profile_json = json.dumps(profile)
