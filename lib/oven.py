@@ -585,9 +585,6 @@ class PID():
             'p': round(self.kp * error, 3),
             'i': round(self.iterm, 3),
             'd': round(self.kd * error_derivative, 3),
-            'kp': self.kp,
-            'ki': self.ki,
-            'kd': self.kd,
             'pid': round(out4logs, 3),
             'out': round(computed_output, 3),
         }
