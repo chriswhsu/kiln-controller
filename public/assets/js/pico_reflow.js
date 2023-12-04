@@ -1,6 +1,7 @@
+// Global Variables
 let state = "IDLE";
 let state_last = "";
-let graph = ['profile', 'live'];
+let graph = {profile: {}, live: {}};
 let profiles = [];
 let selected_profile = 0;
 let selected_profile_name = 'cone-05-long-bisque.json';
@@ -12,34 +13,32 @@ let temp_scale_display = "C";
 let kwh_rate = 0.26;
 let currency_type = "EUR";
 
-let protocol = 'ws:';
-if (window.location.protocol === 'https:') {
-    protocol = 'wss:';
-}
-let host = "" + protocol + "//" + window.location.hostname + ":" + window.location.port;
-let ws_status = new WebSocket(host + "/status");
-let ws_control = new WebSocket(host + "/control");
-let ws_config = new WebSocket(host + "/config");
-let ws_storage = new WebSocket(host + "/storage");
+// WebSocket Initialization
+let protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+let host = `${protocol}//${window.location.hostname}:${window.location.port}`;
+let ws_status = new WebSocket(`${host}/status`);
+let ws_control = new WebSocket(`${host}/control`);
+let ws_config = new WebSocket(`${host}/config`);
+let ws_storage = new WebSocket(`${host}/storage`);
 
-graph.profile =
-    {
-        label: "Profile",
-        data: [],
-        points: {show: false},
-        color: "#75890c",
-        draggable: false
-    };
+// Graph Setup
+graph.profile = {
+    label: "Profile",
+    data: [],
+    points: {show: false},
+    color: "#75890c",
+    draggable: false
+};
 
-graph.live =
-    {
-        label: "Live",
-        data: [],
-        points: {show: false},
-        color: "#d8d3c5",
-        draggable: false
-    };
+graph.live = {
+    label: "Live",
+    data: [],
+    points: {show: false},
+    color: "#d8d3c5",
+    draggable: false
+};
 
+// Function Definitions
 function updateProfile(id) {
     selected_profile = id;
     selected_profile_name = profiles[id].name;
@@ -425,245 +424,315 @@ function getOptions() {
 }
 
 $(document).ready(function () {
-
+    // Check for WebSocket support
     if (!("WebSocket" in window)) {
         $('#chatLog, input, button, #examples').fadeOut("fast");
         $('<p>Oh no, you need a browser that supports WebSockets. How about <a href="https://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');
     } else {
-
-        // Status Socket ////////////////////////////////
-
+        // Status WebSocket Setup
         ws_status.onopen = function () {
             console.log("Status Socket has been opened");
-
-           $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span>Getting data from server",
-           {
-           ele: 'body', // which element to append to
-           type: 'success', // (null, 'info', 'error', 'success')
-           offset: {from: 'top', amount: 250}, // 'top', or 'bottom'
-           align: 'center', // ('left', 'right', or 'center')
-           width: 385, // (integer, or 'auto')
-           delay: 2500,
-           allow_dismiss: true,
-           stackup_spacing: 10 // spacing between consecutively stacked growls.
-           });
+            $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span>Getting data from server", {
+                ele: 'body',
+                type: 'success',
+                offset: {from: 'top', amount: 250},
+                align: 'center',
+                width: 385,
+                delay: 2500,
+                allow_dismiss: true,
+                stackup_spacing: 10
+            });
         };
 
         ws_status.onclose = function () {
             $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>ERROR 1:</b><br/>Status Websocket not available", {
-                ele: 'body', // which element to append to
-                type: 'error', // (null, 'info', 'error', 'success')
-                offset: {from: 'top', amount: 250}, // 'top', or 'bottom'
-                align: 'center', // ('left', 'right', or 'center')
-                width: 385, // (integer, or 'auto')
+                ele: 'body',
+                type: 'error',
+                offset: {from: 'top', amount: 250},
+                align: 'center',
+                width: 385,
                 delay: 5000,
                 allow_dismiss: true,
-                stackup_spacing: 10 // spacing between consecutively stacked growls.
+                stackup_spacing: 10
             });
         };
 
         ws_status.onmessage = function (e) {
-            console.log("received status data")
+            console.log("received status data");
             console.log(e.data);
 
-            let x = JSON.parse(e.data);
-            if (x.type === "backlog") {
-                if (x.profile) {
-                    selected_profile_name = x.profile.name;
-                    $.each(profiles, function (i, v) {
-                        if (v.name === x.profile.name) {
-                            updateProfile(i);
-                            $('#e2').select2('val', i);
-                        }
-                    });
-                }
-
-                $.each(x.log, function (i, v) {
-                    graph.live.data.push([v.runtime, v.temperature]);
-                    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
-                });
-            }
-
-            if (state !== "EDIT") {
-                state = x.state;
-
-                if (state !== state_last) {
-                    if (state_last === "RUNNING") {
-                        $('#target_temp').html('---');
-                        updateProgress(0);
-                        $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>Run completed. New State: " + state + "</b>", {
-
-                            ele: 'body', // which element to append to
-                            type: 'success', // (null, 'info', 'error', 'success')
-                            offset: {from: 'top', amount: 250}, // 'top', or 'bottom'
-                            align: 'center', // ('left', 'right', or 'center')
-                            width: 385, // (integer, or 'auto')
-                            delay: 0,
-                            allow_dismiss: true,
-                            stackup_spacing: 10 // spacing between consecutively stacked growls.
-                        });
-                    }
-                }
-
-                if (state === "RUNNING") {
-                    $("#nav_start").hide();
-                    $("#nav_stop").show();
-
-                    graph.live.data.push([x.runtime, x.temperature]);
-                    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
-
-                    left = parseInt(x.total_time - x.runtime);
-                    eta = new Date(left * 1000).toISOString().substr(11, 8);
-
-                    updateProgress(parseFloat(x.runtime) / parseFloat(x.total_time) * 100);
-                    $('#state').html('<span class="glyphicon glyphicon-time" style="font-size: 22px; font-weight: normal"></span><span style="font-family: Digi; font-size: 40px;">' + eta + '</span>');
-                    $('#target_temp').html(parseInt(x.target));
-                    $('#cost').html(x.currency_type + parseFloat(x.cost).toFixed(2));
-
-
-                } else {
-                    $("#nav_start").show();
-                    $("#nav_stop").hide();
-                    $('#state').html('<p class="ds-text">' + state + '</p>');
-                }
-
-                $('#act_temp').html(parseInt(x.temperature));
-                $('#heat').html('<div class="bar"></div>')
-
-                if (x.cool > 0.5) {
-                    $('#cool').addClass("ds-led-cool-active");
-                } else {
-                    $('#cool').removeClass("ds-led-cool-active");
-                }
-
-                if (x.temperature > hazardTemp()) {
-                    $('#hazard').addClass("ds-led-hazard-active");
-                } else {
-                    $('#hazard').removeClass("ds-led-hazard-active");
-                }
-
-                state_last = state;
-            }
+            let data = JSON.parse(e.data);
+            handleStatusMessage(data);
         };
 
-        // Config Socket /////////////////////////////////
+        // Config WebSocket Setup
+        setupConfigWebSocket();
 
-        ws_config.onopen = function () {
-            ws_config.send('GET');
-        };
+        // Control WebSocket Setup
+        setupControlWebSocket();
 
-        ws_config.onmessage = function (e) {
-            console.log(e.data);
-            x = JSON.parse(e.data);
-            temp_scale = x.temp_scale;
-            time_scale_slope = x.time_scale_slope;
-            time_scale_profile = x.time_scale_profile;
-            kwh_rate = x.kwh_rate;
-            currency_type = x.currency_type;
+        // Storage WebSocket Setup
+        setupStorageWebSocket();
 
-            if (temp_scale === "c") {
-                temp_scale_display = "C";
-            } else {
-                temp_scale_display = "F";
-            }
-
-
-            $('#act_temp_scale').html('º' + temp_scale_display);
-            $('#target_temp_scale').html('º' + temp_scale_display);
-
-            switch (time_scale_profile) {
-                case "s":
-                    time_scale_long = "Seconds";
-                    break;
-                case "m":
-                    time_scale_long = "Minutes";
-                    break;
-                case "h":
-                    time_scale_long = "Hours";
-                    break;
-            }
-        }
-
-        let e2 = $('#e2');
-
-        // Control Socket ////////////////////////////////
-
-        ws_control.onopen = function () {
-
-        };
-
-        ws_control.onmessage = function (e) {
-            //Data from Simulation
-            console.log("control socket has been opened")
-            console.log(e.data);
-            x = JSON.parse(e.data);
-            graph.live.data.push([x.runtime, x.temperature]);
-            graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
-
-        }
-
-        // Storage Socket ///////////////////////////////
-
-        ws_storage.onopen = function () {
-            ws_storage.send('GET');
-        };
-
-
-        ws_storage.onmessage = function (e) {
-            let message = JSON.parse(e.data);
-
-            if (message.resp) {
-                if (message.resp === "FAIL") {
-                    if (confirm('Overwrite?')) {
-                        message.force = true;
-                        console.log("Sending: " + JSON.stringify(message));
-                        ws_storage.send(JSON.stringify(message));
-                    }
-                }
-                return;
-            }
-
-            //the message is an array of profiles
-            //FIXME: this should be better, maybe a {"profiles": ...} container?
-            profiles = message;
-            //delete old options in select
-            e2.find('option').remove().end();
-            // check if current selected value is a valid profile name
-            // if not, update with first available profile name
-            let valid_profile_names = profiles.map(function (a) {
-                return a.name;
-            });
-            if (
-                valid_profile_names.length > 0 &&
-                $.inArray(selected_profile_name, valid_profile_names) === -1
-            ) {
-                selected_profile = 0;
-                selected_profile_name = valid_profile_names[0];
-            }
-
-            // fill select with new options from websocket
-            for (let i = 0; i < profiles.length; i++) {
-                let profile = profiles[i];
-                //console.log(profile.name);
-                e2.append('<option value="' + i + '">' + profile.name + '</option>');
-
-                if (profile.name === selected_profile_name) {
-                    selected_profile = i;
-                    e2.select2('val', i);
-                    updateProfile(i);
-                }
-            }
-        };
-
-        e2.select2(
-            {
-                placeholder: "Select Profile",
-                allowClear: true,
-                minimumResultsForSearch: -1
-            });
-
-        e2.on("change", function (e) {
-            updateProfile(e.val);
-        });
+        // Initialize Profile Selector
+        initializeProfileSelector();
     }
 });
+
+function handleStatusMessage(data) {
+    if (data.type === "backlog") {
+        if (data.profile) {
+            selected_profile_name = data.profile.name;
+            $.each(profiles, function (i, v) {
+                if (v.name === data.profile.name) {
+                    updateProfile(i);
+                    $('#e2').select2('val', i);
+                }
+            });
+        }
+
+        $.each(data.log, function (i, v) {
+            graph.live.data.push([v.runtime, v.temperature]);
+            graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+        });
+    }
+
+    if (state !== "EDIT") {
+        state = data.state;
+
+        if (state !== state_last) {
+            if (state_last === "RUNNING") {
+                $('#target_temp').html('---');
+                updateProgress(0);
+                $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>Run completed. New State: " + state + "</b>", {
+                    ele: 'body',
+                    type: 'success',
+                    offset: {from: 'top', amount: 250},
+                    align: 'center',
+                    width: 385,
+                    delay: 0,
+                    allow_dismiss: true,
+                    stackup_spacing: 10
+                });
+            }
+        }
+
+        if (state === "RUNNING") {
+            $("#nav_start").hide();
+            $("#nav_stop").show();
+
+            graph.live.data.push([data.runtime, data.temperature]);
+            graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+
+            let left = parseInt(data.total_time - data.runtime);
+            let eta = new Date(left * 1000).toISOString().substr(11, 8);
+
+            updateProgress(parseFloat(data.runtime) / parseFloat(data.total_time) * 100);
+            $('#state').html('<span class="glyphicon glyphicon-time" style="font-size: 22px; font-weight: normal"></span><span style="font-family: Digi; font-size: 40px;">' + eta + '</span>');
+            $('#target_temp').html(parseInt(data.target));
+            $('#cost').html(data.currency_type + parseFloat(data.cost).toFixed(2));
+        } else {
+            $("#nav_start").show();
+            $("#nav_stop").hide();
+            $('#state').html('<p class="ds-text">' + state + '</p>');
+        }
+
+        $('#act_temp').html(parseInt(data.temperature));
+        $('#heat').html('<div class="bar"></div>');
+
+        if (data.cool > 0.5) {
+            $('#cool').addClass("ds-led-cool-active");
+        } else {
+            $('#cool').removeClass("ds-led-cool-active");
+        }
+
+        if (data.temperature > hazardTemp()) {
+            $('#hazard').addClass("ds-led-hazard-active");
+        } else {
+            $('#hazard').removeClass("ds-led-hazard-active");
+        }
+
+        state_last = state;
+    }
+}
+
+function setupConfigWebSocket() {
+    ws_config.onopen = function () {
+        // Request initial config on WebSocket open
+        ws_config.send('GET');
+    };
+
+    ws_config.onmessage = function (e) {
+        console.log("Config data received");
+        console.log(e.data);
+
+        let configData = JSON.parse(e.data);
+        updateConfigDisplay(configData);
+    };
+
+    ws_config.onclose = function () {
+        console.log("Config WebSocket closed");
+        // Additional logic for WebSocket close, if needed
+    };
+
+    ws_config.onerror = function (error) {
+        console.log("Config WebSocket error:", error);
+        // Handle errors here
+    };
+}
+
+function updateConfigDisplay(configData) {
+    // Update temperature and time scale display based on received config
+    temp_scale = configData.temp_scale;
+    time_scale_slope = configData.time_scale_slope;
+    time_scale_profile = configData.time_scale_profile;
+    kwh_rate = configData.kwh_rate;
+    currency_type = configData.currency_type;
+
+    temp_scale_display = temp_scale === "c" ? "C" : "F";
+    $('#act_temp_scale').html('º' + temp_scale_display);
+    $('#target_temp_scale').html('º' + temp_scale_display);
+
+    switch (time_scale_profile) {
+        case "s":
+            time_scale_long = "Seconds";
+            break;
+        case "m":
+            time_scale_long = "Minutes";
+            break;
+        case "h":
+            time_scale_long = "Hours";
+            break;
+    }
+}
+
+function setupControlWebSocket() {
+    ws_control.onopen = function () {
+        console.log("Control Socket has been opened");
+        // Additional logic for WebSocket open, if needed
+    };
+
+    ws_control.onmessage = function (e) {
+        console.log("Control data received");
+        console.log(e.data);
+
+        let controlData = JSON.parse(e.data);
+        updateControlDisplay(controlData);
+    };
+
+    ws_control.onclose = function () {
+        console.log("Control WebSocket closed");
+        // Additional logic for WebSocket close, if needed
+    };
+
+    ws_control.onerror = function (error) {
+        console.log("Control WebSocket error:", error);
+        // Handle errors here
+    };
+}
+
+function updateControlDisplay(controlData) {
+    // Update the display based on control data
+    // For example, updating live graph data
+    graph.live.data.push([controlData.runtime, controlData.temperature]);
+    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+
+    // Additional logic to update UI based on control data
+    // ...
+}
+
+
+function setupStorageWebSocket() {
+    ws_storage.onopen = function () {
+        console.log("Storage WebSocket opened");
+        // Request initial profile data on WebSocket open
+        ws_storage.send('GET');
+    };
+
+    ws_storage.onmessage = function (e) {
+        console.log("Storage data received");
+        console.log(e.data);
+
+        let storageData = JSON.parse(e.data);
+        handleStorageMessage(storageData);
+    };
+
+    ws_storage.onclose = function () {
+        console.log("Storage WebSocket closed");
+        // Additional logic for WebSocket close, if needed
+    };
+
+    ws_storage.onerror = function (error) {
+        console.log("Storage WebSocket error:", error);
+        // Handle errors here
+    };
+}
+
+function handleStorageMessage(storageData) {
+    // Check if the message is a response or an error
+    if (storageData.resp && storageData.resp === "FAIL") {
+        if (confirm('Overwrite?')) {
+            storageData.force = true;
+            console.log("Sending: " + JSON.stringify(storageData));
+            ws_storage.send(JSON.stringify(storageData));
+        }
+        return;
+    }
+
+    // Handle profile data update
+    if (Array.isArray(storageData)) {
+        // Assuming storageData is an array of profiles
+        profiles = storageData;
+        updateProfileSelector();
+    }
+
+    // Additional logic to handle different types of storage messages
+    // ...
+}
+
+function updateProfileSelector() {
+    let e2 = $('#e2');
+    e2.find('option').remove().end();
+
+    let valid_profile_names = profiles.map(function (a) {
+        return a.name;
+    });
+
+    if (valid_profile_names.length > 0 &&
+        $.inArray(selected_profile_name, valid_profile_names) === -1) {
+        selected_profile = 0;
+        selected_profile_name = valid_profile_names[0];
+    }
+
+    profiles.forEach(function (profile, i) {
+        e2.append('<option value="' + i + '">' + profile.name + '</option>');
+        if (profile.name === selected_profile_name) {
+            selected_profile = i;
+            e2.select2('val', i);
+            updateProfile(i);
+        }
+    });
+}
+
+
+function initializeProfileSelector() {
+    let e2 = $('#e2');
+
+    // Initialize the profile selector with select2 plugin
+    e2.select2({
+        placeholder: "Select Profile",
+        allowClear: true,
+        minimumResultsForSearch: -1
+    });
+
+    // Event handler for when a new profile is selected
+    e2.on("change", function (e) {
+        updateProfile(e.val);
+    });
+
+    // Additional initialization logic, if needed
+    // ...
+}
+
+
+
