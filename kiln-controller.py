@@ -295,6 +295,9 @@ class KilnController:
         return json.dumps({"temp_scale": self.config.temp_scale,
                            "time_scale_slope": self.config.time_scale_slope,
                            "time_scale_profile": self.config.time_scale_profile,
+                           'kp': self.oven.pid.kp,
+                           'ki': self.oven.pid.ki,
+                           'kd': self.oven.pid.kd,
                            "kwh_rate": self.config.kwh_rate,
                            "currency_type": self.config.currency_type})
 
