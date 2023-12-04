@@ -572,15 +572,15 @@ function updateUIElements(data) {
     $('#act_temp').html(parseInt(data.temperature));
     $('#heat').html('<div class="bar"></div>');
 
-    updateCoolingIndicator(data.cool);
+    updateHeatingIndicator(data.heat);
     updateHazardIndicator(data.temperature);
 }
 
-function updateCoolingIndicator(coolValue) {
-    if (coolValue > 0.5) {
-        $('#cool').addClass("ds-led-cool-active");
+function updateHeatingIndicator(heatValue) {
+    if (heatValue > 0) {
+        $('#heat').addClass("ds-led-heat-active");
     } else {
-        $('#cool').removeClass("ds-led-cool-active");
+        $('#heat').removeClass("ds-led-heat-active");
     }
 }
 
