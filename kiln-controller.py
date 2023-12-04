@@ -123,19 +123,19 @@ def send_static(filename):
 
 def get_websocket_from_request():
     env = bottle.request.environ
-    wsock = env.get('wsgi.websocket')
-    if not wsock:
+    websocket = env.get('wsgi.websocket')
+    if not websocket:
         bottle.abort(400, 'Expected WebSocket request.')
-    return wsock
+    return websocket
 
 
 @app.route('/control')
 def handle_control():
-    wsock = get_websocket_from_request()
+    websocket = get_websocket_from_request()
     log.info("websocket (control) opened")
     while True:
         try:
-            message = wsock.receive()
+            message = websocket.receive()
             if message:
                 log.info("Received (control): %s" % message)
                 msgdict = json.loads(message)
@@ -159,7 +159,7 @@ def handle_control():
                     #    profile = Profile(profile_json)
                     # simulated_oven = Oven(simulate=True, time_step=0.05)
                     # simulation_watcher = OvenWatcher(simulated_oven)
-                    # simulation_watcher.add_observer(wsock)
+                    # simulation_watcher.add_observer(websocket)
                     # simulated_oven.run_profile(profile)
                     # simulation_watcher.record(profile)
                 elif msgdict.get("cmd") == "STOP":
@@ -173,59 +173,64 @@ def handle_control():
 
 @app.route('/storage')
 def handle_storage():
-    wsock = get_websocket_from_request()
-    log.info("websocket (storage) opened")
+    websocket = get_websocket_from_request()
+    log.info("WebSocket (storage) opened")
     while True:
         try:
-            message = wsock.receive()
+            message = websocket.receive()
             if not message:
                 break
-            log.debug("websocket (storage) received: %s" % message)
-
-            try:
-                log.info(f"message: {message}")
-                msgdict = json.loads(message)
-
-            except Exception as error:
-                log.error(f"Error loading message {error}")
-                msgdict = {}
+            log.debug("WebSocket (storage) received: %s" % message)
 
             if message == "GET":
                 log.info("GET command received")
-                wsock.send(get_profiles())
-            elif msgdict.get("cmd") == "DELETE":
-                log.info("DELETE command received")
-                profile_obj = msgdict.get('profile')
-                if delete_profile(profile_obj):
-                    msgdict["resp"] = "OK"
-                wsock.send(json.dumps(msgdict))
-                # wsock.send(get_profiles())
-            elif msgdict.get("cmd") == "PUT":
-                log.info("PUT command received")
-                profile_obj = msgdict.get('profile')
-                # force = msgdict.get('force', False)
-                force = True
-                if profile_obj:
-                    # del msgdict["cmd"]
-                    if save_profile(profile_obj, force):
-                        msgdict["resp"] = "OK"
-                    else:
-                        msgdict["resp"] = "FAIL"
-                    log.debug("websocket (storage) sent: %s" % message)
+                websocket.send(get_profiles())
+            else:
+                try:
+                    msgdict = json.loads(message)
+                    process_storage_command(msgdict, websocket)
+                except json.JSONDecodeError as error:
+                    log.error(f"JSON decoding error: {error}")
 
-                    wsock.send(json.dumps(msgdict))
-                    wsock.send(get_profiles())
         except WebSocketError:
             break
-    log.info("websocket (storage) closed")
+    log.info("WebSocket (storage) closed")
+
+
+def process_storage_command(msgdict, websocket):
+    cmd = msgdict.get("cmd")
+
+    if cmd == "DELETE":
+        handle_delete_command(msgdict, websocket)
+    elif cmd == "PUT":
+        handle_put_command(msgdict, websocket)
+
+
+def handle_delete_command(msgdict, websocket):
+    log.info("DELETE command received")
+    profile_obj = msgdict.get('profile')
+    response = "OK" if delete_profile(profile_obj) else "FAIL"
+    msgdict["resp"] = response
+    websocket.send(json.dumps(msgdict))
+
+
+def handle_put_command(msgdict, websocket):
+    log.info("PUT command received")
+    profile_obj = msgdict.get('profile')
+    force = True  # or extract from msgdict if necessary
+    response = "OK" if save_profile(profile_obj, force) else "FAIL"
+    msgdict["resp"] = response
+    log.debug(f"WebSocket (storage) sent: {json.dumps(msgdict)}")
+    websocket.send(json.dumps(msgdict))
+    websocket.send(get_profiles())
 
 
 @app.route('/config')
 def handle_config():
-    wsock = get_websocket_from_request()
+    websocket = get_websocket_from_request()
     log.info("websocket (config) opened")
     try:
-        wsock.send(get_config())
+        websocket.send(get_config())
     except WebSocketError:
         log.error("Error with Websocket in Config")
     log.info("websocket (config) closed")
@@ -233,13 +238,13 @@ def handle_config():
 
 @app.route('/status')
 def handle_status():
-    wsock = get_websocket_from_request()
-    oven_watcher.add_observer(wsock)
+    websocket = get_websocket_from_request()
+    oven_watcher.add_observer(websocket)
     log.info("websocket (status) opened")
     while True:
         try:
-            message = wsock.receive()
-            wsock.send("Your message was: %r" % message)
+            message = websocket.receive()
+            websocket.send("Your message was: %r" % message)
         except WebSocketError:
             break
     log.info("websocket (status) closed")
