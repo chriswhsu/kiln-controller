@@ -554,7 +554,7 @@ class PID():
             computed_output = 1
         else:
             # Compute integral component
-            integral_component = (error * time_delta * (1 / self.ki))
+            integral_component = (error * time_delta * self.ki)
             self.iterm += integral_component
 
             # Compute derivative component
