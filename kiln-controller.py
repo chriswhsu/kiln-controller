@@ -60,8 +60,8 @@ def handle_api():
 
     # run a kiln schedule
     if bottle.request.json['cmd'] == 'run':
-        wanted = bottle.request.json['profile']
-        log.info('api requested run of profile = %s' % wanted)
+        selected_profile = bottle.request.json['profile']
+        log.info('api requested run of profile = %s' % selected_profile)
 
         # start at a specific minute in the schedule
         # for restarting and skipping over early parts of a schedule
@@ -69,10 +69,10 @@ def handle_api():
         if 'startat' in bottle.request.json:
             startat = bottle.request.json['startat']
 
-        # get the wanted profile/kiln schedule
-        profile = find_profile(wanted)
+        # get the profile/kiln schedule
+        profile = find_profile(selected_profile)
         if profile is None:
-            return {"success": False, "error": "profile %s not found" % wanted}
+            return {"success": False, "error": "profile %s not found" % selected_profile}
 
         # FIXME juggling of json should happen in the Profile class
         profile_json = json.dumps(profile)
@@ -99,18 +99,18 @@ def handle_api():
     return {"success": True}
 
 
-def find_profile(wanted):
+def find_profile(selected_profile):
 
-    # given a wanted profile name, find it and return the parsed
+    # given a selected_profile profile name, find it and return the parsed
     # json profile object or None.
 
     # load all profiles from disk
     profiles = get_profiles()
     json_profiles = json.loads(profiles)
 
-    # find the wanted profile
+    # find the selected_profile profile
     for profile in json_profiles:
-        if profile['name'] == wanted:
+        if profile['name'] == selected_profile:
             return profile
     return None
 
@@ -131,6 +131,7 @@ def get_websocket_from_request():
 
 @app.route('/control')
 def handle_control():
+
     websocket = get_websocket_from_request()
     log.info("websocket (control) opened")
     while True:
