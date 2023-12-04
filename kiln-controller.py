@@ -10,7 +10,6 @@ from geventwebsocket import WebSocketError
 from lib.oven import SimulatedOven, RealOven, Profile
 from lib.ovenWatcher import OvenWatcher
 
-
 try:
     import config
 except ImportError as e:
@@ -111,13 +110,20 @@ class KilnController:
         self.log.debug(f"serving {filename}")
         return bottle.static_file(filename, root=os.path.join(self.script_dir, "public"))
 
+    @staticmethod
+    def get_websocket_from_request():
+        env = bottle.request.environ
+        websocket = env.get('wsgi.websocket')
+        if not websocket:
+            bottle.abort(400, 'Expected WebSocket request.')
+        return websocket
+
     def handle_control(self):
         # Implementation of control handling
-
         websocket = self.get_websocket_from_request()
         self.log.info("websocket (control) opened")
-        while True:
-            try:
+        try:
+            while True:
                 message = websocket.receive()
                 if message:
                     self.log.info("Received (control): %s" % message)
@@ -148,17 +154,18 @@ class KilnController:
                     elif msgdict.get("cmd") == "STOP":
                         self.log.info("Stop command received")
                         self.oven.abort_run()
-            except WebSocketError as wse:
-                self.log.error(wse)
-                break
-        self.log.info("websocket (control) closed")
+        except WebSocketError as wse:
+            self.log.error(wse)
+        finally:
+            websocket.close()
+            self.log.info("websocket (control) closed")
 
     def handle_storage(self):
         # Implementation of storage handling
         websocket = self.get_websocket_from_request()
         self.log.info("WebSocket (storage) opened")
-        while True:
-            try:
+        try:
+            while True:
                 message = websocket.receive()
                 if not message:
                     break
@@ -174,32 +181,38 @@ class KilnController:
                     except json.JSONDecodeError as error:
                         self.log.error(f"JSON decoding error: {error}")
 
-            except WebSocketError:
-                break
-        self.log.info("WebSocket (storage) closed")
+        except WebSocketError:
+            self.log.error(f"Error with WebSocket in storage: {error}")
+        finally:
+            websocket.close()
+            self.log.info("WebSocket (storage) closed")
 
     def handle_config(self):
-        # Implementation of config handling
         websocket = self.get_websocket_from_request()
         self.log.info("websocket (config) opened")
         try:
             websocket.send(self.get_config())
-        except WebSocketError:
-            self.log.error("Error with Websocket in Config")
-        self.log.info("websocket (config) closed")
+        except WebSocketError as error:
+            self.log.error(f"Error with WebSocket in Config: {error}")
+        finally:
+            websocket.close()
+            self.log.info("websocket (config) closed")
 
     def handle_status(self):
         # Implementation of status handling
         websocket = self.get_websocket_from_request()
         self.oven_watcher.add_observer(websocket)
         self.log.info("websocket (status) opened")
-        while True:
-            try:
+        try:
+            while True:
                 message = websocket.receive()
                 websocket.send("Your message was: %r" % message)
-            except WebSocketError:
-                break
-        self.log.info("websocket (status) closed")
+        except WebSocketError as error:
+            self.log.error(f"Error with WebSocket in status: {error}")
+        finally:
+            websocket.close()
+            self.log.info("websocket (status) closed")
+
 
     def run(self):
         ip = self.config.ip_address
@@ -222,13 +235,6 @@ class KilnController:
             if profile['name'] == selected_profile:
                 return profile
         return None
-
-    def get_websocket_from_request(self):
-        env = bottle.request.environ
-        websocket = env.get('wsgi.websocket')
-        if not websocket:
-            bottle.abort(400, 'Expected WebSocket request.')
-        return websocket
 
     def process_storage_command(self, msgdict, websocket):
         cmd = msgdict.get("cmd")
