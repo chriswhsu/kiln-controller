@@ -75,6 +75,9 @@ class TempSensor(threading.Thread):
         self.time_step = config.sensor_time_wait
         self.noConnection = self.shortToGround = self.shortToVCC = self.unknownError = False
 
+    def run(self):
+        pass
+
 
 class TempSensorSimulated(TempSensor):
     # not much here, just need to be able to set the temperature
@@ -394,6 +397,8 @@ class SimulatedOven(Oven):
 
     def create_temp_sensor(self):
         self.temp_sensor = TempSensorSimulated()
+        # Doesn't really do anything, but start anyways.
+        self.temp_sensor.start()
 
 
     def apply_heat(self, pid):
@@ -450,6 +455,8 @@ class RealOven(Oven):
 
     def create_temp_sensor(self):
         self.temp_sensor = TempSensorReal()
+        self.temp_sensor.start()
+
 
     def reset(self):
         super().reset()
