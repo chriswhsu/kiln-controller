@@ -199,10 +199,7 @@ class Oven(threading.Thread):
         self.pid = PID(ki=config.pid_ki, kd=config.pid_kd, kp=config.pid_kp)
 
     def create_temp_sensor(self):
-        if config.simulate:
-            self.temp_sensor = TempSensorSimulated()
-        else:
-            self.temp_sensor = TempSensorReal()
+        pass
 
     def run_profile(self, profile, startat=0):
         self.reset()
@@ -394,6 +391,10 @@ class SimulatedOven(Oven):
         self.start()
         log.info("SimulatedOven started")
 
+    def create_temp_sensor(self):
+        self.temp_sensor = TempSensorSimulated()
+
+
     def apply_heat(self, pid):
         self.heat = max(0.0, round(float(self.time_step * pid), 2))
 
@@ -445,6 +446,9 @@ class RealOven(Oven):
 
         # start thread
         self.start()
+
+    def create_temp_sensor(self):
+        self.temp_sensor = TempSensorReal()
 
     def reset(self):
         super().reset()
