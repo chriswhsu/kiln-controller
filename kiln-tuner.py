@@ -6,6 +6,7 @@ import time
 import argparse
 from lib.oven import RealOven, SimulatedOven
 
+
 def recordprofile(csvfile, targettemp):
     try:
         sys.dont_write_bytecode = True
@@ -19,8 +20,8 @@ def recordprofile(csvfile, targettemp):
 
     # open the file to log data to
     f = open(csvfile, 'w')
-    csvout = csv.writer(f)
-    csvout.writerow(['time', 'temperature'])
+    csv_out = csv.writer(f)
+    csv_out.writerow(['time', 'temperature'])
 
     # construct the oven
     if config.simulate:
@@ -44,7 +45,7 @@ def recordprofile(csvfile, targettemp):
         while True:
             temp = oven.temperature + config.thermocouple_offset
 
-            csvout.writerow([time.time(), temp])
+            csv_out.writerow([time.time(), temp])
             f.flush()
 
             if stage == 'heating':
