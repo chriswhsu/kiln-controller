@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
-import os
 import sys
 import csv
 import time
 import argparse
-
+from lib.oven import RealOven, SimulatedOven
 
 def recordprofile(csvfile, targettemp):
     try:
@@ -17,11 +16,6 @@ def recordprofile(csvfile, targettemp):
         print("Could not import config file.")
         print("Copy config.py.EXAMPLE to config.py and adapt it for your setup.")
         exit(1)
-
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    sys.path.insert(0, script_dir + '/lib/')
-
-    from lib.oven import RealOven, SimulatedOven
 
     # open the file to log data to
     f = open(csvfile, 'w')
@@ -48,8 +42,7 @@ def recordprofile(csvfile, targettemp):
             oven.output.heat(0)
 
         while True:
-            temp = oven.board.temp_sensor.temperature + \
-                   config.thermocouple_offset
+            temp = oven.temperature + config.thermocouple_offset
 
             csvout.writerow([time.time(), temp])
             f.flush()
@@ -162,7 +155,7 @@ def calculate(filename, tangentdivisor, showplot):
 
     # output to the user
     print("pid_kp = %s" % (Kp))
-    print("pid_ki = %s" % (1 / Ki))
+    print("pid_ki = %s" % (Ki))
     print("pid_kd = %s" % (Kd))
 
     if showplot:

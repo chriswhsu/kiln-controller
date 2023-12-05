@@ -19,15 +19,7 @@ class DupLogger:
         self.log.addFilter(self.filter)
 
     def filter(self, record):
-        """
-        Filters the log record for duplicates.
-
-        Args:
-            record: The log record to be filtered.
-
-        Returns:
-            bool: True if the message is not a duplicate, False otherwise.
-        """
+        # Filters the log record for duplicates.
         if record.msg not in self.msgs:
             self.msgs.add(record.msg)
             return True
