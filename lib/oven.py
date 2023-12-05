@@ -173,6 +173,7 @@ class Oven(threading.Thread):
 
     def __init__(self):
         threading.Thread.__init__(self)
+        self.ovenwatcher = None
         self.startat = 0
         self.pid = PID(ki=config.pid_ki, kd=config.pid_kd, kp=config.pid_kp)
         # heating or not?
@@ -334,7 +335,8 @@ class Oven(threading.Thread):
         return True
 
     def automatic_restart(self):
-        with open(config.automatic_restart_state_file) as infile: d = json.load(infile)
+        with open(config.automatic_restart_state_file) as infile:
+            d = json.load(infile)
         startat = d["runtime"] / 60
         filename = "%s.json" % (d["profile"])
         profile_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'storage', 'profiles', filename))
@@ -377,16 +379,19 @@ class Oven(threading.Thread):
 class SimulatedOven(Oven):
 
     def __init__(self):
-        self.t_env = config.sim_t_env
+        self.element_to_oven_heat_transfer = None
+        self.heat_transfer_rate_to_environ = None
+        self.heat_energy = None
+        self.environ_temp = config.sim_t_env
         self.elem_heat_capacity = config.element_heat_capacity
         self.c_oven = config.oven_heat_capacity
         self.p_heat = config.oven_heating_power
-        self.res_oven = config.thermal_res_oven_to_environ
-        self.res_element = config.thermal_res_element_to_oven
+        self.oven_resistance = config.thermal_res_oven_to_environ
+        self.element_resistance = config.thermal_res_element_to_oven
 
         # set temps to the temp of the surrounding environment
-        self.t = self.t_env  # deg F temp of oven
-        self.t_h = self.t_env  # deg F temp of heating element
+        self.oven_temp = self.environ_temp  # deg F temp of oven
+        self.element_temperature = self.environ_temp  # deg F temp of heating element
 
         super().__init__()
 
@@ -396,9 +401,8 @@ class SimulatedOven(Oven):
 
     def create_temp_sensor(self):
         self.temp_sensor = TempSensorSimulated()
-        # Doesn't really do anything, but start anyways.
+        # Doesn't really do anything, but start anyway.
         self.temp_sensor.start()
-
 
     def apply_heat(self, pid):
         self.heat = max(0.0, round(float(self.time_step * pid), 2))
@@ -407,10 +411,10 @@ class SimulatedOven(Oven):
         self.temp_changes()
 
         log.info("simulation: -> %dW heater: %.0f -> %dW oven: %.0f -> %dW env" % (int(self.p_heat * pid),
-                                                                                   self.t_h,
-                                                                                   int(self.p_ho),
-                                                                                   self.t,
-                                                                                   int(self.p_env)))
+                                                                                   self.element_temperature,
+                                                                                   int(self.element_to_oven_heat_transfer),
+                                                                                   self.oven_temp,
+                                                                                   int(self.heat_transfer_rate_to_environ)))
 
         time.sleep(self.time_step)
 
@@ -421,23 +425,23 @@ class SimulatedOven(Oven):
     def heating_energy(self, pid):
         # using pid here simulates the element being on for
         # only part of the time_step
-        self.Q_h = self.p_heat * self.time_step * pid
+        self.heat_energy = self.p_heat * self.time_step * pid
 
     def temp_changes(self):
         # temperature change of heat element by heating
-        self.t_h += self.Q_h / self.elem_heat_capacity
+        self.element_temperature += self.heat_energy / self.elem_heat_capacity
 
         # energy flux heat_el -> oven
-        self.p_ho = (self.t_h - self.t) / self.res_element
+        self.element_to_oven_heat_transfer = (self.element_temperature - self.oven_temp) / self.element_resistance
 
         # temperature change of oven and heating element
-        self.t += self.p_ho * self.time_step / self.c_oven
-        self.t_h -= self.p_ho * self.time_step / self.elem_heat_capacity
+        self.oven_temp += self.element_to_oven_heat_transfer * self.time_step / self.c_oven
+        self.element_temperature -= self.element_to_oven_heat_transfer * self.time_step / self.elem_heat_capacity
 
         # temperature change of oven by cooling to environment
-        self.p_env = (self.t - self.t_env) / self.res_oven
-        self.t -= self.p_env * self.time_step / self.c_oven
-        self.temperature = round(self.t, 2)
+        self.heat_transfer_rate_to_environ = (self.oven_temp - self.environ_temp) / self.oven_resistance
+        self.oven_temp -= self.heat_transfer_rate_to_environ * self.time_step / self.c_oven
+        self.temperature = round(self.oven_temp, 2)
 
 
 class RealOven(Oven):
@@ -455,7 +459,6 @@ class RealOven(Oven):
     def create_temp_sensor(self):
         self.temp_sensor = TempSensorReal()
         self.temp_sensor.start()
-
 
     def reset(self):
         super().reset()
@@ -479,7 +482,7 @@ class RealOven(Oven):
             self.output.cool(heat_off)
 
 
-class Profile():
+class Profile:
     def __init__(self, json_data):
         obj = json.loads(json_data)
         self.name = obj["name"]
@@ -488,33 +491,38 @@ class Profile():
     def get_duration(self):
         return max([t for (t, x) in self.data])
 
-    def get_surrounding_points(self, time):
-        if time > self.get_duration():
-            return (None, None)
+    def get_surrounding_points(self, runtime):
+        # If runtime exceeds the total duration, return None for both points
+        if runtime > self.get_duration():
+            return None, None
 
+        # Initialize variables for the previous and next points
         prev_point = None
         next_point = None
 
+        # Iterate through the data points
         for i in range(len(self.data)):
-            if time < self.data[i][0]:
-                prev_point = self.data[i - 1]
-                next_point = self.data[i]
-                break
+            # Find the point where runtime falls between two data points
+            if runtime < self.data[i][0]:
+                prev_point = self.data[i - 1]  # The point before the runtime
+                next_point = self.data[i]  # The point after the runtime
+                break  # Stop the loop once the correct points are found
 
-        return (prev_point, next_point)
+        # Return the previous and next points
+        return prev_point, next_point
 
-    def get_target_temperature(self, time):
-        if time > self.get_duration():
+    def get_target_temperature(self, runtime):
+        if runtime > self.get_duration():
             return 0
 
-        (prev_point, next_point) = self.get_surrounding_points(time)
+        (prev_point, next_point) = self.get_surrounding_points(runtime)
 
         incl = float(next_point[1] - prev_point[1]) / float(next_point[0] - prev_point[0])
-        temp = prev_point[1] + (time - prev_point[0]) * incl
+        temp = prev_point[1] + (runtime - prev_point[0]) * incl
         return temp
 
 
-class PID():
+class PID:
     def __init__(self, ki=1, kp=1, kd=1):
         # Initialize PID coefficients
         self.ki = ki  # Integral coefficient
@@ -533,8 +541,8 @@ class PID():
         # Compute the PID output for given setpoint and current value (current_value)
 
         # Calculate time elapsed since last computation
-        now = datetime.datetime.now()
-        time_delta = round((now - self.last_now).total_seconds())
+        right_now = datetime.datetime.now()
+        time_delta = round((right_now - self.last_now).total_seconds())
         # Ensure time_delta is not zero to avoid division by zero
         time_delta = max(float(time_delta), 0.0001)
 
@@ -571,7 +579,7 @@ class PID():
 
         # Update last error and time for next iteration
         self.last_error = error
-        self.last_now = now
+        self.last_now = right_now
 
         # Ensure no negative output (active cooling disabled)
         if computed_output < 0:
@@ -579,7 +587,7 @@ class PID():
 
         # Update PID statistics
         self.pidstats = {
-            'time': time.mktime(now.timetuple()),
+            'time': time.mktime(right_now.timetuple()),
             'time_delta': time_delta,
             'setpoint': setpoint,
             'current_value': current_value,
