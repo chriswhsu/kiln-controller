@@ -131,7 +131,6 @@ class TempSensorReal(TempSensor):
                 self.ok_count = 0
                 self.bad_stamp = time.time()
 
-            log.info("get thermocouple")
             temp = self.thermocouple.get()
             self.noConnection = self.thermocouple.noConnection
             self.shortToGround = self.thermocouple.shortToGround
