@@ -191,7 +191,7 @@ class KilnController:
                     except json.JSONDecodeError as error:
                         self.log.error(f"JSON decoding error: {error}")
 
-        except WebSocketError:
+        except WebSocketError as error:
             self.log.error(f"Error with WebSocket in storage: {error}")
         finally:
             websocket.close()
