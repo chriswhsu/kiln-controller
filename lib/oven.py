@@ -95,7 +95,7 @@ class TempSensorReal(TempSensor):
 
         if config.max31855:
             log.info("init MAX31855")
-            from max31855 import MAX31855
+            from lib.max31855 import MAX31855
             self.thermocouple = MAX31855(config.gpio_sensor_cs,
                                          config.gpio_sensor_clock,
                                          config.gpio_sensor_data,
@@ -103,7 +103,7 @@ class TempSensorReal(TempSensor):
 
         if config.max31856:
             log.info("init MAX31856")
-            from max31856 import MAX31856
+            from lib.max31856 import MAX31856
             software_spi = {'cs': config.gpio_sensor_cs,
                             'clk': config.gpio_sensor_clock,
                             'do': config.gpio_sensor_data,
