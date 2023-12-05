@@ -31,18 +31,13 @@ class KilnController:
         self.app = bottle.Bottle()
         self.config = config
 
-        if config.simulate:
-            self.log.info("this is a simulation")
-            self.oven = SimulatedOven()
-        else:
-            self.log.info("this is a real kiln")
-            self.oven = RealOven()
-
+        self.oven = SimulatedOven()
+        # Initialize with the simulated oven, need to have the oven_watcher running
+        # before a run starts.
+        # Swap out later when actual run starts.
         self.oven_watcher = OvenWatcher(self.oven)
         self.oven.set_ovenwatcher(self.oven_watcher)
-        self.setup_routes()
 
-    def setup_routes(self):
         self.app.route('/')(self.index)
         self.app.get('/api/stats')(self.handle_api_stats)
         self.app.post('/api')(self.handle_api)
@@ -119,7 +114,6 @@ class KilnController:
         return websocket
 
     def handle_control(self):
-        # Implementation of control handling
         websocket = self.get_websocket_from_request()
         self.log.info("websocket (control) opened")
         try:
@@ -128,37 +122,53 @@ class KilnController:
                 if message:
                     self.log.info("Received (control): %s" % message)
                     msgdict = json.loads(message)
+
                     if msgdict.get("cmd") == "RUN":
                         self.log.info("RUN command received")
-                        profile_obj = msgdict.get('profile')
-                        if profile_obj:
-                            profile_json = json.dumps(profile_obj)
-                            profile = Profile(profile_json)
-                            self.oven.run_profile(profile)
-                            self.oven_watcher.record(profile)
-                        else:
-                            self.log.error("No profile defined.  Aborting.")
-                            bottle.abort()
+                        # Reinitialize a real oven
+                        self.oven = RealOven()
+                        self.log.info("Real oven created")
+                        self.oven_watcher.set_oven(self.oven)  # Update the oven_watcher with the real oven
+                        self.oven.set_ovenwatcher(self.oven_watcher)
+
+                        self.process_run_command(msgdict)
 
                     elif msgdict.get("cmd") == "SIMULATE":
                         self.log.info("SIMULATE command received")
-                        # profile_obj = msgdict.get('profile')
-                        # if profile_obj:
-                        #    profile_json = json.dumps(profile_obj)
-                        #    profile = Profile(profile_json)
-                        # simulated_oven = Oven(simulate=True, time_step=0.05)
-                        # simulation_watcher = OvenWatcher(simulated_oven)
-                        # simulation_watcher.add_observer(websocket)
-                        # simulated_oven.run_profile(profile)
-                        # simulation_watcher.record(profile)
+                        # Reinitialize the simulated oven and set the oven_watcher
+                        self.log.info("Simulated oven created")
+                        self.oven = SimulatedOven()
+                        self.oven_watcher.set_oven(self.oven)
+                        self.oven.set_ovenwatcher(self.oven_watcher)
+
+                        self.process_run_command(msgdict)
+
                     elif msgdict.get("cmd") == "STOP":
                         self.log.info("Stop command received")
-                        self.oven.abort_run()
+                        if self.oven:
+                            self.oven.abort_run()
+                        else:
+                            self.log.error("No oven initialized. Aborting.")
+                            bottle.abort()
+
+                    # Add additional command handling here if necessary
+
         except WebSocketError as wse:
             self.log.error(wse)
         finally:
             websocket.close()
             self.log.info("websocket (control) closed")
+
+    def process_run_command(self, msgdict):
+        profile_obj = msgdict.get('profile')
+        if profile_obj:
+            profile_json = json.dumps(profile_obj)
+            profile = Profile(profile_json)
+            self.oven.run_profile(profile)
+            self.oven_watcher.record(profile)
+        else:
+            self.log.error("No profile defined. Aborting.")
+            bottle.abort()
 
     def handle_storage(self):
         # Implementation of storage handling
@@ -199,9 +209,12 @@ class KilnController:
             self.log.info("websocket (config) closed")
 
     def handle_status(self):
+        logging.info("Handle Status Initialized")
         # Implementation of status handling
         websocket = self.get_websocket_from_request()
-        self.oven_watcher.add_observer(websocket)
+        if self.oven_watcher:
+            self.oven_watcher.add_observer(websocket)
+            logging.info("OvenWatcher connected to websocket.")
         self.log.info("websocket (status) opened")
         try:
             while True:
@@ -212,7 +225,6 @@ class KilnController:
         finally:
             websocket.close()
             self.log.info("websocket (status) closed")
-
 
     def run(self):
         ip = self.config.ip_address
@@ -295,9 +307,9 @@ class KilnController:
         return json.dumps({"temp_scale": self.config.temp_scale,
                            "time_scale_slope": self.config.time_scale_slope,
                            "time_scale_profile": self.config.time_scale_profile,
-                           'kp': self.oven.pid.kp,
-                           'ki': self.oven.pid.ki,
-                           'kd': self.oven.pid.kd,
+                           'kp': config.pid_kp,
+                           'ki': config.pid_ki,
+                           'kd': config.pid_kd,
                            "kwh_rate": self.config.kwh_rate,
                            "currency_type": self.config.currency_type})
 

@@ -27,6 +27,9 @@ class OvenWatcher(threading.Thread):
     # out more than N minutes, don't restart
     # FIXME - this should not be done in the Watcher, but in the Oven class
 
+    def set_oven(self, oven):
+        self.oven = oven
+
     def run(self):
         while True:
             oven_state = self.oven.get_state()
