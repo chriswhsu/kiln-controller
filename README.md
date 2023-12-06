@@ -10,14 +10,14 @@ Turns a Raspberry Pi into an inexpensive, web-enabled kiln controller.
             
 **WARNING** This project involves **high temperatures**. 
  
- Do not run the kiln-controller unattended when attatched to a real kiln.
+ Do not run the kiln-controller unattended when attached to a real kiln.
 
 ## Features
 
  * Visually design and adjust kiln schedules
  * Extended Operation Capability - run continuously for extended durations
  * Multi-Device Monitoring - check status on computers, tablets, etc.
- * Pre-Run & Real-Time Cost Estimation for Firing
+ * Pre-Run & Real-Time Cost Estimation for Kiln runs
  * NIST-Linearized Conversion for Precise K-Type Thermocouple Readings
  * Customizable PID Parameters for Kiln Tuning
  * Temperature Monitoring Post-Schedule Completion
@@ -28,7 +28,7 @@ Turns a Raspberry Pi into an inexpensive, web-enabled kiln controller.
  * Adaptive Schedule Management for Slow Heating Conditions
  * Integral Wind-Up Prevention for Off-Set Point Temperatures
  * Automatic Restart Functionality in Power Outages or Similar Events
- * Integrated Wemo Switch Control for Over-Temperature Safety
+ * Integrated Wemo Switch Control for Over-Temperature Safety Kill Switch
 
 
 **Run Kiln Schedule**
@@ -62,7 +62,8 @@ My controller plugs into the wall, and the kiln plugs into the controller.
 
 ![Image](https://github.com/jbruce12000/kiln-controller/blob/master/public/assets/images/schematic.png)
 
-*Note: I tried to power my ssr directly using a gpio pin on a RaspPi 4, and it *did* work. ymmv.
+*Note: Using a RaspPi 4, I was able to power my ssr directly using a gpio pin on a RaspPi 4.
+       No transistor was required.
 
 ## Software 
 
