@@ -3,23 +3,29 @@ Kiln Controller
 
 Turns a Raspberry Pi into an inexpensive, web-enabled kiln controller.
 
+**WARNING** This project involves **high voltages** and **high currents**. 
+            Do not attempt this project if you do not have prior experience working with electric circuits especially 120V / 240V circuits.
+            Please make sure that anything you build conforms to local electrical codes and aligns with industry best practices.
+            
+**WARNING** This project involves **high temperatures**. Please do not run the kiln-controller unattended.
+
 ## Features
 
-  * easy to create new kiln schedules and edit / modify existing schedules
-  * no limit to runtime - fire for days if you want
-  * view status from multiple devices at once - computer, tablet etc
-  * real-time firing cost estimate
-  * NIST-linearized conversion for accurate K type thermocouple readings
-  * supports PID parameters you tune to your kiln
-  * monitors temperature in kiln after schedule has ended
-  * api for starting and stopping at any point in a schedule
-  * supports MAX31856 and MAX31855 thermocouple boards
-  * support for K, J, N, R, S, T, E, or B type thermocouples
-  * accurate simulation
-  * support for shifting schedule when kiln cannot heat quickly enough
-  * prevents integral wind-up when temperatures not near the set point
-  * automatic restarts if there is a power outage or other event
-  * added support to control a wemo switch as a failsafe / kill-switch in the event of over-temp
+ * Visually design and adjust kiln schedules
+ * Extended Operation Capability - run continuously for extended durations
+ * Multi-Device Monitoring - check status on computers, tablets, etc.
+ * Real-Time Cost Estimation for Firing
+ * NIST-Linearized Conversion for Precise K-Type Thermocouple Readings
+ * Customizable PID Parameters for Kiln Tuning
+ * Temperature Monitoring Post-Schedule Completion
+ * API for Flexible Schedule Start and Stop Control
+ * Compatibility with MAX31856 and MAX31855 Thermocouple Boards
+ * Support for Various Thermocouple Types: K, J, N, R, S, T, E, B
+ * Accurate Kiln Operation Simulation
+ * Adaptive Schedule Management for Slow Heating Conditions
+ * Integral Wind-Up Prevention for Off-Set Point Temperatures
+ * Automatic Restart Functionality in Power Outages or Similar Events
+ * Integrated Wemo Switch Control for Over-Temperature Safety
 
 
 **Run Kiln Schedule**
