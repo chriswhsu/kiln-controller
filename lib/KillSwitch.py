@@ -14,6 +14,7 @@ class KillSwitch:
         devices = pywemo.discover_devices()
         # look for device based upon configured name, but assign none if no match.
         self.wemo_device = next((dev for dev in devices if dev.name == config.wemo_device_name), None)
+        log.info("Kill switch initialized.")
 
         if self.wemo_device is None:
             log.error("Configured Kill Switch Not Found, don't continue.")
