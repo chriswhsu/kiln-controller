@@ -14,7 +14,7 @@ Turns a Raspberry Pi into an inexpensive, web-enabled kiln controller.
  * Visually design and adjust kiln schedules
  * Extended Operation Capability - run continuously for extended durations
  * Multi-Device Monitoring - check status on computers, tablets, etc.
- * Real-Time Cost Estimation for Firing
+ * Pre-Run & Real-Time Cost Estimation for Firing
  * NIST-Linearized Conversion for Precise K-Type Thermocouple Readings
  * Customizable PID Parameters for Kiln Tuning
  * Temperature Monitoring Post-Schedule Completion
