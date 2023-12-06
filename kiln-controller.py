@@ -41,7 +41,7 @@ class KilnController:
         self.app.route('/')(self.index)
         self.app.get('/api/stats')(self.handle_api_stats)
         self.app.post('/api')(self.handle_api)
-        self.app.route('/pico_reflow/:filename#.*#')(self.send_static)
+        self.app.route('/kiln_control/:filename#.*#')(self.send_static)
         self.app.route('/control')(self.handle_control)
         self.app.route('/storage')(self.handle_storage)
         self.app.route('/config')(self.handle_config)
@@ -49,7 +49,7 @@ class KilnController:
 
     @staticmethod
     def index():
-        return bottle.redirect('/pico_reflow/index.html')
+        return bottle.redirect('/kiln_control/index.html')
 
     def handle_api_stats(self):
         self.log.info("/api/stats command received")
