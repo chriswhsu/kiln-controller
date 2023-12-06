@@ -5,8 +5,8 @@ Turns a Raspberry Pi into an inexpensive, web-enabled kiln controller.
 
 **WARNING** This project involves **high voltages** and **high currents**. 
 
-            Do not attempt this project if you do not have prior experience working with electric circuits especially 120V / 240V circuits.
-            Please make sure that anything you build conforms to local electrical codes and aligns with industry best practices.
+ Do not attempt this project if you do not have prior experience working with electric circuits especially 120V / 240V circuits.
+ Please make sure that anything you build conforms to local electrical codes and aligns with industry best practices.
             
 **WARNING** This project involves **high temperatures**. Please do not run the kiln-controller unattended.
 
