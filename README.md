@@ -10,7 +10,7 @@ Turns a Raspberry Pi into an inexpensive, web-enabled kiln controller.
             
 **WARNING** This project involves **high temperatures**. 
  
- Do not run the kiln-controller unattended.
+ Do not run the kiln-controller unattended when attatched to a real kiln.
 
 ## Features
 
