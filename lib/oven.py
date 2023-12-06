@@ -175,10 +175,7 @@ class Oven(threading.Thread):
 
     def __init__(self):
         threading.Thread.__init__(self)
-        if config.kill_switch_enabled:
-            self.kill_switch = KillSwitch()
-        else:
-            self.kill_switch = None
+        self.kill_switch = None
         self.ovenwatcher = None
         self.startat = 0
         self.pid = PID(ki=config.pid_ki, kd=config.pid_kd, kp=config.pid_kp)
@@ -196,6 +193,9 @@ class Oven(threading.Thread):
         self.temperature = 0
         self.time_step = config.sensor_time_wait
         self.create_temp_sensor()
+
+        # start thread
+        self.start()
 
     def _common_reset_abort_logic(self, state):
         self.cost = 0
@@ -406,11 +406,10 @@ class SimulatedOven(Oven):
         self.oven_temp = self.environ_temp  # deg F temp of oven
         self.element_temperature = self.environ_temp  # deg F temp of heating element
 
+        log.info("SimulatedOven starting")
+
         super().__init__()
 
-        # start thread
-        self.start()
-        log.info("SimulatedOven started")
 
     def create_temp_sensor(self):
         self.temp_sensor = TempSensorSimulated()
@@ -460,14 +459,16 @@ class SimulatedOven(Oven):
 class RealOven(Oven):
 
     def __init__(self):
+
+        if config.kill_switch_enabled:
+            self.kill_switch = KillSwitch()
+
         self.output = Output()
         self.complete()
 
         # call parent init
+        log.info("Starting real oven...")
         Oven.__init__(self)
-
-        # start thread
-        self.start()
 
     def create_temp_sensor(self):
         self.temp_sensor = TempSensorReal()
