@@ -19,6 +19,7 @@ Turns a Raspberry Pi into an inexpensive, web-enabled kiln controller.
   * support for shifting schedule when kiln cannot heat quickly enough
   * prevents integral wind-up when temperatures not near the set point
   * automatic restarts if there is a power outage or other event
+  * added support to control a wemo switch as a failsafe / kill-switch in the event of over-temp
 
 
 **Run Kiln Schedule**
@@ -52,7 +53,7 @@ My controller plugs into the wall, and the kiln plugs into the controller.
 
 ![Image](https://github.com/jbruce12000/kiln-controller/blob/master/public/assets/images/schematic.png)
 
-*Note: I tried to power my ssr directly using a gpio pin, but it did not work. My ssr required 25ma to switch and rpi's gpio could only provide 16ma. YMMV.*
+*Note: I tried to power my ssr directly using a gpio pin on a RaspPi 4, and it *did* work. ymmv.
 
 ## Software 
 
@@ -109,7 +110,7 @@ of your PI and the port defined in config.py (default 8081).
 
 ### Simulation
 
-In config.py, set **simulate=True**. Start the server and select a profile and click Start. Simulations run at near real time.
+Start the server and select a profile and click Simulate. Simulations run at near real time.
 
 ### Watcher
 
