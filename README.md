@@ -19,6 +19,7 @@ Turns a Raspberry Pi into an inexpensive, web-enabled kiln controller.
   * support for shifting schedule when kiln cannot heat quickly enough
   * prevents integral wind-up when temperatures not near the set point
   * automatic restarts if there is a power outage or other event
+  * added support to control a wemo switch as a failsafe / kill-switch in the event of over-temp
 
 
 **Run Kiln Schedule**
