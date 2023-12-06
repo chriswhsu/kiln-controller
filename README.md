@@ -110,7 +110,7 @@ of your PI and the port defined in config.py (default 8081).
 
 ### Simulation
 
-In config.py, set **simulate=True**. Start the server and select a profile and click Start. Simulations run at near real time.
+Start the server and select a profile and click Simulate. Simulations run at near real time.
 
 ### Watcher
 
