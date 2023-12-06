@@ -426,64 +426,50 @@ function getOptions() {
     };
 }
 
-$(document).ready(function () {
-    // Check for WebSocket support
-    if (!("WebSocket" in window)) {
-        $('#chatLog, input, button, #examples').fadeOut("fast");
-        $('<p>Oh no, you need a browser that supports WebSockets. How about <a href="https://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');
-    } else {
-        // Status WebSocket Setup
-        ws_status.onopen = function () {
-            console.log("Status Socket has been opened");
-            $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span>Getting data from server", {
-                ele: 'body',
-                type: 'success',
-                offset: {from: 'top', amount: 250},
-                align: 'center',
-                width: 385,
-                delay: 2500,
-                allow_dismiss: true,
-                stackup_spacing: 10
-            });
-        };
+function reconnectWebSocket(wsName) {
+    console.log(`Lost connection to ${wsName}. Reloading the page...`);
+    // Optionally, you can use a delay before the refresh
+    setTimeout(function () {
+        location.reload();
+    }, 1000); // Refresh the page after 1 second
+}
 
-        ws_status.onclose = function () {
-            $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>ERROR 1:</b><br/>Status Websocket not available", {
-                ele: 'body',
-                type: 'error',
-                offset: {from: 'top', amount: 250},
-                align: 'center',
-                width: 385,
-                delay: 5000,
-                allow_dismiss: true,
-                stackup_spacing: 10
-            });
-        };
+// Function to initialize a WebSocket with event handlers
+function initializeWebSocket(wsName) {
+    window[wsName].onopen = handleStatusOpen;
+    window[wsName].onmessage = handleStatusMessage;
+    window[wsName].onerror = handleStatusError;
 
-        ws_status.onmessage = function (e) {
-            console.log("received status data");
-            console.log(e.data);
-
-            let data = JSON.parse(e.data);
-            handleStatusMessage(data);
-        };
-
-        // Config WebSocket Setup
-        setupConfigWebSocket();
-
-        // Control WebSocket Setup
-        setupControlWebSocket();
-
-        // Storage WebSocket Setup
-        setupStorageWebSocket();
-
-        // Initialize Profile Selector
-        initializeProfileSelector();
+    switch (wsName) {
+        case 'ws_status':
+            window[wsName].onclose = handleStatusClose;
+            break;
+        case 'ws_control':
+            window[wsName].onclose = handleControlClose;
+            break;
     }
-});
+}
 
 
-function handleStatusMessage(data) {
+function handleStatusOpen() {
+    console.log("Status Socket has been opened");
+    $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span>Getting data from server", {
+        ele: 'body',
+        type: 'success',
+        offset: {from: 'top', amount: 250},
+        align: 'center',
+        width: 385,
+        delay: 2500,
+        allow_dismiss: true,
+        stackup_spacing: 10
+    });
+}
+
+
+function handleStatusMessage(e) {
+    console.log("received status data");
+    console.log(e.data);
+    let data = JSON.parse(e.data);  // This line was missing
     if (data.type === "backlog") {
         handleBacklogData(data);
     }
@@ -491,6 +477,32 @@ function handleStatusMessage(data) {
     if (state !== "EDIT") {
         updateApplicationState(data);
     }
+}
+
+function handleStatusClose() {
+    $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>ERROR 1:</b><br/>Status Websocket not available", {
+        ele: 'body',
+        type: 'error',
+        offset: {from: 'top', amount: 250},
+        align: 'center',
+        width: 385,
+        delay: 5000,
+        allow_dismiss: true,
+        stackup_spacing: 10
+    });
+    console.log("Status WebSocket closed. Attempting to reconnect...");
+    reconnectWebSocket('ws_status', `${host}/status`);
+}
+
+
+function handleControlClose() {
+    console.log("Control WebSocket closed. Attempting to reconnect...");
+    reconnectWebSocket('ws_control', `${host}/control`);
+}
+
+function handleStatusError(error) {
+    console.log("Status WebSocket encountered an error:", error);
+    // Your existing error logic...
 }
 
 function handleBacklogData(data) {
@@ -559,7 +571,7 @@ function updateForRunningState(data) {
     let eta = new Date(left * 1000).toISOString().substr(11, 8);
 
     updateProgress(parseFloat(data.runtime) / parseFloat(data.total_time) * 100);
-    $('#state').html('<span class="glyphicon glyphicon-time" style="font-size: 22px; font-weight: normal"></span><span> </span><span style="font-family: Digi; font-size: 40px;">' + eta + '</span>');
+    $('#state').html('<span class="glyphicon glyphicon-time" style="font-size: 22px; font-weight: normal"></span><span> </span><span style="font-family: Digi,monospace; font-size: 40px;">' + eta + '</span>');
     $('#target_temp').html(parseInt(data.target));
     $('#cost').html(currency_type + parseFloat(data.cost).toFixed(2));
 }
@@ -621,7 +633,7 @@ function setupConfigWebSocket() {
 }
 
 function updateConfigDisplay(configData) {
-    // Update temperature and time scale display based on received config
+    // Update temperature and timescale display based on received config
     temp_scale = configData.temp_scale;
     time_scale_slope = configData.time_scale_slope;
     time_scale_profile = configData.time_scale_profile;
@@ -772,6 +784,33 @@ function initializeProfileSelector() {
     // Additional initialization logic, if needed
     // ...
 }
+
+
+$(document).ready(function () {
+    if (!("WebSocket" in window)) {
+        $('#chatLog, input, button, #examples').fadeOut("fast");
+        $('<p>Oh no, you need a browser that supports WebSockets. How about <a href="https://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');
+    } else {
+        // WebSocket URLs
+        let protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        let host = `${protocol}//${window.location.hostname}:${window.location.port}`;
+
+        // Initialize WebSocket connections
+        window.ws_status = new WebSocket(`${host}/status`);
+        window.ws_config = new WebSocket(`${host}/config`);
+        window.ws_control = new WebSocket(`${host}/control`);
+        window.ws_storage = new WebSocket(`${host}/storage`);
+
+        // Assign event handlers
+        initializeWebSocket('ws_status');
+        setupConfigWebSocket(); // Assumes you have this function defined elsewhere
+        setupControlWebSocket(); // Assumes you have this function defined elsewhere
+        setupStorageWebSocket(); // Assumes you have this function defined elsewhere
+
+        // Initialize Profile Selector
+        initializeProfileSelector(); // Assumes you have this function defined elsewhere
+    }
+});
 
 
 
