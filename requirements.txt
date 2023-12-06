@@ -9,3 +9,4 @@ websocket-client
 
 requests
 matplotlib
+pywemo

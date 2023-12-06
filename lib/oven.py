@@ -6,6 +6,8 @@ import json
 import config
 import os
 
+from lib.KillSwitch import KillSwitch
+
 log = logging.getLogger(__name__)
 
 
@@ -173,6 +175,10 @@ class Oven(threading.Thread):
 
     def __init__(self):
         threading.Thread.__init__(self)
+        if config.kill_switch_enabled:
+            self.kill_switch = KillSwitch()
+        else:
+            self.kill_switch = None
         self.ovenwatcher = None
         self.startat = 0
         self.pid = PID(ki=config.pid_ki, kd=config.pid_kd, kp=config.pid_kp)
@@ -191,9 +197,9 @@ class Oven(threading.Thread):
         self.time_step = config.sensor_time_wait
         self.create_temp_sensor()
 
-    def reset(self):
+    def _common_reset_abort_logic(self, state):
         self.cost = 0
-        self.state = "IDLE"
+        self.state = state
         self.profile = None
         self.start_time = 0
         self.runtime = 0
@@ -202,11 +208,20 @@ class Oven(threading.Thread):
         self.heat = 0
         self.pid = PID(ki=config.pid_ki, kd=config.pid_kd, kp=config.pid_kp)
 
+    def complete(self):
+        self._common_reset_abort_logic("COMPLETE")
+
+    def abort(self):
+        self._common_reset_abort_logic("ABORTED")
+
+    def stop(self):
+        self._common_reset_abort_logic("STOPPED")
+
     def create_temp_sensor(self):
         pass
 
     def run_profile(self, profile, startat=0):
-        self.reset()
+        self.complete()
 
         self.startat = startat * 60
         self.runtime = self.startat
@@ -216,10 +231,6 @@ class Oven(threading.Thread):
         self.state = "RUNNING"
         log.info("Running schedule %s starting at %d minutes" % (profile.name, startat))
         log.info("Starting")
-
-    def abort_run(self):
-        self.reset()
-        self.save_automatic_restart_state()
 
     def heat_then_cool(self):
         # Compute the PID output for the current target and temperature
@@ -264,15 +275,17 @@ class Oven(threading.Thread):
     def reset_if_emergency(self):
         # reset if the temperature is way TOO HOT, or other critical errors detected
         if self.temperature >= config.emergency_shutoff_temp:
-            log.info("emergency!!! temperature too high")
-            if not config.ignore_temp_too_high:
-                self.abort_run()
+            log.error("Emergency!!! Temperature too high.")
+            self.abort()
+            if self.kill_switch:
+                log.error("Activating kill switch. System will power off.")
+                self.kill_switch.kill()  # Activate the kill switch as the last action
 
     def reset_if_schedule_ended(self):
         if self.runtime > self.total_time:
             log.info("schedule ended, shutting down")
             log.info("total cost = %s%.2f" % (config.currency_type, self.cost))
-            self.abort_run()
+            self.complete()
 
     def update_cost(self):
         if self.heat:
@@ -448,7 +461,7 @@ class RealOven(Oven):
 
     def __init__(self):
         self.output = Output()
-        self.reset()
+        self.complete()
 
         # call parent init
         Oven.__init__(self)
@@ -460,8 +473,8 @@ class RealOven(Oven):
         self.temp_sensor = TempSensorReal()
         self.temp_sensor.start()
 
-    def reset(self):
-        super().reset()
+    def complete(self):
+        super().complete()
         self.output.cool(0)
 
     # get actual temperature from sensor.

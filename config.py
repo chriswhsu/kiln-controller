@@ -92,13 +92,6 @@ temp_scale = "f"  # c = Celsius | f = Fahrenheit - Unit to display
 time_scale_slope = "h"  # s = Seconds | m = Minutes | h = Hours - Slope displayed in temp_scale per time_scale_slope
 time_scale_profile = "m"  # s = Seconds | m = Minutes | h = Hours - Enter and view target time in time_scale_profile
 
-# emergency shutoff the profile if this temp is reached or exceeded.
-# This just shuts off the profile. If your SSR is working, your kiln will
-# naturally cool off. If your SSR has failed/shorted/closed circuit, this
-# means your kiln receives full power until your house burns down.
-# this should not replace you watching your kiln or use of a kiln-sitter
-emergency_shutoff_temp = 2264  # cone 7
-
 # If the current temperature is below the pid control window,
 # delay the schedule until it goes back inside. This allows for heating
 # as fast as possible and not continuing until temp is reached.
@@ -115,7 +108,7 @@ pid_control_window = 20  # degrees
 
 # thermocouple offset
 # If you put your thermocouple in ice water and it reads 36F, you can
-# set set this offset to -4 to compensate.  This probably means you have a
+# set this offset to -4 to compensate.  This probably means you have a
 # cheap thermocouple.  Invest in a better thermocouple.
 thermocouple_offset = 0
 
@@ -138,7 +131,6 @@ ac_freq_50hz = False
 # - too many errors in a short period from thermocouple
 # but in some cases, you might want to ignore a specific error, log it,
 # and continue running your profile.
-ignore_temp_too_high = False
 ignore_lost_connection_tc = False
 ignore_unknown_tc_error = False
 ignore_too_many_tc_errors = False
@@ -147,6 +139,19 @@ ignore_too_many_tc_errors = False
 # Set this to True to ignore these errors and assume the temperature 
 # reading was correct anyway
 ignore_tc_short_errors = False
+
+
+# emergency shutoff the profile if this temp is reached or exceeded.
+# This just shuts off the profile. If your SSR is working, your kiln will
+# naturally cool off. If your SSR has failed/shorted/closed circuit, this
+# means your kiln receives full power until your house burns down.
+# this should not replace you watching your kiln or use of a kiln-sitter like
+# an optional wemo swtich configured below if you are using a <15 Amp kiln.
+emergency_shutoff_temp = 1200 # don't go above 1200, glass never needs heating higher.
+
+# Wemo Backup Switch Control
+kill_switch_enabled = True
+wemo_device_name = "Christmas Lights"
 
 ########################################################################
 # automatic restarts - if you have a power brown-out and the raspberry pi

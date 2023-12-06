@@ -146,7 +146,7 @@ class KilnController:
                     elif msgdict.get("cmd") == "STOP":
                         self.log.info("Stop command received")
                         if self.oven:
-                            self.oven.abort_run()
+                            self.oven.stop()
                         else:
                             self.log.error("No oven initialized. Aborting.")
                             bottle.abort()
