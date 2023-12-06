@@ -83,21 +83,17 @@ body {
 
 .ds-num {
     width: 105px;
-    font-family: "Digi";
+    font-family: "Digi", monospace;
     border-right: 1px solid #b9b6af;
     white-space: nowrap;
     text-shadow: 0 0 25px rgba(0, 0, 0, 1);
 }
 
 .ds-input {
-    color: #d8d3c5;
-    font-family: "Digi";
+    color: #111111;
+    font-family: "Digi", monospace;
     font-size: 24px;
-    text-shadow: 0 0 12px rgba(0, 0, 0, 1);
-    background: #3F3E3A url('/public/assets/images/panel_bg.png') repeat;
-    -moz-box-shadow: inset 0 0 12px 0 #000;
-    -webkit-box-shadow: inset 0 0 12px 0 #000;
-    box-shadow: inset 0 0 12px 0 #000;
+    box-shadow: inset 0 0 12px 0 #737270;
     text-align: right;
     padding: 0;
     padding-right: 7px;
@@ -105,7 +101,7 @@ body {
 }
 
 .ds-unit {
-    font-family: "Arial";
+    font-family: "Arial", sans-serif;
     font-size: 22px;
     vertical-align: top;
     line-height: 32px;
@@ -113,7 +109,7 @@ body {
 }
 
 .ds-led {
-    font-family: "Tables";
+    font-family: "Tables", monospace;
     font-size: 38px;
     text-align: center;
     color: #1F1E1A;
@@ -129,7 +125,7 @@ body {
     //padding: 2px 2px 0px 2px;
     //display:block;
     display: inline-block;
-    font-family:arial;
+    font-family: arial, sans-serif;
     font-size:12px;
     background-color:#ca3c38;
     color:#000;
@@ -160,7 +156,6 @@ body {
 
 .ds-state {
     border: none;
-    width: initial;
     text-align: center;
     width: 100px;
     padding: 0;
@@ -188,7 +183,7 @@ body {
 
 .progress-bar {
     background-color: #75890c;
-    font-family: "Digi";
+    font-family: "Digi", monospace;
     font-size: 16px;
 }
 
