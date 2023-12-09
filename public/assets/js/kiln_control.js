@@ -466,6 +466,8 @@ function handleStatusOpen() {
 }
 
 
+
+
 function handleStatusMessage(e) {
     console.log("received status data");
     console.log(e.data);
@@ -550,6 +552,10 @@ function handleStateChange(data) {
 
     state_last = state;
 }
+
+
+
+
 
 function notifyRunCompleted(newState) {
     $('#target_temp').html('---');
