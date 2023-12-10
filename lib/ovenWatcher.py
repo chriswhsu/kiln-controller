@@ -74,10 +74,9 @@ class OvenWatcher(threading.Thread):
             'log': self.lastlog_subset(),
             # 'started': self.started
         }
-        print(backlog)
         backlog_json = json.dumps(backlog)
         try:
-            print(backlog_json)
+            log.debug(backlog_json)
             observer.send(backlog_json)
         except Exception as e:
             log.error(f"An error occurred: {e}")

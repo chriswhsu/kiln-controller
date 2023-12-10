@@ -7,7 +7,10 @@ import bottle
 from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket import WebSocketError
-from lib.oven import SimulatedOven, RealOven, Profile
+
+import output
+from lib.oven import SimulatedOven, RealOven
+from lib.profile import Profile
 from lib.ovenWatcher import OvenWatcher
 
 try:
@@ -209,12 +212,12 @@ class KilnController:
             self.log.info("websocket (config) closed")
 
     def handle_status(self):
-        logging.info("Handle Status Initialized")
+        self.log.info("Handle Status Initialized")
         # Implementation of status handling
         websocket = self.get_websocket_from_request()
         if self.oven_watcher:
             self.oven_watcher.add_observer(websocket)
-            logging.info("OvenWatcher connected to websocket.")
+            self.log.info("OvenWatcher connected to websocket.")
         self.log.info("websocket (status) opened")
         try:
             while True:
@@ -227,8 +230,8 @@ class KilnController:
             self.log.info("websocket (status) closed")
 
     def run(self):
-        ip = self.config.ip_address
-        port = self.config.listening_port
+        ip = output.ip_address
+        port = output.listening_port
         self.log.info(f"listening on {ip}:{port}")
         server = WSGIServer((ip, port), self.app, handler_class=WebSocketHandler)
         server.serve_forever()
@@ -310,8 +313,8 @@ class KilnController:
                            'kp': config.pid_kp,
                            'ki': config.pid_ki,
                            'kd': config.pid_kd,
-                           "kwh_rate": self.config.kwh_rate,
-                           "currency_type": self.config.currency_type})
+                           "kwh_rate": output.kwh_rate,
+                           "currency_type": output.currency_type})
 
 
 if __name__ == "__main__":
