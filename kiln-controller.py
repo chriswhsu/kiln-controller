@@ -55,14 +55,14 @@ class KilnController:
         return bottle.redirect('/kiln_control/index.html')
 
     def handle_api_stats(self):
-        self.log.info("/api/stats command received")
+        self.log.debug("/api/stats command received")
         if hasattr(self.oven, 'pid'):
             if hasattr(self.oven.pid, 'pid_stats'):
                 return json.dumps(self.oven.pid.pidstats)
 
     def handle_api(self):
         # Implementation of API handling
-        self.log.info("/api is alive")
+        self.log.debug("/api is alive")
 
         # run a kiln schedule
         if bottle.request.json['cmd'] == 'run':
@@ -91,13 +91,13 @@ class KilnController:
             self.oven.abort_run()
 
         if bottle.request.json['cmd'] == 'memo':
-            self.log.info("api memo command received")
+            self.log.debug("api memo command received")
             memo = bottle.request.json['memo']
-            self.log.info(f"memo={memo}")
+            self.log.debug(f"memo={memo}")
 
         # get stats during a run
         if bottle.request.json['cmd'] == 'stats':
-            self.log.info("api stats command received")
+            self.log.debug("api stats command received")
             if hasattr(self.oven, 'pid'):
                 if hasattr(self.oven.pid, 'pid_stats'):
                     return json.dumps(self.oven.pid.pidstats)
@@ -118,26 +118,26 @@ class KilnController:
 
     def handle_control(self):
         websocket = self.get_websocket_from_request()
-        self.log.info("websocket (control) opened")
+        self.log.debug("websocket (control) opened")
         try:
             while True:
                 message = websocket.receive()
                 if message:
-                    self.log.info("Received (control): %s" % message)
+                    self.log.debug("Received (control): %s" % message)
                     msgdict = json.loads(message)
 
                     if msgdict.get("cmd") == "RUN":
-                        self.log.info("RUN command received")
+                        self.log.debug("RUN command received")
                         # Reinitialize a real oven
                         self.oven = RealOven()
-                        self.log.info("Real oven created")
+                        self.log.debug("Real oven created")
                         self.oven_watcher.set_oven(self.oven)  # Update the oven_watcher with the real oven
                         self.oven.set_ovenwatcher(self.oven_watcher)
 
                         self.process_run_command(msgdict)
 
                     elif msgdict.get("cmd") == "SIMULATE":
-                        self.log.info("SIMULATE command received")
+                        self.log.debug("SIMULATE command received")
                         # Reinitialize the simulated oven and set the oven_watcher
                         self.log.info("Simulated oven created")
                         self.oven = SimulatedOven()
@@ -160,7 +160,7 @@ class KilnController:
             self.log.error(wse)
         finally:
             websocket.close()
-            self.log.info("websocket (control) closed")
+            self.log.debug("websocket (control) closed")
 
     def process_run_command(self, msgdict):
         profile_obj = msgdict.get('profile')
@@ -176,7 +176,7 @@ class KilnController:
     def handle_storage(self):
         # Implementation of storage handling
         websocket = self.get_websocket_from_request()
-        self.log.info("WebSocket (storage) opened")
+        self.log.debug("WebSocket (storage) opened")
         try:
             while True:
                 message = websocket.receive()
@@ -185,7 +185,7 @@ class KilnController:
                 self.log.debug("WebSocket (storage) received: %s" % message)
 
                 if message == "GET":
-                    self.log.info("GET command received")
+                    self.log.debug("GET command received")
                     websocket.send(self.get_profiles())
                 else:
                     try:
@@ -198,27 +198,27 @@ class KilnController:
             self.log.error(f"Error with WebSocket in storage: {error}")
         finally:
             websocket.close()
-            self.log.info("WebSocket (storage) closed")
+            self.log.debug("WebSocket (storage) closed")
 
     def handle_config(self):
         websocket = self.get_websocket_from_request()
-        self.log.info("websocket (config) opened")
+        self.log.debug("websocket (config) opened")
         try:
             websocket.send(self.get_config())
         except WebSocketError as error:
             self.log.error(f"Error with WebSocket in Config: {error}")
         finally:
             websocket.close()
-            self.log.info("websocket (config) closed")
+            self.log.debug("websocket (config) closed")
 
     def handle_status(self):
-        self.log.info("Handle Status Initialized")
+        self.log.debug("Handle Status Initialized")
         # Implementation of status handling
         websocket = self.get_websocket_from_request()
         if self.oven_watcher:
             self.oven_watcher.add_observer(websocket)
-            self.log.info("OvenWatcher connected to websocket.")
-        self.log.info("websocket (status) opened")
+            self.log.debug("OvenWatcher connected to websocket.")
+        self.log.debug("websocket (status) opened")
         try:
             while True:
                 message = websocket.receive()
@@ -227,7 +227,7 @@ class KilnController:
             self.log.error(f"Error with WebSocket in status: {error}")
         finally:
             websocket.close()
-            self.log.info("websocket (status) closed")
+            self.log.debug("websocket (status) closed")
 
     def run(self):
         ip = output.ip_address
@@ -270,14 +270,14 @@ class KilnController:
             self.handle_put_command(msgdict, websocket)
 
     def handle_delete_command(self, msgdict, websocket):
-        self.log.info("DELETE command received")
+        self.log.debug("DELETE command received")
         profile_obj = msgdict.get('profile')
         response = "OK" if self.delete_profile(profile_obj) else "FAIL"
         msgdict["resp"] = response
         websocket.send(json.dumps(msgdict))
 
     def handle_put_command(self, msgdict, websocket):
-        self.log.info("PUT command received")
+        self.log.debug("PUT command received")
         profile_obj = msgdict.get('profile')
         force = True  # or extract from msgdict if necessary
         response = "OK" if self.save_profile(profile_obj, force) else "FAIL"

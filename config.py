@@ -63,7 +63,7 @@ sensor_time_wait = 2
 # well with the simulated oven. You must tune them to work well with 
 # your specific kiln.
 pid_kp = 5.0  # Proportional
-pid_ki = 0.1  # Integral
+pid_ki = 0.03  # Integral
 pid_kd = 0.1  # Derivative
 
 ########################################################################
@@ -86,19 +86,12 @@ temp_scale = "f"  # c = Celsius | f = Fahrenheit - Unit to display
 time_scale_slope = "h"  # s = Seconds | m = Minutes | h = Hours - Slope displayed in temp_scale per time_scale_slope
 time_scale_profile = "m"  # s = Seconds | m = Minutes | h = Hours - Enter and view target time in time_scale_profile
 
-# If the current temperature is below the pid control window,
+# If the current temperature is below the profile pause window,
 # delay the schedule until it goes back inside. This allows for heating
 # as fast as possible and not continuing until temp is reached.
 kiln_must_catch_up = True
-
-# This setting is required. 
-# This setting defines the window within which PID control occurs.
-# Outside this window (N degrees below or above the current target)
-# the elements are either 100% on because the kiln is too cold
-# or 100% off because the kiln is too hot. No integral builds up
-# outside the window. The bigger you make the window, the more
-# integral you will accumulate. This should be a positive integer.
-pid_control_window = 20  # degrees
+# Outside this window, N degrees below  the current target time will not elapse.
+profile_pause_window = 50  # degrees
 
 # thermocouple offset
 # If you put your thermocouple in ice water and it reads 36F, you can
