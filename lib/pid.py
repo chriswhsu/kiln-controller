@@ -12,6 +12,9 @@ class PID:
 
     def compute(self, setpoint, current_value):
         # Compute the PID output for given setpoint and current value (current_value)
+
+        # first set the current setpoint
         self.pid.setpoint = setpoint
 
+        # then derive and return pid output value
         return self.pid(current_value)
