@@ -1,10 +1,18 @@
 #!/usr/bin/env python
 
-import sys
-import csv
-import time
 import argparse
+import csv
+import sys
+import time
+import logging
+import config
+
 from lib.oven import RealOven, SimulatedOven
+
+log = logging.getLogger(__name__)
+logging.basicConfig(level=config.log_level, format=config.log_format)
+
+SIMULATE = True
 
 
 def recordprofile(csvfile, targettemp):
@@ -14,8 +22,8 @@ def recordprofile(csvfile, targettemp):
         sys.dont_write_bytecode = False
 
     except ImportError:
-        print("Could not import config file.")
-        print("Copy config.py.EXAMPLE to config.py and adapt it for your setup.")
+        log.error("Could not import config file.")
+        log.error("Copy config.py.EXAMPLE to config.py and adapt it for your setup.")
         exit(1)
 
     # open the file to log data to
@@ -24,7 +32,7 @@ def recordprofile(csvfile, targettemp):
     csv_out.writerow(['time', 'temperature'])
 
     # construct the oven
-    if config.simulate:
+    if SIMULATE:
         oven = SimulatedOven()
     else:
         oven = RealOven()
@@ -39,8 +47,8 @@ def recordprofile(csvfile, targettemp):
     # We record the temperature every second
     try:
         stage = 'heating'
-        if not config.simulate:
-            oven.output.heat(0)
+        if not SIMULATE:
+            oven.output.heat(sleep_for=0)
 
         while True:
             temp = oven.temperature + config.thermocouple_offset
@@ -50,7 +58,7 @@ def recordprofile(csvfile, targettemp):
 
             if stage == 'heating':
                 if temp >= targettemp:
-                    if not config.simulate:
+                    if not SIMULATE:
                         oven.output.cool(0)
                     stage = 'cooling'
 
@@ -58,14 +66,14 @@ def recordprofile(csvfile, targettemp):
                 if temp < targettemp:
                     break
 
-            print("stage = %s, actual = %s, target = %s" % (stage, temp, targettemp))
+            log.info("stage = %s, actual = %s, target = %s" % (stage, temp, targettemp))
             time.sleep(1)
 
         f.close()
 
     finally:
         # ensure we always shut the oven down!
-        if not config.simulate:
+        if not SIMULATE:
             oven.output.cool(0)
 
 
@@ -121,27 +129,27 @@ def calculate(filename, tangentdivisor, showplot):
                 continue  # just ignore bad values!
 
     # gather points for tangent line
-    miny = min(ydata)
-    maxy = max(ydata)
-    midy = (maxy + miny) / 2
-    yoffset = int((maxy - miny) / tangentdivisor)
+    min_y = min(ydata)
+    max_y = max(ydata)
+    mid_y = (max_y + min_y) / 2
+    y_offset = int((max_y - min_y) / tangentdivisor)
     tangent_min = tangent_max = None
     for i in range(0, len(xdata)):
-        rowx = xdata[i]
-        rowy = ydata[i]
+        row_x = xdata[i]
+        row_y = ydata[i]
 
-        if rowy >= (midy - yoffset) and tangent_min is None:
-            tangent_min = (rowx, rowy)
-        elif rowy >= (midy + yoffset) and tangent_max is None:
-            tangent_max = (rowx, rowy)
+        if row_y >= (mid_y - y_offset) and tangent_min is None:
+            tangent_min = (row_x, row_y)
+        elif row_y >= (mid_y + y_offset) and tangent_max is None:
+            tangent_max = (row_x, row_y)
 
     # calculate tangent line to the main temperature curve
     tangent_slope = (tangent_max[1] - tangent_min[1]) / (tangent_max[0] - tangent_min[0])
     tangent_offset = tangent_min[1] - line(tangent_slope, 0, tangent_min[0])
 
     # determine the point at which the tangent line crosses the min/max temperaturess
-    lower_crossing_x = invline(tangent_slope, tangent_offset, miny)
-    upper_crossing_x = invline(tangent_slope, tangent_offset, maxy)
+    lower_crossing_x = invline(tangent_slope, tangent_offset, min_y)
+    upper_crossing_x = invline(tangent_slope, tangent_offset, max_y)
 
     # compute parameters
     L = lower_crossing_x - min(xdata)
@@ -185,7 +193,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.mode == 'recordprofile':
-        recordprofile(args.csvfile, args.targettemp)
+        recordprofile(args.csv_file, args.targettemp)
 
     elif args.mode == 'zn':
         if args.tangentdivisor < 2:

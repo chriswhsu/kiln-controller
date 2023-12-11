@@ -74,7 +74,6 @@ pid_kd = 1.5  # Derivative
 
 ########################################################################
 #   Simulation parameters
-simulate = True
 sim_t_env = 70.0  # deg F
 element_heat_capacity = 200.0  # J/K  heat capacity of heat element
 oven_heat_capacity = 1000.0  # J/K  heat capacity of oven
