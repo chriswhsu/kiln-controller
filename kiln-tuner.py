@@ -51,6 +51,7 @@ def recordprofile(csvfile, targettemp):
             oven.output.heat(sleep_for=0)
 
         while True:
+            oven.update_temperature()
             temp = oven.temperature + config.thermocouple_offset
 
             csv_out.writerow([time.time(), temp])
