@@ -80,8 +80,6 @@ class Oven(threading.Thread):
     def determine_heat(self):
         # Compute the PID output for the current target and temperature
         pid_output = self.pid.compute(self.target, self.temperature)
-        p, i, d = self.pid.components  # The separate terms are now in p, i, d
-        log.info(f"P: {p}, I: {i}, D: {d}")
         # Apply heating or cooling based on PID output.
         self.apply_heat(pid_output)
         self.log_heating(pid_output)

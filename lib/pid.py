@@ -16,5 +16,10 @@ class PID:
         # first set the current setpoint
         self.pid.setpoint = setpoint
 
+        output = self.pid(current_value)
+
+        p, i, d = self.pid.components  # The separate terms are now in p, i, d
+        log.info(f"Output: {output}, P: {p}, I: {i}, D: {d}")
+
         # then derive and return pid output value
-        return self.pid(current_value)
+        return output
