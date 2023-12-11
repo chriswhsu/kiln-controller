@@ -7,7 +7,7 @@ log = logging.getLogger(__name__)
 
 class PID:
     def __init__(self, kp, ki, kd):
-        self.pid = simple_pid.PID(kp, ki, kd, setpoint=1, sample_time=None)
+        self.pid = simple_pid.PID(kp, ki, kd, setpoint=1, sample_time=2)
         self.pid.output_limits = (0, 1)
 
     def compute(self, setpoint, current_value):
