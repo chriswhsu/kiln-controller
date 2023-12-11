@@ -6,3 +6,6 @@
 .DStore/
 thumbs.db
 .idea/*
+nohup.out
+state.json
+
