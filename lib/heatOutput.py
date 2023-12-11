@@ -6,7 +6,7 @@ import config
 log = logging.getLogger(__name__)
 
 
-class Output:
+class HeatOutput:
     def __init__(self):
         self.GPIO = None
         self.active = False

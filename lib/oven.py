@@ -6,9 +6,8 @@ import threading
 import time
 
 import config
-import output
+from lib.heatOutput import HeatOutput
 from lib.killSwitch import KillSwitch
-from lib.output import Output
 from lib.pid import PID
 from lib.profile import Profile
 from lib.tempSensor import TempSensorSimulated, TempSensorReal
@@ -52,7 +51,7 @@ class Oven(threading.Thread):
         self.total_time = 0
         self.target = 0
         self.heat = 0
-        self.pid = PID( kp=config.pid_kp, ki=config.pid_ki, kd=config.pid_kd)
+        self.pid = PID(kp=config.pid_kp, ki=config.pid_ki, kd=config.pid_kd)
 
     def complete(self):
         self._common_reset_abort_logic("COMPLETE")
@@ -128,12 +127,12 @@ class Oven(threading.Thread):
     def reset_if_schedule_ended(self):
         if self.runtime > self.total_time:
             log.info("schedule ended, shutting down")
-            log.info("total cost = %s%.2f" % (output.currency_type, self.cost))
+            log.info("total cost = %s%.2f" % (config.currency_type, self.cost))
             self.complete()
 
     def update_cost(self):
         if self.heat:
-            cost = (output.kwh_rate * output.kw_elements) * (self.heat / 3600)
+            cost = (config.kwh_rate * config.kw_elements) * (self.heat / 3600)
         else:
             cost = 0
         self.cost += cost
@@ -148,7 +147,7 @@ class Oven(threading.Thread):
             'state': self.state,
             'heat': self.heat,
             'total_time': self.total_time,
-            'profile': self.profile.name if self.profile else None        }
+            'profile': self.profile.name if self.profile else None}
         return state
 
     def save_state(self):
@@ -304,7 +303,7 @@ class RealOven(Oven):
         if config.kill_switch_enabled:
             self.kill_switch = KillSwitch()
 
-        self.output = Output()
+        self.output = HeatOutput()
         self.complete()
 
         # call parent init

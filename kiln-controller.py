@@ -8,7 +8,6 @@ from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket import WebSocketError
 
-import output
 from lib.oven import SimulatedOven, RealOven
 from lib.profile import Profile
 from lib.ovenWatcher import OvenWatcher
@@ -230,8 +229,8 @@ class KilnController:
             self.log.debug("websocket (status) closed")
 
     def run(self):
-        ip = output.ip_address
-        port = output.listening_port
+        ip = config.ip_address
+        port = config.listening_port
         self.log.info(f"listening on {ip}:{port}")
         server = WSGIServer((ip, port), self.app, handler_class=WebSocketHandler)
         server.serve_forever()
@@ -313,8 +312,8 @@ class KilnController:
                            'kp': config.pid_kp,
                            'ki': config.pid_ki,
                            'kd': config.pid_kd,
-                           "kwh_rate": output.kwh_rate,
-                           "currency_type": output.currency_type})
+                           "kwh_rate": config.kwh_rate,
+                           "currency_type": config.currency_type})
 
 
 if __name__ == "__main__":
