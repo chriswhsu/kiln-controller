@@ -200,7 +200,7 @@ if __name__ == "__main__":
         if args.tangentdivisor < 2:
             raise ValueError("tangentdivisor must be >= 2")
 
-        calculate(args.csvfile, args.tangentdivisor, args.showplot)
+        calculate(args.csv_file, args.tangentdivisor, args.showplot)
 
     elif args.mode == '':
         parser.print_help()
