@@ -10,3 +10,4 @@ websocket-client
 requests
 matplotlib
 pywemo
+simple-pid

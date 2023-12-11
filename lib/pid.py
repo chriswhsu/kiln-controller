@@ -1,5 +1,5 @@
 import logging
-from simple_pid import PID as simplePID
+import simple_pid
 
 log = logging.getLogger(__name__)
 
@@ -7,7 +7,7 @@ log = logging.getLogger(__name__)
 class PID:
     def __init__(self, kp, ki, kd):
 
-        self.pid = simplePID(kp, ki, kd, setpoint=1)
+        self.pid = simple_pid.PID(kp, ki, kd, setpoint=1)
         self.pid.output_limits = (0, 1)
 
     def compute(self, setpoint, current_value):
