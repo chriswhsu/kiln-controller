@@ -12,7 +12,7 @@ from lib.oven import RealOven, SimulatedOven
 log = logging.getLogger(__name__)
 logging.basicConfig(level=config.log_level, format=config.log_format)
 
-SIMULATE = True
+SIMULATE = False
 
 
 def recordprofile(csvfile, targettemp):
