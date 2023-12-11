@@ -24,7 +24,7 @@ class Oven(threading.Thread):
         self.kill_switch = None
         self.ovenwatcher = None
         self.startat = 0
-        self.pid = PID(ki=config.pid_ki, kd=config.pid_kd, kp=config.pid_kp)
+        self.pid = PID(kp=config.pid_kp, ki=config.pid_ki, kd=config.pid_kd)
         # heating or not?
         self.heat = 0
         self.target = 0
@@ -52,7 +52,7 @@ class Oven(threading.Thread):
         self.total_time = 0
         self.target = 0
         self.heat = 0
-        self.pid = PID(ki=config.pid_ki, kd=config.pid_kd, kp=config.pid_kp)
+        self.pid = PID( kp=config.pid_kp, ki=config.pid_ki, kd=config.pid_kd)
 
     def complete(self):
         self._common_reset_abort_logic("COMPLETE")
