@@ -70,7 +70,7 @@ sensor_time_wait = 2
 # your specific kiln.
 pid_kp = 3.0  # Proportional
 pid_ki = 0.05  # Integral
-pid_kd = 5  # Derivative
+pid_kd = 10  # Derivative
 
 ########################################################################
 #   Simulation parameters
