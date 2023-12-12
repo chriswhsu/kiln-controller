@@ -96,8 +96,7 @@ class Oven(threading.Thread):
         heat_off = float(self.time_step * (1 - pid_output))
 
         log.info(
-                "temp=%.2f, target=%.2f, pid_output=%.2f, heat_on=%.2f, heat_off=%.2f, run_time=%d" %
-                (self.temperature, self.target, pid_output, heat_on, heat_off, self.runtime)
+                f"temp={self.temperature:.2f}, target={self.target:.2f}, pid_output={pid_output:.2f}, heat_on={heat_on:.2f}, heat_off={heat_off:.2f}, run_time={self.runtime:.1f}"
         )
 
     def kiln_must_catch_up(self):

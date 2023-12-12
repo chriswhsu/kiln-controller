@@ -26,14 +26,12 @@ class PID:
             integral_gain=config.pid_ki,
             derivative_gain=config.pid_kd,
             setpoint=70,
-            proportional_on_measurement=False,
-            differential_on_measurement=True,
+            differential_on_measurement=False,
             error_map=None,
             starting_output=0.0,
     ):
         self.Kp, self.Ki, self.Kd = proportional_gain, integral_gain, derivative_gain
         self.setpoint = setpoint
-        self.proportional_on_measurement = proportional_on_measurement
         self.differential_on_measurement = differential_on_measurement
         self.error_map = error_map
         self.o_limits = config.output_limits
@@ -62,13 +60,11 @@ class PID:
         if self.error_map is not None:
             error = self.error_map(error)
 
-        if not self.proportional_on_measurement:
-            self._proportional = self.Kp * error
-        else:
-            self._proportional -= self.Kp * d_input
+        self._proportional = self.Kp * error
 
         self._integral += self.Ki * error * elapsed_time
         self._integral = _clamp(self._integral, self.i_limits)
+
         if self.differential_on_measurement:
             self._derivative = -self.Kd * d_input / elapsed_time
         else:
@@ -93,7 +89,6 @@ class PID:
             f'proportional_gain={self.Kp!r}, integral_gain={self.Ki!r}, derivative_gain={self.Kd!r}, '
             f'setpoint={self.setpoint!r}, '
             f'output_limits={self.output_limits!r}, '
-            f'proportional_on_measurement={self.proportional_on_measurement!r}, '
             f'differential_on_measurement={self.differential_on_measurement!r}, '
             f'error_map={self.error_map!r}'
             ')'

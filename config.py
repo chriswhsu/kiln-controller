@@ -23,14 +23,23 @@ listening_port = 80
 # well with the simulated oven. You must tune them to work well with 
 # your specific kiln.
 pid_kp = 2.0  # Proportional
-pid_ki = 0.15  # Integral
-pid_kd = 40  # Derivative
+pid_ki = 4 / 100  # Integral
+pid_kd = 100  # Derivative
 
 # clamp output between these values
 output_limits = (0, 100)
 
 # clamp max integral accumulation
-integral_limits = (0, 100)
+integral_limits = (0, 75)
+
+########################################################################
+#
+# duty cycle of the entire system in seconds
+#
+# Every N seconds a decision is made about switching the relay[s]
+# on & off and for how long. The thermocouple is read
+# temperature_average_samples times during and the average value is used.
+sensor_time_wait = 1
 
 ########################################################################
 #   Simulation parameters
@@ -51,15 +60,6 @@ thermal_res_element_to_oven = 0.05  # K/W  thermal resistance heat element -> ov
 kwh_rate = 0.20  # cost per kilowatt-hour per currency_type to calculate cost to run job
 kw_elements = 1.460  # if the kiln elements are on, the wattage in kilowatts
 currency_type = "$"  # Currency Symbol to show when calculating cost to run job
-
-########################################################################
-#
-# duty cycle of the entire system in seconds
-#
-# Every N seconds a decision is made about switching the relay[s]
-# on & off and for how long. The thermocouple is read
-# temperature_average_samples times during and the average value is used.
-sensor_time_wait = 2
 
 ########################################################################
 #   Time and Temperature parameters
@@ -86,7 +86,7 @@ thermocouple_offset = 0
 
 # number of samples of temperature to average.
 # If you suffer from the high temperature kiln issue and have set 
-# honour_theromocouple_short_errors to False,
+# honour_thermocouple_short_errors to False,
 # you will likely need to increase this (eg I use 40)
 temperature_average_samples = 40
 
