@@ -8,7 +8,7 @@ import time
 import config
 from lib.heatOutput import HeatOutput
 from lib.killSwitch import KillSwitch
-from lib.pidcontroller import PIDController
+from lib.pid import PID
 from lib.profile import Profile
 from lib.tempSensor import TempSensorSimulated, TempSensorReal
 
@@ -23,7 +23,7 @@ class Oven(threading.Thread):
         self.kill_switch = None
         self.ovenwatcher = None
         self.startat = 0
-        self.pid = PIDController(kp=config.pid_kp, ki=config.pid_ki, kd=config.pid_kd)
+        self.pid = PID()
         # heating or not?
         self.heat = 0
         self.target = 0
@@ -51,7 +51,7 @@ class Oven(threading.Thread):
         self.total_time = 0
         self.target = 0
         self.heat = 0
-        self.pid = PIDController(kp=config.pid_kp, ki=config.pid_ki, kd=config.pid_kd)
+        self.pid = PID()
 
     def complete(self):
         self._common_reset_abort_logic("COMPLETE")
@@ -262,10 +262,10 @@ class SimulatedOven(Oven):
         self.temp_changes()
 
         log.debug("simulation: -> %dW heater: %.0f -> %dW oven: %.0f -> %dW env" % (int(self.p_heat * pid),
-                                                                                   self.element_temperature,
-                                                                                   int(self.element_to_oven_heat_transfer),
-                                                                                   self.oven_temp,
-                                                                                   int(self.heat_transfer_rate_to_environ)))
+                                                                                    self.element_temperature,
+                                                                                    int(self.element_to_oven_heat_transfer),
+                                                                                    self.oven_temp,
+                                                                                    int(self.heat_transfer_rate_to_environ)))
 
         time.sleep(self.time_step)
 

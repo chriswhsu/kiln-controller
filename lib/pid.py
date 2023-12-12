@@ -1,6 +1,8 @@
 import logging
 import time
 
+import config
+
 log = logging.getLogger(__name__)
 
 
@@ -15,134 +17,87 @@ def _clamp(value, limits):
     return value
 
 
-class PID(object):
-    """A simple PID controller."""
+class PID:
+    """A merged PID controller with logging and output normalization."""
 
     def __init__(
             self,
-            proportional_gain,
-            integral_gain,
-            derivative_gain,
-            setpoint=0,
-            output_limits=(None, None),
-            integral_limits=(None, None),
+            proportional_gain=config.pid_kp,
+            integral_gain=config.pid_ki,
+            derivative_gain=config.pid_kd,
+            setpoint=70,
             proportional_on_measurement=False,
             differential_on_measurement=True,
             error_map=None,
             starting_output=0.0,
     ):
-        """
-        Initialize a new PID controller.
-
-        :param proportional_gain: The value for the proportional gain Kp
-        :param integral_gain: The value for the integral gain Ki
-        :param derivative_gain: The value for the derivative gain Kd
-        :param setpoint: The initial setpoint that the PID will try to achieve
-        :param output_limits: The initial output limits to use, given as an iterable with 2
-            elements, for example: (lower, upper). The output will never go below the lower limit
-            or above the upper limit. Either of the limits can also be set to None to have no limit
-            in that direction. Setting output limits also avoids integral windup, since the
-            integral term will never be allowed to grow outside of the limits.
-        :param proportional_on_measurement: Whether the proportional term should be calculated on
-            the input directly rather than on the error (which is the traditional way). Using
-            proportional-on-measurement avoids overshoot for some types of systems.
-        :param differential_on_measurement: Whether the differential term should be calculated on
-            the input directly rather than on the error (which is the traditional way).
-        :param error_map: Function to transform the error value in another constrained value.
-        :param starting_output: The starting point for the PID's output. If you start controlling
-            a system that is already at the setpoint, you can set this to your best guess at what
-            output the PID should give when first calling it to avoid the PID outputting zero and
-            moving the system away from the setpoint.
-        """
         self.Kp, self.Ki, self.Kd = proportional_gain, integral_gain, derivative_gain
         self.setpoint = setpoint
-
-        self._min_output, self._max_output = None, None
         self.proportional_on_measurement = proportional_on_measurement
         self.differential_on_measurement = differential_on_measurement
         self.error_map = error_map
-
+        self.o_limits = config.output_limits
+        self.i_limits = config.integral_limits
         self._proportional = 0
         self._integral = 0
         self._derivative = 0
-
         self._last_time = None
         self._last_output = None
         self._last_error = None
         self._last_input = None
-
-        # Get monotonic time to ensure that time deltas are always positive
         self.time_fn = time.monotonic
-
-        self.o_limits = output_limits
-        self.i_limits = integral_limits
         self.reset()
+        self._integral = _clamp(starting_output, self.i_limits)
 
-        # Set initial state of the controller
-        self._integral = _clamp(starting_output, integral_limits)
+    def compute(self, setpoint, actual_temp):
 
-    def __call__(self, actual_temp):
-        """
-        Update the PID controller.
-
-        Call the PID controller with *actual_temp* and calculate and return a control output if
-        sample_time seconds has passed since the last update. If no new output is calculated,
-        return the previous output instead (or None if no value has been calculated yet).
-
-        """
+        self.setpoint = setpoint
 
         now = self.time_fn()
         elapsed_time = now - self._last_time if (now - self._last_time) else 1e-16
-
-        # Compute error terms
         error = self.setpoint - actual_temp
         d_input = actual_temp - (self._last_input if (self._last_input is not None) else actual_temp)
         d_error = error - (self._last_error if (self._last_error is not None) else error)
 
-        # Check if must map the error
         if self.error_map is not None:
             error = self.error_map(error)
 
-        # Compute the proportional term
         if not self.proportional_on_measurement:
-            # Regular proportional-on-error, simply set the proportional term
             self._proportional = self.Kp * error
         else:
-            # Add the proportional error on measurement to error_sum
             self._proportional -= self.Kp * d_input
 
-        # Compute integral and derivative terms
         self._integral += self.Ki * error * elapsed_time
-        self._integral = _clamp(self._integral, self.i_limits)  # Avoid integral windup
-
+        self._integral = _clamp(self._integral, self.i_limits)
         if self.differential_on_measurement:
             self._derivative = -self.Kd * d_input / elapsed_time
         else:
             self._derivative = self.Kd * d_error / elapsed_time
 
-        # Compute final output
         output = self._proportional + self._integral + self._derivative
         output = _clamp(output, self.o_limits)
 
-        # Keep track of state
         self._last_output = output
         self._last_input = actual_temp
         self._last_error = error
         self._last_time = now
 
-        return output
+        p, i, d = self.components
+        log.info(f"Setpoint: {self.setpoint:.2f}, Actual: {actual_temp:.2f}, Output: {output:.2f}, P: {p:.3f}, I: {i:.3f}, D: {d:.3f}")
+
+        return output / 100
 
     def __repr__(self):
         return (
-            '{self.__class__.__name__}('
-            'proportional_gain={self.proportional_gain!r}, integral_gain={self.integral_gain!r}, derivative_gain={self.derivative_gain!r}, '
-            'setpoint={self.setpoint!r}, '
-            'output_limits={self.output_limits!r}, '
-            'proportional_on_measurement={self.proportional_on_measurement!r}, '
-            'differential_on_measurement={self.differential_on_measurement!r}, '
-            'error_map={self.error_map!r}'
+            f'{self.__class__.__name__}('
+            f'proportional_gain={self.Kp!r}, integral_gain={self.Ki!r}, derivative_gain={self.Kd!r}, '
+            f'setpoint={self.setpoint!r}, '
+            f'output_limits={self.output_limits!r}, '
+            f'proportional_on_measurement={self.proportional_on_measurement!r}, '
+            f'differential_on_measurement={self.differential_on_measurement!r}, '
+            f'error_map={self.error_map!r}'
             ')'
-        ).format(self=self)
+        )
 
     @property
     def components(self):
@@ -166,7 +121,6 @@ class PID(object):
     def output_limits(self):
         """
         The current output limits as a 2-tuple: (lower, upper).
-
         See also the *output_limits* parameter in :meth:`PID.__init__`.
         """
         return self._min_output, self._max_output

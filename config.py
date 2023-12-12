@@ -12,54 +12,8 @@ log_level = logging.INFO
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 
 # Server
-ip_address = "192.168.1.195"
-listening_port = 8080
-
-########################################################################
-# Cost Information
-#
-# This is used to calculate a cost estimate before a run. It's also used
-# to produce the actual cost during a run. My kiln has three
-# elements that when my switches are set to high, consume 9460 watts.
-
-kwh_rate = 0.20  # cost per kilowatt hour per currency_type to calculate cost to run job
-kw_elements = 1.460  # if the kiln elements are on, the wattage in kilowatts
-currency_type = "$"  # Currency Symbol to show when calculating cost to run job
-
-########################################################################
-#   GPIO Setup (BCM SoC Numbering Schema)
-#
-#   Check the RasPi docs to see where these GPIOs are
-#   connected on the P1 header for your board type/rev.
-#   These were tested on a Pi B Rev2 but of course you
-#   can use whichever GPIO you prefer/have available.
-
-# Outputs
-gpio_heat = 23  # Switches zero-cross solid-state-relay
-
-# Thermocouple Adapter selection:
-#   max31855 - bitbang SPI interface
-#   max31856 - bitbang SPI interface. must specify thermocouple_type.
-max31855 = 1
-max31856 = 0
-# see lib/max31856.py for other thermocouple_type, only applies to max31856
-# uncomment this if using MAX-31856
-# thermocouple_type = MAX31856.MAX31856_S_TYPE
-
-# Thermocouple Connection (using bitbang interfaces)
-gpio_sensor_cs = 27
-gpio_sensor_clock = 22
-gpio_sensor_data = 17
-gpio_sensor_di = 10  # only used with max31856
-
-########################################################################
-#
-# duty cycle of the entire system in seconds
-# 
-# Every N seconds a decision is made about switching the relay[s] 
-# on & off and for how long. The thermocouple is read 
-# temperature_average_samples times during and the average value is used.
-sensor_time_wait = 2
+ip_address = "192.168.1.185"
+listening_port = 80
 
 ########################################################################
 #
@@ -72,6 +26,12 @@ pid_kp = 2.0  # Proportional
 pid_ki = 0.15  # Integral
 pid_kd = 40  # Derivative
 
+# clamp output between these values
+output_limits = (0, 100)
+
+# clamp max integral accumulation
+integral_limits = (0, 100)
+
 ########################################################################
 #   Simulation parameters
 sim_t_env = 70.0  # deg F
@@ -80,6 +40,26 @@ oven_heat_capacity = 1000.0  # J/K  heat capacity of oven
 oven_heating_power = 1450.0  # W    heating power of oven
 thermal_res_oven_to_environ = 0.5  # K/W  thermal resistance oven -> environment
 thermal_res_element_to_oven = 0.05  # K/W  thermal resistance heat element -> oven
+
+########################################################################
+# Cost Information
+#
+# This is used to calculate a cost estimate before a run. It's also used
+# to produce the actual cost during a run. My kiln has three
+# elements that when my switches are set to high, consume 9460 watts.
+
+kwh_rate = 0.20  # cost per kilowatt-hour per currency_type to calculate cost to run job
+kw_elements = 1.460  # if the kiln elements are on, the wattage in kilowatts
+currency_type = "$"  # Currency Symbol to show when calculating cost to run job
+
+########################################################################
+#
+# duty cycle of the entire system in seconds
+#
+# Every N seconds a decision is made about switching the relay[s]
+# on & off and for how long. The thermocouple is read
+# temperature_average_samples times during and the average value is used.
+sensor_time_wait = 2
 
 ########################################################################
 #   Time and Temperature parameters
@@ -114,6 +94,32 @@ temperature_average_samples = 40
 ac_freq_50hz = False
 
 ########################################################################
+#   GPIO Setup (BCM SoC Numbering Schema)
+#
+#   Check the RasPi docs to see where these GPIOs are
+#   connected on the P1 header for your board type/rev.
+#   These were tested on a Pi B Rev2 but of course you
+#   can use whichever GPIO you prefer/have available.
+
+# Outputs
+gpio_heat = 23  # Switches zero-cross solid-state-relay
+
+# Thermocouple Adapter selection:
+#   max31855 - bitbang SPI interface
+#   max31856 - bitbang SPI interface. must specify thermocouple_type.
+max31855 = 1
+max31856 = 0
+# see lib/max31856.py for other thermocouple_type, only applies to max31856
+# uncomment this if using MAX-31856
+# thermocouple_type = MAX31856.MAX31856_S_TYPE
+
+# Thermocouple Connection (using bitbang interfaces)
+gpio_sensor_cs = 27
+gpio_sensor_clock = 22
+gpio_sensor_data = 17
+gpio_sensor_di = 10  # only used with max31856
+
+########################################################################
 # Emergencies - or maybe not
 ########################################################################
 # There are all kinds of emergencies that can happen including:
@@ -132,14 +138,13 @@ ignore_too_many_tc_errors = False
 # reading was correct anyway
 ignore_tc_short_errors = False
 
-
 # emergency shutoff the profile if this temp is reached or exceeded.
 # This just shuts off the profile. If your SSR is working, your kiln will
 # naturally cool off. If your SSR has failed/shorted/closed circuit, this
 # means your kiln receives full power until your house burns down.
 # this should not replace you watching your kiln or use of a kiln-sitter like
 # an optional wemo swtich configured below if you are using a <15 Amp kiln.
-emergency_shutoff_temp = 1200 # don't go above 1200, glass never needs heating higher.
+emergency_shutoff_temp = 1200  # don't go above 1200, glass never needs heating higher.
 
 # Wemo Backup Switch Control
 kill_switch_enabled = True
@@ -165,4 +170,3 @@ automatic_restart_state_file = os.path.abspath(os.path.join(os.path.dirname(__fi
 # to load profiles from this repository by default.
 # See https://github.com/jbruce12000/kiln-profiles
 kiln_profiles_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), "storage", "profiles"))
-# kiln_profiles_directory = os.path.abspath(os.path.join(os.path.dirname( __file__ ),'..','kiln-profiles','pottery'))
