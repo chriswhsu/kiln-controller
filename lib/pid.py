@@ -1,6 +1,6 @@
 import logging
 
-from simplePID import PID as myPID
+from lib.simplePID import PID as myPID
 log = logging.getLogger(__name__)
 
 
