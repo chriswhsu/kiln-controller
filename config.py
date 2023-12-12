@@ -12,8 +12,8 @@ log_level = logging.INFO
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 
 # Server
-ip_address = "192.168.1.185"
-listening_port = 80
+ip_address = "192.168.1.195"
+listening_port = 8080
 
 ########################################################################
 # Cost Information
@@ -68,9 +68,9 @@ sensor_time_wait = 2
 # These parameters control kiln temperature change. These settings work
 # well with the simulated oven. You must tune them to work well with 
 # your specific kiln.
-pid_kp = .10  # Proportional
-pid_ki = 0.01  # Integral
-pid_kd = 25  # Derivative
+pid_kp = 3.0  # Proportional
+pid_ki = 0.05  # Integral
+pid_kd = 5  # Derivative
 
 ########################################################################
 #   Simulation parameters
@@ -143,7 +143,7 @@ emergency_shutoff_temp = 1200 # don't go above 1200, glass never needs heating h
 
 # Wemo Backup Switch Control
 kill_switch_enabled = True
-wemo_device_name = "Christmas Lights"
+wemo_device_name = "Kiln"
 
 ########################################################################
 # automatic restarts - if you have a power brown-out and the raspberry pi

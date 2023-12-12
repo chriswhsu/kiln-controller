@@ -20,11 +20,12 @@ class PID(object):
 
     def __init__(
             self,
-            Kp=1.0,
-            Ki=0.0,
-            Kd=0.0,
+            proportional_gain,
+            integral_gain,
+            derivative_gain,
             setpoint=0,
             output_limits=(None, None),
+            integral_limits=(None, None),
             proportional_on_measurement=False,
             differential_on_measurement=True,
             error_map=None,
@@ -33,9 +34,9 @@ class PID(object):
         """
         Initialize a new PID controller.
 
-        :param Kp: The value for the proportional gain Kp
-        :param Ki: The value for the integral gain Ki
-        :param Kd: The value for the derivative gain Kd
+        :param proportional_gain: The value for the proportional gain Kp
+        :param integral_gain: The value for the integral gain Ki
+        :param derivative_gain: The value for the derivative gain Kd
         :param setpoint: The initial setpoint that the PID will try to achieve
         :param output_limits: The initial output limits to use, given as an iterable with 2
             elements, for example: (lower, upper). The output will never go below the lower limit
@@ -53,7 +54,7 @@ class PID(object):
             output the PID should give when first calling it to avoid the PID outputting zero and
             moving the system away from the setpoint.
         """
-        self.Kp, self.Ki, self.Kd = Kp, Ki, Kd
+        self.Kp, self.Ki, self.Kd = proportional_gain, integral_gain, derivative_gain
         self.setpoint = setpoint
 
         self._min_output, self._max_output = None, None
@@ -70,15 +71,15 @@ class PID(object):
         self._last_error = None
         self._last_input = None
 
-
-         # Get monotonic time to ensure that time deltas are always positive
+        # Get monotonic time to ensure that time deltas are always positive
         self.time_fn = time.monotonic
 
-        self.output_limits = output_limits
+        self.o_limits = output_limits
+        self.i_limits = integral_limits
         self.reset()
 
         # Set initial state of the controller
-        self._integral = _clamp(starting_output, output_limits)
+        self._integral = _clamp(starting_output, integral_limits)
 
     def __call__(self, input_):
         """
@@ -112,7 +113,7 @@ class PID(object):
 
         # Compute integral and derivative terms
         self._integral += self.Ki * error * elapsed_time
-        self._integral = _clamp(self._integral, self.output_limits)  # Avoid integral windup
+        self._integral = _clamp(self._integral, self.i_limits)  # Avoid integral windup
 
         if self.differential_on_measurement:
             self._derivative = -self.Kd * d_input / elapsed_time
@@ -121,7 +122,7 @@ class PID(object):
 
         # Compute final output
         output = self._proportional + self._integral + self._derivative
-        output = _clamp(output, self.output_limits)
+        output = _clamp(output, self.o_limits)
 
         # Keep track of state
         self._last_output = output
@@ -134,7 +135,7 @@ class PID(object):
     def __repr__(self):
         return (
             '{self.__class__.__name__}('
-            'Kp={self.Kp!r}, Ki={self.Ki!r}, Kd={self.Kd!r}, '
+            'proportional_gain={self.proportional_gain!r}, integral_gain={self.integral_gain!r}, derivative_gain={self.derivative_gain!r}, '
             'setpoint={self.setpoint!r}, '
             'output_limits={self.output_limits!r}, '
             'proportional_on_measurement={self.proportional_on_measurement!r}, '
@@ -153,7 +154,7 @@ class PID(object):
 
     @property
     def tunings(self):
-        """The tunings used by the controller as a tuple: (Kp, Ki, Kd)."""
+        """The tunings used by the controller as a tuple: (proportional_gain, integral_gain, derivative_gain)."""
         return self.Kp, self.Ki, self.Kd
 
     @tunings.setter
@@ -185,8 +186,8 @@ class PID(object):
         self._min_output = min_output
         self._max_output = max_output
 
-        self._integral = _clamp(self._integral, self.output_limits)
-        self._last_output = _clamp(self._last_output, self.output_limits)
+        self._integral = _clamp(self._integral, self.i_limits)
+        self._last_output = _clamp(self._last_output, self.o_limits)
 
     def reset(self):
         """
@@ -199,7 +200,7 @@ class PID(object):
         self._integral = 0
         self._derivative = 0
 
-        self._integral = _clamp(self._integral, self.output_limits)
+        self._integral = _clamp(self._integral, self.i_limits)
 
         self._last_time = self.time_fn()
         self._last_output = None
