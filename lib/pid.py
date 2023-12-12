@@ -1,12 +1,12 @@
 import logging
 
-import simplePID
+from simplePID import PID as myPID
 log = logging.getLogger(__name__)
 
 
 class PID:
     def __init__(self, kp, ki, kd):
-        self.pid = simplePID.PID(kp, ki, kd, setpoint=1, sample_time=2)
+        self.pid = myPID(kp, ki, kd, setpoint=70)
         self.pid.output_limits = (0, 1)
 
     def compute(self, setpoint, current_value):
