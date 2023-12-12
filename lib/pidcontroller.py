@@ -7,7 +7,7 @@ log = logging.getLogger(__name__)
 
 class PIDController:
     def __init__(self, kp, ki, kd):
-        self.pid = PID(kp, ki, kd, setpoint=70, output_limits=(0, 100), integral_limits=(0, 30))
+        self.pid = PID(kp, ki, kd, setpoint=70, output_limits=(0, 100), integral_limits=(0, 100))
 
     def compute(self, setpoint, current_value):
         # Compute the PIDController output for given setpoint and current value (current_value)

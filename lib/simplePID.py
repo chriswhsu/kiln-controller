@@ -81,11 +81,11 @@ class PID(object):
         # Set initial state of the controller
         self._integral = _clamp(starting_output, integral_limits)
 
-    def __call__(self, input_):
+    def __call__(self, actual_temp):
         """
         Update the PID controller.
 
-        Call the PID controller with *input_* and calculate and return a control output if
+        Call the PID controller with *actual_temp* and calculate and return a control output if
         sample_time seconds has passed since the last update. If no new output is calculated,
         return the previous output instead (or None if no value has been calculated yet).
 
@@ -95,8 +95,8 @@ class PID(object):
         elapsed_time = now - self._last_time if (now - self._last_time) else 1e-16
 
         # Compute error terms
-        error = self.setpoint - input_
-        d_input = input_ - (self._last_input if (self._last_input is not None) else input_)
+        error = self.setpoint - actual_temp
+        d_input = actual_temp - (self._last_input if (self._last_input is not None) else actual_temp)
         d_error = error - (self._last_error if (self._last_error is not None) else error)
 
         # Check if must map the error
@@ -126,7 +126,7 @@ class PID(object):
 
         # Keep track of state
         self._last_output = output
-        self._last_input = input_
+        self._last_input = actual_temp
         self._last_error = error
         self._last_time = now
 
