@@ -23,8 +23,8 @@ listening_port = 8080
 # well with the simulated oven. You must tune them to work well with 
 # your specific kiln.
 pid_kp = 1.0  # Proportional
-pid_ki = 3 / 100  # Integral
-pid_kd = 20  # Derivative
+pid_ki = 2 / 100  # Integral
+pid_kd = 30  # Derivative
 
 # Take derivative on measurement as opposed to error.
 derivative_on_measurement = True

@@ -1,78 +1,58 @@
-import threading
-import logging
-import json
-import time
 import datetime
+import json
+import logging
+import threading
+import time
 
 log = logging.getLogger(__name__)
 
 
 class OvenWatcher(threading.Thread):
     def __init__(self, oven):
-        self.last_profile = None
-        self.last_log = []
-        self.started = None
-        self.recording = False
-        self.observers = []
-        threading.Thread.__init__(self)
+        super().__init__()
         self.daemon = True
         self.oven = oven
-        self.start()
+        self.last_profile = None
+        self.temperature_history = []
+        self.started = None
+        self.observers = []
 
-    # FIXME - need to save runs of schedules in near-real-time
-    # FIXME - this will enable re-start in case of power outage
-    # FIXME - re-start also requires safety start (pausing at the beginning
-    # until a temp is reached)
-    # FIXME - re-start requires a time setting in minutes.  if power has been
-    # out more than N minutes, don't restart
-    # FIXME - this should not be done in the Watcher, but in the Oven class
-
+    # Needed for swapping out oven after initial program initialization
     def set_oven(self, oven):
         self.oven = oven
 
     def run(self):
+        self.started = datetime.datetime.now()
+        self.temperature_history = []
+
         while True:
             oven_state = self.oven.get_state()
 
-            # record state for any new clients that join
             if oven_state.get("state") == "RUNNING":
-                self.last_log.append(oven_state)
-            else:
-                self.recording = False
+                self.temperature_history.append(oven_state)
             self.notify_all(oven_state)
             time.sleep(self.oven.time_step)
 
-    def lastlog_subset(self, maxpts=50):
-        # send about maxpts from lastlog by skipping unwanted data
-        totalpts = len(self.last_log)
-        if totalpts <= maxpts:
-            return self.last_log
-        every_nth = int(totalpts / (maxpts - 1))
-        return self.last_log[::every_nth]
+    def sampled_temp_history(self, max_points=100):
+        total_points = len(self.temperature_history)
+        if total_points <= max_points:
+            points = self.temperature_history
+        else:
+            every_nth = max(1, total_points // (max_points - 1))  # Avoid division by zero
+            points = self.temperature_history[::every_nth]
 
-    def record(self, profile):
+        log.info(f"Returning {len(points)} points from the current run")
+        return points
+
+    def set_profile(self, profile):
         self.last_profile = profile
-        self.last_log = []
-        self.started = datetime.datetime.now()
-        self.recording = True
-        # we just turned on, add first state for nice graph
-        self.last_log.append(self.oven.get_state())
 
     def add_observer(self, observer):
-        if self.last_profile:
-            p = {
-                "name": self.last_profile.name,
-                "data": self.last_profile.data,
-                "type": "profile"
-            }
-        else:
-            p = None
-
+        profile_data = self.get_profile_data()
         backlog = {
             'type': "backlog",
-            'profile': p,
-            'log': self.lastlog_subset(),
-            # 'started': self.started
+            'profile': profile_data,
+            'log': self.sampled_temp_history(),
         }
         backlog_json = json.dumps(backlog)
         try:
@@ -80,19 +60,28 @@ class OvenWatcher(threading.Thread):
             observer.send(backlog_json)
         except Exception as e:
             log.error(f"An error occurred: {e}")
-            log.error("Could not send backlog to new observer")
+            log.error("Could not send backlog to a new observer")
 
         self.observers.append(observer)
 
+    def get_profile_data(self):
+        if self.last_profile:
+            return {
+                "name": self.last_profile.name,
+                "data": self.last_profile.data,
+                "type": "profile"
+            }
+        return None
+
     def notify_all(self, message):
         message_json = json.dumps(message)
-        log.debug("sending to %d clients: %s" % (len(self.observers), message_json))
+        log.debug("Sending to %d clients: %s" % (len(self.observers), message_json))
         for wsock in self.observers:
             if wsock:
                 try:
                     wsock.send(message_json)
-                except:
-                    log.error("could not write to socket %s" % wsock)
+                except Exception as e:
+                    log.error(f"Could not write to socket {wsock}: {e}")
                     self.observers.remove(wsock)
             else:
                 self.observers.remove(wsock)

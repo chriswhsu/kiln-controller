@@ -9,7 +9,6 @@ import config
 from lib.heatoutput import HeatOutput
 from lib.killswitch import KillSwitch
 from lib.pid import PID
-from lib.profile import Profile
 from lib.tempsensor import TempSensorSimulated, TempSensorReal
 
 log = logging.getLogger(__name__)
@@ -152,56 +151,6 @@ class Oven(threading.Thread):
         with open(config.automatic_restart_state_file, 'w', encoding='utf-8') as f:
             json.dump(self.get_state(), f, ensure_ascii=False, indent=4)
 
-    @staticmethod
-    def state_file_is_old():
-        # returns True is state files is older than 15 mins default
-        #         False if younger
-        #         True if state file cannot be opened or does not exist
-
-        if os.path.isfile(config.automatic_restart_state_file):
-            state_age = os.path.getmtime(config.automatic_restart_state_file)
-            now = time.time()
-            minutes = (now - state_age) / 60
-            if minutes <= config.automatic_restart_window:
-                return False
-        return True
-
-    def save_automatic_restart_state(self):
-        # only save state if the feature is enabled
-        if config.automatic_restarts:
-            self.save_state()
-
-    def should_i_automatic_restart(self):
-        # only automatic restart if the feature is enabled
-        if not config.automatic_restarts:
-            return False
-        if self.state_file_is_old():
-            log.info("automatic restart not possible. state file does not exist or is too old.")
-            return False
-
-        with open(config.automatic_restart_state_file) as infile:
-            d = json.load(infile)
-        if d["state"] != "RUNNING":
-            log.info("automatic restart not possible. state = %s" % (d["state"]))
-            return False
-        return True
-
-    def automatic_restart(self):
-        with open(config.automatic_restart_state_file) as infile:
-            d = json.load(infile)
-        startat = d["runtime"] / 60
-        filename = "%s.json" % (d["profile"])
-        profile_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'storage', 'profiles', filename))
-
-        log.info("automatically restarting profile = %s at minute = %d" % (profile_path, startat))
-        with open(profile_path) as infile:
-            profile_json = json.dumps(json.load(infile))
-        profile = Profile(profile_json)
-        self.run_profile(profile, startat=startat)
-        self.cost = d["cost"]
-        time.sleep(1)
-        self.ovenwatcher.record(profile)
-
     def set_ovenwatcher(self, watcher):
         log.info("ovenwatcher set in oven class")
         self.ovenwatcher = watcher
@@ -212,28 +161,27 @@ class Oven(threading.Thread):
     def run(self):
         while True:
             if self.state == "IDLE":
-                if self.should_i_automatic_restart():
-                    self.automatic_restart()
                 time.sleep(1)
                 continue
             if self.state == "RUNNING":
-                self.update_temperature()
                 self.update_cost()
-                self.save_automatic_restart_state()
                 self.kiln_must_catch_up()
                 self.update_runtime()
                 self.update_target_temp()
                 self.determine_heat()
                 self.reset_if_emergency()
                 self.reset_if_schedule_ended()
+            # else:
+            #     self.update_temperature()
+            #     time.sleep(1)
 
 
 class SimulatedOven(Oven):
 
     def __init__(self):
-        self.element_to_oven_heat_transfer = None
-        self.heat_transfer_rate_to_environ = None
-        self.heat_energy = None
+        self.element_to_oven_heat_transfer = 0
+        self.heat_transfer_rate_to_environ = 0
+        self.heat_energy = 0
         self.environ_temp = config.sim_t_env
         self.elem_heat_capacity = config.element_heat_capacity
         self.c_oven = config.oven_heat_capacity
@@ -258,7 +206,6 @@ class SimulatedOven(Oven):
         self.heat = max(0.0, round(float(self.time_step * pid), 2))
 
         self.heating_energy(pid)
-        self.temp_changes()
 
         log.debug("simulation: -> %dW heater: %.0f -> %dW oven: %.0f -> %dW env" % (int(self.p_heat * pid),
                                                                                     self.element_temperature,
@@ -266,6 +213,7 @@ class SimulatedOven(Oven):
                                                                                     self.oven_temp,
                                                                                     int(self.heat_transfer_rate_to_environ)))
 
+        self.temp_changes()
         time.sleep(self.time_step)
 
     def update_temperature(self):
@@ -278,6 +226,7 @@ class SimulatedOven(Oven):
         self.heat_energy = self.p_heat * self.time_step * pid
 
     def temp_changes(self):
+        log.info(f"heat_energy: {self.heat_energy}")
         # temperature change of heat element by heating
         self.element_temperature += self.heat_energy / self.elem_heat_capacity
 
@@ -291,8 +240,9 @@ class SimulatedOven(Oven):
         # temperature change of oven by cooling to environment
         self.heat_transfer_rate_to_environ = (self.oven_temp - self.environ_temp) / self.oven_resistance
         self.oven_temp -= self.heat_transfer_rate_to_environ * self.time_step / self.c_oven
-        self.temperature = round(self.oven_temp, 2)
 
+        self.temperature = round(self.oven_temp, 2)
+        log.info(f"Set simulated oven temp to {self.temperature}")
 
 class RealOven(Oven):
 

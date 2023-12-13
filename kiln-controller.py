@@ -43,6 +43,7 @@ class KilnController:
         # Swap out later when actual run starts.
         self.oven_watcher = OvenWatcher(self.oven)
         self.oven.set_ovenwatcher(self.oven_watcher)
+        self.oven_watcher.start()
 
         self.app.route('/')(self.index)
         self.app.route('/kiln_control/:filename#.*#')(self.send_static)
@@ -77,7 +78,12 @@ class KilnController:
                     log.debug("Received (control): %s" % message)
                     msgdict = json.loads(message)
                     command = msgdict.get("cmd")
-                    profile = Profile(json.dumps(msgdict.get('profile')))
+
+                    profile_data = msgdict.get('profile')
+                    if profile_data:
+                        profile = Profile(profile_data=profile_data)
+                    else:
+                        profile = None
 
                     if command == "RUN":
                         log.debug("RUN command received")
@@ -122,7 +128,7 @@ class KilnController:
         self.oven_watcher.set_oven(self.oven)
         self.oven.set_ovenwatcher(self.oven_watcher)
         self.oven.run_profile(profile)
-        self.oven_watcher.record(profile)
+        self.oven_watcher.set_profile(profile)
 
     def handle_status(self):
         log.debug("Handle Status Initialized")
