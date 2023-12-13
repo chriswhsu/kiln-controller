@@ -8,4 +8,4 @@ thumbs.db
 .idea/*
 nohup.out
 state.json
-
+local_config.py

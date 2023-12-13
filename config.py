@@ -1,6 +1,8 @@
 import logging
 import os
 
+import local_config
+
 # uncomment this if using MAX-31856
 # from lib.max31856 import MAX31856
 
@@ -12,8 +14,8 @@ log_level = logging.INFO
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 
 # Server
-ip_address = "localhost"
-listening_port = 8080
+ip_address = local_config.ip_address
+listening_port = local_config.listening_port
 
 ########################################################################
 #
