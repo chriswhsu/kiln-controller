@@ -73,6 +73,7 @@ class TempSensorReal(TempSensor):
                 self.bad_stamp = time.time()
 
             temp = self.thermocouple.get()
+            log.debug(f"Temp: {temp}")
             self.noConnection = self.thermocouple.noConnection
             self.shortToGround = self.thermocouple.shortToGround
             self.shortToVCC = self.thermocouple.shortToVCC

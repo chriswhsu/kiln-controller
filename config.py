@@ -22,15 +22,18 @@ listening_port = 80
 # These parameters control kiln temperature change. These settings work
 # well with the simulated oven. You must tune them to work well with 
 # your specific kiln.
-pid_kp = 2.0  # Proportional
-pid_ki = 4 / 100  # Integral
-pid_kd = 100  # Derivative
+pid_kp = 1.0  # Proportional
+pid_ki = 3 / 100  # Integral
+pid_kd = 20  # Derivative
+
+# Take derivative on measurement as opposed to error.
+derivative_on_measurement = True
 
 # clamp output between these values
 output_limits = (0, 100)
 
 # clamp max integral accumulation
-integral_limits = (0, 75)
+integral_limits = (0, 100)
 
 ########################################################################
 #

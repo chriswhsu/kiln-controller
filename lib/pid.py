@@ -26,16 +26,15 @@ class PID:
             integral_gain=config.pid_ki,
             derivative_gain=config.pid_kd,
             setpoint=70,
-            differential_on_measurement=False,
             error_map=None,
             starting_output=0.0,
     ):
         self.Kp, self.Ki, self.Kd = proportional_gain, integral_gain, derivative_gain
         self.setpoint = setpoint
-        self.differential_on_measurement = differential_on_measurement
+        self.derivative_on_measurement = config.derivative_on_measurement
         self.error_map = error_map
-        self.o_limits = config.output_limits
-        self.i_limits = config.integral_limits
+        self.output_limits = config.output_limits
+        self.integral_limits = config.integral_limits
         self._proportional = 0
         self._integral = 0
         self._derivative = 0
@@ -45,7 +44,7 @@ class PID:
         self._last_input = None
         self.time_fn = time.monotonic
         self.reset()
-        self._integral = _clamp(starting_output, self.i_limits)
+        self._integral = _clamp(starting_output, self.integral_limits)
 
     def compute(self, setpoint, actual_temp):
 
@@ -63,15 +62,15 @@ class PID:
         self._proportional = self.Kp * error
 
         self._integral += self.Ki * error * elapsed_time
-        self._integral = _clamp(self._integral, self.i_limits)
+        self._integral = _clamp(self._integral, self.integral_limits)
 
-        if self.differential_on_measurement:
+        if self.derivative_on_measurement:
             self._derivative = -self.Kd * d_input / elapsed_time
         else:
             self._derivative = self.Kd * d_error / elapsed_time
 
         output = self._proportional + self._integral + self._derivative
-        output = _clamp(output, self.o_limits)
+        output = _clamp(output, self.output_limits)
 
         self._last_output = output
         self._last_input = actual_temp
@@ -89,7 +88,7 @@ class PID:
             f'proportional_gain={self.Kp!r}, integral_gain={self.Ki!r}, derivative_gain={self.Kd!r}, '
             f'setpoint={self.setpoint!r}, '
             f'output_limits={self.output_limits!r}, '
-            f'differential_on_measurement={self.differential_on_measurement!r}, '
+            f'differential_on_measurement={self.derivative_on_measurement!r}, '
             f'error_map={self.error_map!r}'
             ')'
         )
@@ -135,8 +134,8 @@ class PID:
         self._min_output = min_output
         self._max_output = max_output
 
-        self._integral = _clamp(self._integral, self.i_limits)
-        self._last_output = _clamp(self._last_output, self.o_limits)
+        self._integral = _clamp(self._integral, self.integral_limits)
+        self._last_output = _clamp(self._last_output, self.output_limits)
 
     def reset(self):
         """
@@ -149,7 +148,7 @@ class PID:
         self._integral = 0
         self._derivative = 0
 
-        self._integral = _clamp(self._integral, self.i_limits)
+        self._integral = _clamp(self._integral, self.integral_limits)
 
         self._last_time = self.time_fn()
         self._last_output = None
