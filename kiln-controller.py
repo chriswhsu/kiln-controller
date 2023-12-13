@@ -95,8 +95,6 @@ class KilnController:
                             log.error("No oven initialized. Aborting.")
                             bottle.abort()
 
-                    # Add additional command handling here if necessary
-
         except WebSocketError as wse:
             log.error(wse)
         finally:
@@ -125,6 +123,24 @@ class KilnController:
         self.oven.set_ovenwatcher(self.oven_watcher)
         self.oven.run_profile(profile)
         self.oven_watcher.record(profile)
+
+    def handle_status(self):
+        log.debug("Handle Status Initialized")
+        # Implementation of status handling
+        websocket = self.get_websocket_from_request()
+        if self.oven_watcher:
+            self.oven_watcher.add_observer(websocket)
+            log.debug("OvenWatcher connected to websocket.")
+        log.debug("websocket (status) opened")
+        try:
+            while True:
+                message = websocket.receive()
+                websocket.send("Your message was: %r" % message)
+        except WebSocketError as error:
+            log.error(f"Error with WebSocket in status: {error}")
+        finally:
+            websocket.close()
+            log.debug("websocket (status) closed")
 
     def handle_storage(self):
         # Implementation of storage handling
@@ -163,24 +179,6 @@ class KilnController:
         finally:
             websocket.close()
             log.debug("websocket (config) closed")
-
-    def handle_status(self):
-        log.debug("Handle Status Initialized")
-        # Implementation of status handling
-        websocket = self.get_websocket_from_request()
-        if self.oven_watcher:
-            self.oven_watcher.add_observer(websocket)
-            log.debug("OvenWatcher connected to websocket.")
-        log.debug("websocket (status) opened")
-        try:
-            while True:
-                message = websocket.receive()
-                websocket.send("Your message was: %r" % message)
-        except WebSocketError as error:
-            log.error(f"Error with WebSocket in status: {error}")
-        finally:
-            websocket.close()
-            log.debug("websocket (status) closed")
 
     def get_config(self):
         return json.dumps({"temp_scale": self.config.temp_scale,
