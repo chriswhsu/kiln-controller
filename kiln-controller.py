@@ -9,10 +9,11 @@ from gevent.pywsgi import WSGIServer
 from geventwebsocket import WebSocketError
 from geventwebsocket.handler import WebSocketHandler
 
-from lib.oven import SimulatedOven, RealOven
-from lib.ovenwatcher import OvenWatcher
+from lib.real_oven import RealOven
+from lib.simulated_oven import SimulatedOven
+from lib.oven_watcher import OvenWatcher
 from lib.profile import Profile
-from lib.profilemanager import ProfileManager
+from lib.profile_manager import ProfileManager
 
 log = logging.getLogger(__name__)
 
