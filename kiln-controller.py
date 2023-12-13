@@ -80,9 +80,9 @@ class KilnController:
                     msgdict = json.loads(message)
                     command = msgdict.get("cmd")
 
-                    profile_data = msgdict.get('profile')
-                    if profile_data:
-                        profile = Profile(profile_data=profile_data)
+                    profile_dict = msgdict.get('profile')
+                    if profile_dict:
+                        profile = Profile(profile_dict=profile_dict)
                     else:
                         profile = None
 

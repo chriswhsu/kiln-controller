@@ -4,6 +4,8 @@ import logging
 import threading
 import time
 
+from lib.profile import Profile
+
 log = logging.getLogger(__name__)
 
 
@@ -44,7 +46,7 @@ class OvenWatcher(threading.Thread):
         log.info(f"Returning {len(points)} points from the current run")
         return points
 
-    def set_profile(self, profile):
+    def set_profile(self, profile: Profile):
         self.last_profile = profile
 
     def add_observer(self, observer):
@@ -68,7 +70,7 @@ class OvenWatcher(threading.Thread):
         if self.last_profile:
             return {
                 "name": self.last_profile.name,
-                "data": self.last_profile.data,
+                "data": self.last_profile.temp_cycle_steps,
                 "type": "profile"
             }
         return None
