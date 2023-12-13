@@ -38,12 +38,11 @@ class KilnController:
         self.bottle_server = bottle.Bottle()
         self.config = config
 
-        self.oven = SimulatedOven()
         # Initialize with the simulated oven, need to have the oven_watcher running
         # before a run starts.
         # Swap out later when actual run starts.
+        self.oven = SimulatedOven()
         self.oven_watcher = OvenWatcher(self.oven)
-        self.oven.set_ovenwatcher(self.oven_watcher)
         self.oven_watcher.start()
 
         self.bottle_server.route('/')(self.index)
@@ -127,7 +126,6 @@ class KilnController:
 
         log.debug(f"{oven_type} Oven created")
         self.oven_watcher.set_oven(self.oven)
-        self.oven.set_ovenwatcher(self.oven_watcher)
         self.oven.run_profile(profile)
         self.oven_watcher.set_profile(profile)
 

@@ -16,7 +16,6 @@ class Oven(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.kill_switch = None
-        self.ovenwatcher = None
         self.startat = 0
         self.pid = PID()
         # heating or not?
@@ -146,10 +145,6 @@ class Oven(threading.Thread):
     def save_state(self):
         with open(config.automatic_restart_state_file, 'w', encoding='utf-8') as f:
             json.dump(self.get_state(), f, ensure_ascii=False, indent=4)
-
-    def set_ovenwatcher(self, watcher):
-        log.info("ovenwatcher set in oven class")
-        self.ovenwatcher = watcher
 
     def update_temperature(self):
         pass

@@ -10,11 +10,11 @@ log = logging.getLogger(__name__)
 
 
 class OvenWatcher(threading.Thread):
-    def __init__(self, oven):
+    def __init__(self, oven, profile: Profile = None):
         super().__init__()
         self.daemon = True
         self.oven = oven
-        self.last_profile = None
+        self.active_profile = profile
         self.temperature_history = []
         self.started = None
         self.observers = []
@@ -47,7 +47,7 @@ class OvenWatcher(threading.Thread):
         return points
 
     def set_profile(self, profile: Profile):
-        self.last_profile = profile
+        self.active_profile = profile
 
     def add_observer(self, observer):
         profile_data = self.get_profile_data()
@@ -67,10 +67,10 @@ class OvenWatcher(threading.Thread):
         self.observers.append(observer)
 
     def get_profile_data(self):
-        if self.last_profile:
+        if self.active_profile:
             return {
-                "name": self.last_profile.name,
-                "data": self.last_profile.temp_cycle_steps,
+                "name": self.active_profile.name,
+                "data": self.active_profile.temp_cycle_steps,
                 "type": "profile"
             }
         return None
