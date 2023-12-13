@@ -57,56 +57,6 @@ class KilnController:
     def index():
         return bottle.redirect('/kiln_control/index.html')
 
-    def handle_api_stats(self):
-        log.debug("/api/stats command received")
-        if hasattr(self.oven, 'pid'):
-            if hasattr(self.oven.pid, 'pid_stats'):
-                return json.dumps(self.oven.pid.pidstats)
-
-    def handle_api(self):
-        # Implementation of API handling
-        log.debug("/api is alive")
-
-        # run a kiln schedule
-        if bottle.request.json['cmd'] == 'run':
-            selected_profile = bottle.request.json['profile']
-            log.info('api requested run of profile = %s' % selected_profile)
-
-            # start at a specific minute in the schedule
-            # for restarting and skipping over early parts of a schedule
-            startat = 0
-            if 'startat' in bottle.request.json:
-                startat = bottle.request.json['startat']
-
-            # get the profile/kiln schedule
-            profile = self.prof_man.find_profile(selected_profile)
-            if profile is None:
-                return {"success": False, "error": "profile %s not found" % selected_profile}
-
-            # FIXME juggling of json should happen in the Profile class
-            profile_json = json.dumps(profile)
-            profile = Profile(profile_json)
-            self.oven.run_profile(profile, startat=startat)
-            self.oven_watcher.record(profile)
-
-        if bottle.request.json['cmd'] == 'stop':
-            log.info("api stop command received")
-            self.oven.abort_run()
-
-        if bottle.request.json['cmd'] == 'memo':
-            log.debug("api memo command received")
-            memo = bottle.request.json['memo']
-            log.debug(f"memo={memo}")
-
-        # get stats during a run
-        if bottle.request.json['cmd'] == 'stats':
-            log.debug("api stats command received")
-            if hasattr(self.oven, 'pid'):
-                if hasattr(self.oven.pid, 'pid_stats'):
-                    return json.dumps(self.oven.pid.pidstats)
-
-        return {"success": True}
-
     def send_static(self, filename):
         log.debug(f"serving {filename}")
         return bottle.static_file(filename, root=os.path.join(self.script_dir, "public"))
