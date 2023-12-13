@@ -45,8 +45,6 @@ class KilnController:
         self.oven.set_ovenwatcher(self.oven_watcher)
 
         self.app.route('/')(self.index)
-        self.app.get('/api/stats')(self.handle_api_stats)
-        self.app.post('/api')(self.handle_api)
         self.app.route('/kiln_control/:filename#.*#')(self.send_static)
         self.app.route('/control')(self.handle_control)
         self.app.route('/storage')(self.handle_storage)
@@ -115,17 +113,6 @@ class KilnController:
             websocket.close()
             log.debug("websocket (control) closed")
 
-    def process_run_command(self, msgdict):
-        profile_obj = msgdict.get('profile')
-        if profile_obj:
-            profile_json = json.dumps(profile_obj)
-            profile = Profile(profile_json)
-            self.oven.run_profile(profile)
-            self.oven_watcher.record(profile)
-        else:
-            log.error("No profile defined. Aborting.")
-            bottle.abort()
-
     def handle_storage(self):
         # Implementation of storage handling
         websocket = self.get_websocket_from_request()
@@ -191,6 +178,17 @@ class KilnController:
                            'kd': config.pid_kd,
                            "kwh_rate": config.kwh_rate,
                            "currency_type": config.currency_type})
+
+    def process_run_command(self, msg_dict):
+        profile_obj = msg_dict.get('profile')
+        if profile_obj:
+            profile_json = json.dumps(profile_obj)
+            profile = Profile(profile_json)
+            self.oven.run_profile(profile)
+            self.oven_watcher.record(profile)
+        else:
+            log.error("No profile defined. Aborting.")
+            bottle.abort()
 
     def run(self):
         ip = config.ip_address
