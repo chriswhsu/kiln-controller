@@ -24,32 +24,40 @@ let ws_storage = new WebSocket(`${host}/storage`);
 
 // Graph Setup
 graph.profile = {
-    label: "Profile",
-    data: [],
-    points: {show: false},
-    color: "#75890c",
-    draggable: false
+    label: "Profile", data: [], points: {show: false}, color: "#75890c", draggable: false
 };
 
 graph.live = {
-    label: "Live",
-    data: [],
-    points: {show: false},
-    color: "#d8d3c5",
-    draggable: false
+    label: "Live", data: [], points: {show: false}, color: "#d8d3c5", draggable: false
 };
 
-// Function Definitions
+// Function to update the profile based on the selected ID
 function updateProfile(id) {
+    // Set the selected profile and its name
     selected_profile = id;
     selected_profile_name = profiles[id].name;
+
+    // Calculate the duration of the job in seconds
+    // If no data, duration is 0, otherwise, get the last timestamp from the profile data
     let job_seconds = profiles[id].data.length === 0 ? 0 : parseInt(profiles[id].data[profiles[id].data.length - 1][0]);
+
+    // Calculate the energy consumption in kWh
+    // Assumes 3850 W power usage, converts seconds to hours, and formats to 2 decimal places
     let kwh = (3850 * job_seconds / 3600 / 1000).toFixed(2);
+
+    // Calculate the cost of the job
+    // Multiplies kWh by the rate and formats to 2 decimal places
     let cost = (kwh * kwh_rate).toFixed(2);
+
+    // Format the job duration into a readable time format (HH:MM:SS)
     let job_time = new Date(job_seconds * 1000).toISOString().slice(11, 19);
+
+    // Update the UI with the selected profile name, estimated time, and cost
     $('#sel_prof').html(profiles[id].name);
     $('#sel_prof_eta').html(job_time);
     $('#sel_prof_cost').html(kwh + ' kWh (' + currency_type + cost + ')');
+
+    // Update the graph with the selected profile's data and re-plot it
     graph.profile.data = profiles[id].data;
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 }
@@ -147,72 +155,13 @@ function updateProfileTable() {
     });
 }
 
-function timeProfileFormatter(val, down) {
-    let rval = val
-    switch (time_scale_profile) {
-        case "m":
-            if (down) {
-                rval = val / 60;
-            } else {
-                rval = val * 60;
-            }
-            break;
-        case "h":
-            if (down) {
-                rval = val / 3600;
-            } else {
-                rval = val * 3600;
-            }
-            break;
-    }
-    return Math.round(rval);
-}
 
-function formatDPS(val) {
-    let tval = val;
-    if (time_scale_slope === "m") {
-        tval = val * 60;
-    }
-    if (time_scale_slope === "h") {
-        tval = (val * 60) * 60;
-    }
-    return Math.round(tval);
-}
 
-function hazardTemp() {
-
-    if (temp_scale === "f") {
-        return (1500 * 9 / 5) + 32
-    } else {
-        return 1500
-    }
-}
-
-function timeTickFormatter(val, axis) {
-// hours
-    if (axis.max > 3600) {
-        //let hours = Math.floor(val / (3600));
-        //return hours;
-        return Math.floor(val / 3600);
-    }
-
-// minutes
-    if (axis.max <= 3600) {
-        return Math.floor(val / 60);
-    }
-
-// seconds
-    if (axis.max <= 60) {
-        return val;
-    }
-}
 
 function runTask() {
-    let cmd =
-        {
-            "cmd": "RUN",
-            "profile": profiles[selected_profile]
-        }
+    let cmd = {
+        "cmd": "RUN", "profile": profiles[selected_profile]
+    }
 
     graph.live.data = [];
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
@@ -222,11 +171,9 @@ function runTask() {
 }
 
 function runTaskSimulation() {
-    let cmd =
-        {
-            "cmd": "SIMULATE",
-            "profile": profiles[selected_profile]
-        }
+    let cmd = {
+        "cmd": "SIMULATE", "profile": profiles[selected_profile]
+    }
 
     graph.live.data = [];
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
@@ -323,9 +270,7 @@ function saveProfile() {
                 offset: {from: 'top', amount: 250}, // 'top', or 'bottom'
                 align: 'center', // ('left', 'right', or 'center')
                 width: 385, // (integer, or 'auto')
-                delay: 5000,
-                allow_dismiss: true,
-                stackup_spacing: 10 // spacing between consecutively stacked growls.
+                delay: 5000, allow_dismiss: true, stackup_spacing: 10 // spacing between consecutively stacked growls.
             });
 
             return false;
@@ -344,87 +289,6 @@ function saveProfile() {
     leaveEditMode();
 }
 
-function get_tick_size() {
-//switch(time_scale_profile){
-//  case "s":
-//    return 1;
-//  case "m":
-//    return 60;
-//  case "h":
-//    return 3600;
-//  }
-    return 3600;
-}
-
-function getOptions() {
-
-    return {
-
-        series:
-            {
-                lines:
-                    {
-                        show: true
-                    },
-
-                points:
-                    {
-                        show: true,
-                        radius: 5,
-                        symbol: "circle"
-                    },
-
-                shadowSize: 3
-
-            },
-
-        xaxis:
-            {
-                min: 0,
-                tickColor: 'rgba(216, 211, 197, 0.2)',
-                tickFormatter: timeTickFormatter,
-                tickSize: get_tick_size(),
-                font:
-                    {
-                        size: 14,
-                        lineHeight: 14, weight: "normal",
-                        family: "Digi",
-                        variant: "small-caps",
-                        color: "rgba(216, 211, 197, 0.85)"
-                    }
-            },
-
-        yaxis:
-            {
-                min: 0,
-                tickDecimals: 0,
-                draggable: false,
-                tickColor: 'rgba(216, 211, 197, 0.2)',
-                font:
-                    {
-                        size: 14,
-                        lineHeight: 14,
-                        weight: "normal",
-                        family: "Digi",
-                        variant: "small-caps",
-                        color: "rgba(216, 211, 197, 0.85)"
-                    }
-            },
-
-        grid:
-            {
-                color: 'rgba(216, 211, 197, 0.55)',
-                borderWidth: 1,
-                labelMargin: 10,
-                mouseActiveRadius: 50
-            },
-
-        legend:
-            {
-                show: false
-            }
-    };
-}
 
 function reconnectWebSocket(wsName) {
     console.log(`Lost connection to ${wsName}. Reloading the page...`);
@@ -465,7 +329,6 @@ function handleStatusOpen() {
     });
 }
 
-
 function handleStatusMessage(e) {
     console.log("received status data");
     console.log(e.data);
@@ -493,7 +356,6 @@ function handleStatusClose() {
     console.log("Status WebSocket closed. Attempting to reconnect...");
     reconnectWebSocket('ws_status', `${host}/status`);
 }
-
 
 function handleControlClose() {
     console.log("Control WebSocket closed. Attempting to reconnect...");
@@ -555,8 +417,14 @@ function notifyRunCompleted(newState) {
     $('#target_temp').html('---');
     updateProgress(0);
     $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>Run completed. New State: " + newState + "</b>", {
-        ele: 'body', type: 'success', offset: {from: 'top', amount: 250},
-        align: 'center', width: 385, delay: 0, allow_dismiss: true, stackup_spacing: 10
+        ele: 'body',
+        type: 'success',
+        offset: {from: 'top', amount: 250},
+        align: 'center',
+        width: 385,
+        delay: 0,
+        allow_dismiss: true,
+        stackup_spacing: 10
     });
 }
 
@@ -749,8 +617,7 @@ function updateProfileSelector() {
         return a.name;
     });
 
-    if (valid_profile_names.length > 0 &&
-        $.inArray(selected_profile_name, valid_profile_names) === -1) {
+    if (valid_profile_names.length > 0 && $.inArray(selected_profile_name, valid_profile_names) === -1) {
         selected_profile = 0;
         selected_profile_name = valid_profile_names[0];
     }
@@ -771,9 +638,7 @@ function initializeProfileSelector() {
 
     // Initialize the profile selector with select2 plugin
     e2.select2({
-        placeholder: "Select Profile",
-        allowClear: true,
-        minimumResultsForSearch: -1
+        placeholder: "Select Profile", allowClear: true, minimumResultsForSearch: -1
     });
 
     // Event handler for when a new profile is selected
