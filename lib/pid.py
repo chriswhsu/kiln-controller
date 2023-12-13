@@ -33,8 +33,8 @@ class PID:
         self.setpoint = setpoint
         self.derivative_on_measurement = config.derivative_on_measurement
         self.error_map = error_map
-        self.output_limits = config.output_limits
-        self.integral_limits = config.integral_limits
+        self.out_limits = config.output_limits
+        self.int_limits = config.integral_limits
         self._proportional = 0
         self._integral = 0
         self._derivative = 0
@@ -44,7 +44,7 @@ class PID:
         self._last_input = None
         self.time_fn = time.monotonic
         self.reset()
-        self._integral = _clamp(starting_output, self.integral_limits)
+        self._integral = _clamp(starting_output, self.int_limits)
 
     def compute(self, setpoint, actual_temp):
 
@@ -62,7 +62,7 @@ class PID:
         self._proportional = self.Kp * error
 
         self._integral += self.Ki * error * elapsed_time
-        self._integral = _clamp(self._integral, self.integral_limits)
+        self._integral = _clamp(self._integral, self.int_limits)
 
         if self.derivative_on_measurement:
             self._derivative = -self.Kd * d_input / elapsed_time
@@ -70,7 +70,7 @@ class PID:
             self._derivative = self.Kd * d_error / elapsed_time
 
         output = self._proportional + self._integral + self._derivative
-        output = _clamp(output, self.output_limits)
+        output = _clamp(output, self.out_limits)
 
         self._last_output = output
         self._last_input = actual_temp
@@ -134,8 +134,8 @@ class PID:
         self._min_output = min_output
         self._max_output = max_output
 
-        self._integral = _clamp(self._integral, self.integral_limits)
-        self._last_output = _clamp(self._last_output, self.output_limits)
+        self._integral = _clamp(self._integral, self.int_limits)
+        self._last_output = _clamp(self._last_output, self.out_limits)
 
     def reset(self):
         """
@@ -148,7 +148,7 @@ class PID:
         self._integral = 0
         self._derivative = 0
 
-        self._integral = _clamp(self._integral, self.integral_limits)
+        self._integral = _clamp(self._integral, self.int_limits)
 
         self._last_time = self.time_fn()
         self._last_output = None
