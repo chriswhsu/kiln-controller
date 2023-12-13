@@ -58,19 +58,19 @@ class KilnController:
         return bottle.redirect('/kiln_control/index.html')
 
     def handle_api_stats(self):
-        self.log.debug("/api/stats command received")
+        log.debug("/api/stats command received")
         if hasattr(self.oven, 'pid'):
             if hasattr(self.oven.pid, 'pid_stats'):
                 return json.dumps(self.oven.pid.pidstats)
 
     def handle_api(self):
         # Implementation of API handling
-        self.log.debug("/api is alive")
+        log.debug("/api is alive")
 
         # run a kiln schedule
         if bottle.request.json['cmd'] == 'run':
             selected_profile = bottle.request.json['profile']
-            self.log.info('api requested run of profile = %s' % selected_profile)
+            log.info('api requested run of profile = %s' % selected_profile)
 
             # start at a specific minute in the schedule
             # for restarting and skipping over early parts of a schedule
@@ -79,7 +79,7 @@ class KilnController:
                 startat = bottle.request.json['startat']
 
             # get the profile/kiln schedule
-            profile = self.find_profile(selected_profile)
+            profile = self.prof_man.find_profile(selected_profile)
             if profile is None:
                 return {"success": False, "error": "profile %s not found" % selected_profile}
 
@@ -90,17 +90,17 @@ class KilnController:
             self.oven_watcher.record(profile)
 
         if bottle.request.json['cmd'] == 'stop':
-            self.log.info("api stop command received")
+            log.info("api stop command received")
             self.oven.abort_run()
 
         if bottle.request.json['cmd'] == 'memo':
-            self.log.debug("api memo command received")
+            log.debug("api memo command received")
             memo = bottle.request.json['memo']
-            self.log.debug(f"memo={memo}")
+            log.debug(f"memo={memo}")
 
         # get stats during a run
         if bottle.request.json['cmd'] == 'stats':
-            self.log.debug("api stats command received")
+            log.debug("api stats command received")
             if hasattr(self.oven, 'pid'):
                 if hasattr(self.oven.pid, 'pid_stats'):
                     return json.dumps(self.oven.pid.pidstats)
