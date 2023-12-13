@@ -26,13 +26,11 @@ class PID:
             integral_gain=config.pid_ki,
             derivative_gain=config.pid_kd,
             setpoint=70,
-            error_map=None,
             starting_output=0.0,
     ):
         self.Kp, self.Ki, self.Kd = proportional_gain, integral_gain, derivative_gain
         self.setpoint = setpoint
         self.derivative_on_measurement = config.derivative_on_measurement
-        self.error_map = error_map
         self.out_limits = config.output_limits
         self.int_limits = config.integral_limits
         self._proportional = 0
@@ -55,9 +53,6 @@ class PID:
         error = self.setpoint - actual_temp
         d_input = actual_temp - (self._last_input if (self._last_input is not None) else actual_temp)
         d_error = error - (self._last_error if (self._last_error is not None) else error)
-
-        if self.error_map is not None:
-            error = self.error_map(error)
 
         self._proportional = self.Kp * error
 
@@ -89,7 +84,6 @@ class PID:
             f'setpoint={self.setpoint!r}, '
             f'output_limits={self.output_limits!r}, '
             f'differential_on_measurement={self.derivative_on_measurement!r}, '
-            f'error_map={self.error_map!r}'
             ')'
         )
 

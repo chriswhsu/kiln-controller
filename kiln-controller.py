@@ -34,7 +34,7 @@ class KilnController:
 
         self.script_dir = os.path.dirname(os.path.realpath(__file__))
         self.profile_path = config.kiln_profiles_directory
-        self.app = bottle.Bottle()
+        self.bottle_server = bottle.Bottle()
         self.config = config
 
         self.oven = SimulatedOven()
@@ -45,12 +45,12 @@ class KilnController:
         self.oven.set_ovenwatcher(self.oven_watcher)
         self.oven_watcher.start()
 
-        self.app.route('/')(self.index)
-        self.app.route('/kiln_control/:filename#.*#')(self.send_static)
-        self.app.route('/control')(self.handle_control)
-        self.app.route('/storage')(self.handle_storage)
-        self.app.route('/config')(self.handle_config)
-        self.app.route('/status')(self.handle_status)
+        self.bottle_server.route('/')(self.index)
+        self.bottle_server.route('/kiln_control/:filename#.*#')(self.send_static)
+        self.bottle_server.route('/control')(self.handle_control)
+        self.bottle_server.route('/storage')(self.handle_storage)
+        self.bottle_server.route('/config')(self.handle_config)
+        self.bottle_server.route('/status')(self.handle_status)
 
     @staticmethod
     def index():
@@ -200,7 +200,7 @@ class KilnController:
         ip = config.ip_address
         port = config.listening_port
         log.info(f"listening on {ip}:{port}")
-        server = WSGIServer((ip, port), self.app, handler_class=WebSocketHandler)
+        server = WSGIServer((ip, port), self.bottle_server, handler_class=WebSocketHandler)
         server.serve_forever()
 
 
