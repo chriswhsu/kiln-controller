@@ -1,3 +1,4 @@
+import collections
 import logging
 import threading
 import time
@@ -6,13 +7,18 @@ import config
 
 log = logging.getLogger(__name__)
 
+try:
+    from lib.max31855 import MAX31855
+except ImportError as e:
+    log.warning(f"Could not import MAX31855: {e}")
+    MAX31855 = None  # Placeholder for the MAX31855 class
+
 
 class TempSensor(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.daemon = True
         self.temperature = 0
-        self.bad_percent = 0
         self.time_step = config.sensor_time_wait
         self.noConnection = self.shortToGround = self.shortToVCC = self.unknownError = False
 
@@ -28,83 +34,61 @@ class TempSensorSimulated(TempSensor):
 
 
 class TempSensorReal(TempSensor):
-    # real temperature sensor thread that takes N measurements during the time_step
-
     def __init__(self):
-        TempSensor.__init__(self)
-        self.sleep_time = self.time_step / float(config.temperature_average_samples)
-        self.bad_count = 0
-        self.ok_count = 0
-        self.bad_stamp = 0
+        super().__init__()
+        self.sample_interval_seconds = 0.25  # Gather samples 4 times per second
+        self.update_interval_seconds = 1  # Update temperature every 1 second
+        self.sliding_window_seconds = 3
+        # The deque length is based on how many samples are in the 3 second window
+        self.temps = collections.deque(maxlen=int(self.sliding_window_seconds / self.sample_interval_seconds))
+        self.last_update_time = time.monotonic()
 
-        if config.max31855:
-            log.info("init MAX31855")
-            from lib.max31855 import MAX31855
-            self.thermocouple = MAX31855(config.gpio_sensor_cs,
-                                         config.gpio_sensor_clock,
-                                         config.gpio_sensor_data,
-                                         config.temp_scale)
-
-        if config.max31856:
-            log.info("init MAX31856")
-            from lib.max31856 import MAX31856
-            software_spi = {'cs': config.gpio_sensor_cs,
-                            'clk': config.gpio_sensor_clock,
-                            'do': config.gpio_sensor_data,
-                            'di': config.gpio_sensor_di}
-            self.thermocouple = MAX31856(tc_type=config.thermocouple_type,
-                                         software_spi=software_spi,
-                                         units=config.temp_scale,
-                                         ac_freq_50hz=config.ac_freq_50hz,
-                                         )
+        log.info("Initializing MAX31855")
+        self.thermocouple = MAX31855(config.gpio_sensor_cs,
+                                     config.gpio_sensor_clock,
+                                     config.gpio_sensor_data,
+                                     config.temp_scale)
 
     def run(self):
-        # use a moving average of config.temperature_average_samples across the time_step
-        temps = []
         while True:
-            # reset error counter if time is up
-            if (time.time() - self.bad_stamp) > (self.time_step * 2):
-                if self.bad_count + self.ok_count:
-                    self.bad_percent = (self.bad_count / (self.bad_count + self.ok_count)) * 100
-                else:
-                    self.bad_percent = 0
-                self.bad_count = 0
-                self.ok_count = 0
-                self.bad_stamp = time.time()
+            current_time = time.monotonic()
 
-            temp = self.thermocouple.get()
-            log.debug(f"Temp: {temp}")
-            self.noConnection = self.thermocouple.noConnection
-            self.shortToGround = self.thermocouple.shortToGround
-            self.shortToVCC = self.thermocouple.shortToVCC
-            self.unknownError = self.thermocouple.unknownError
+            if current_time - self.last_update_time >= self.update_interval_seconds:
+                if self.temps:  # Ensure there are readings to calculate average
+                    self.temperature = self.get_avg_temp(list(self.temps))
+                self.last_update_time = current_time
 
-            is_bad_value = self.noConnection | self.unknownError
-            if not config.ignore_tc_short_errors:
-                is_bad_value |= self.shortToGround | self.shortToVCC
+            temp, is_bad_value = self.read_temperature()
 
             if not is_bad_value:
-                temps.append(temp)
-                if len(temps) > config.temperature_average_samples:
-                    del temps[0]
-                self.ok_count += 1
-
+                self.temps.append(temp)
             else:
-                log.error("Problem reading temp N/C:%s GND:%s VCC:%s ???:%s" % (self.noConnection, self.shortToGround, self.shortToVCC, self.unknownError))
-                self.bad_count += 1
+                self.process_bad_temp()
 
-            if len(temps):
-                self.temperature = self.get_avg_temp(temps)
-            time.sleep(self.sleep_time)
+            time.sleep(self.sample_interval_seconds)
+
+    def read_temperature(self):
+        temp = self.thermocouple.get()
+        log.debug(f"Temp: {temp}")
+
+        is_bad_value = self.thermocouple.noConnection or self.thermocouple.unknownError
+        if not config.ignore_tc_short_errors:
+            is_bad_value |= self.thermocouple.shortToGround or self.thermocouple.shortToVCC
+
+        return temp, is_bad_value
+
+    def process_bad_temp(self):
+        log.error(
+                f"Problem reading temp N/C:{self.thermocouple.noConnection} GND:{self.thermocouple.shortToGround} VCC:{self.thermocouple.shortToVCC} ???:"
+                f"{self.thermocouple.unknownError}")
 
     @staticmethod
-    def get_avg_temp(temps, chop=25):
+    def get_avg_temp(temps, chop=20):
+        if not temps:
+            return 0
 
-        # strip off chop percent from the beginning and end of the sorted temps then return the average of what is left
-
-        chop = chop / 100
+        chop_percentage = chop / 100
         temps = sorted(temps)
-        total = len(temps)
-        items = int(total * chop)
-        temps = temps[items:total - items]
-        return sum(temps) / len(temps)
+        chop_count = int(len(temps) * chop_percentage)
+        temps = temps[chop_count:-chop_count]
+        return sum(temps) / len(temps) if temps else 0
