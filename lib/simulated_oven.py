@@ -14,7 +14,7 @@ class SimulatedOven(Oven):
         self.element_to_oven_heat_transfer = 0
         self.heat_transfer_rate_to_environ = 0
         self.heat_energy = 0
-        self.environ_temp = config.sim_t_env
+        self.environ_temp = config.simulated_room_temp
         self.elem_heat_capacity = config.element_heat_capacity
         self.c_oven = config.oven_heat_capacity
         self.p_heat = config.oven_heating_power
@@ -22,12 +22,12 @@ class SimulatedOven(Oven):
         self.element_resistance = config.thermal_res_element_to_oven
 
         # set temps to the temp of the surrounding environment
-        self.oven_temp = self.environ_temp  # deg F temp of oven
         self.element_temperature = self.environ_temp  # deg F temp of heating element
-
         log.info("SimulatedOven starting")
 
         super().__init__()
+
+        self.temperature = config.simulated_room_temp
 
     def create_temp_sensor(self):
         self.temp_sensor = TempSensorSimulated()
@@ -35,43 +35,41 @@ class SimulatedOven(Oven):
         self.temp_sensor.start()
 
     def apply_heat(self, pid):
-        self.heat = max(0.0, round(float(self.time_step * pid), 2))
+        # Determine the proportion of the time step the heater is on
+        self.heat = max(0.0, float(self.time_step * pid))
 
-        self.heating_energy(pid)
+        # Calculate the heating energy based on the proportion of time the heater is on
+        self.heat_energy = self.p_heat * self.heat
 
-        log.debug("simulation: -> %dW heater: %.0f -> %dW oven: %.0f -> %dW env" % (int(self.p_heat * pid),
-                                                                                    self.element_temperature,
-                                                                                    int(self.element_to_oven_heat_transfer),
-                                                                                    self.oven_temp,
-                                                                                    int(self.heat_transfer_rate_to_environ)))
+        log.debug(
+                f"simulation: -> {self.p_heat * pid:.2f}W heater: {self.element_temperature:.2f} -> "
+                f"{self.element_to_oven_heat_transfer:.2f}W oven: {self.temperature:.2f} -> "
+                f"{self.heat_transfer_rate_to_environ:.2f}W env"
+        )
 
-        self.temp_changes()
         time.sleep(self.time_step)
 
     def update_temperature(self):
         # temperature is set directly on member variable, no need to query temp sensor.
-        pass
+        # just simulate the change
+        self.simulate_temp_changes()
 
-    def heating_energy(self, pid):
-        # using pid here simulates the element being on for
-        # only part of the time_step
-        self.heat_energy = self.p_heat * self.time_step * pid
-
-    def temp_changes(self):
-        log.info(f"heat_energy: {self.heat_energy}")
+    def simulate_temp_changes(self):
+        oven_temp = self.temperature
+        log.debug(f"heat_energy: {self.heat_energy}")
         # temperature change of heat element by heating
         self.element_temperature += self.heat_energy / self.elem_heat_capacity
 
         # energy flux heat_el -> oven
-        self.element_to_oven_heat_transfer = (self.element_temperature - self.oven_temp) / self.element_resistance
+        self.element_to_oven_heat_transfer = (self.element_temperature - oven_temp) / self.element_resistance
 
         # temperature change of oven and heating element
-        self.oven_temp += self.element_to_oven_heat_transfer * self.time_step / self.c_oven
+        oven_temp += self.element_to_oven_heat_transfer * self.time_step / self.c_oven
         self.element_temperature -= self.element_to_oven_heat_transfer * self.time_step / self.elem_heat_capacity
 
         # temperature change of oven by cooling to environment
-        self.heat_transfer_rate_to_environ = (self.oven_temp - self.environ_temp) / self.oven_resistance
-        self.oven_temp -= self.heat_transfer_rate_to_environ * self.time_step / self.c_oven
+        self.heat_transfer_rate_to_environ = (oven_temp - self.environ_temp) / self.oven_resistance
+        oven_temp -= self.heat_transfer_rate_to_environ * self.time_step / self.c_oven
 
-        self.temperature = round(self.oven_temp, 2)
-        log.info(f"Set simulated oven temp to {self.temperature}")
+        self.temperature = round(oven_temp, 2)
+        log.debug(f"Set simulated oven temp to {self.temperature}")

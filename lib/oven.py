@@ -74,6 +74,7 @@ class Oven(threading.Thread):
     def determine_heat(self):
         # Compute the PID output for the current target and temperature
         pid_output = self.pid.compute(self.target, self.temperature)
+
         # Apply heating or cooling based on PID output.
         self.apply_heat(pid_output)
         self.log_heating(pid_output)
@@ -90,7 +91,8 @@ class Oven(threading.Thread):
         heat_off = float(self.time_step * (1 - pid_output))
 
         log.info(
-                f"temp={self.temperature:.2f}, target={self.target:.2f}, pid_output={pid_output:.2f}, heat_on={heat_on:.2f}, heat_off={heat_off:.2f}, run_time={self.runtime:.1f}"
+                f"temp={self.temperature:.2f}, target={self.target:.2f}, pid_output={pid_output:.2f}, "
+                f"heat_on={heat_on:.2f}, heat_off={heat_off:.2f}, run_time={self.runtime:.1f}"
         )
 
     def kiln_must_catch_up(self):
@@ -147,7 +149,8 @@ class Oven(threading.Thread):
             json.dump(self.get_state(), f, ensure_ascii=False, indent=4)
 
     def update_temperature(self):
-        pass
+        # Placeholder method - overridden in child classes
+        raise NotImplementedError("This method should be overridden in child classes")
 
     def run(self):
         while True:
@@ -155,6 +158,7 @@ class Oven(threading.Thread):
                 time.sleep(1)
                 continue
             if self.state == "RUNNING":
+                self.update_temperature()
                 self.update_cost()
                 self.kiln_must_catch_up()
                 self.update_runtime()
@@ -162,7 +166,4 @@ class Oven(threading.Thread):
                 self.determine_heat()
                 self.reset_if_emergency()
                 self.reset_if_schedule_ended()
-            # else:
-            #     self.update_temperature()
-            #     time.sleep(1)
 

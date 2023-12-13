@@ -46,7 +46,7 @@ sensor_time_wait = 1
 
 ########################################################################
 #   Simulation parameters
-sim_t_env = 70.0  # deg F
+simulated_room_temp = 70.0  # deg F
 element_heat_capacity = 200.0  # J/K  heat capacity of heat element
 oven_heat_capacity = 1000.0  # J/K  heat capacity of oven
 oven_heating_power = 1450.0  # W    heating power of oven
