@@ -1,32 +1,36 @@
 #!/usr/bin/env python
+import json
+import logging
 import os
 import sys
-import logging
-import json
+
 import bottle
 from gevent.pywsgi import WSGIServer
-from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket import WebSocketError
+from geventwebsocket.handler import WebSocketHandler
 
 from lib.oven import SimulatedOven, RealOven
-from lib.profile import Profile
 from lib.ovenWatcher import OvenWatcher
+from lib.profile import Profile
+from lib.profilemanager import ProfileManager
+
+log = logging.getLogger(__name__)
 
 try:
     import config
 except ImportError as e:
-    logging.error(f"Error importing config: {e}")
-    logging.error("Copy config.py.EXAMPLE to config.py and adapt it for your setup.")
+    log.error(f"Error importing config: {e}")
+    log.error("Copy config.py.EXAMPLE to config.py and adapt it for your setup.")
     sys.exit(1)
 
 
 class KilnController:
-    log = logging.getLogger("kiln-controller")
 
     def __init__(self):
 
         logging.basicConfig(level=config.log_level, format=config.log_format)
-        self.log.info("Initializing the kiln controller")
+        log.info("Initializing the kiln controller")
+        self.prof_man = ProfileManager(config.kiln_profiles_directory)
 
         self.script_dir = os.path.dirname(os.path.realpath(__file__))
         self.profile_path = config.kiln_profiles_directory
@@ -104,7 +108,7 @@ class KilnController:
         return {"success": True}
 
     def send_static(self, filename):
-        self.log.debug(f"serving {filename}")
+        log.debug(f"serving {filename}")
         return bottle.static_file(filename, root=os.path.join(self.script_dir, "public"))
 
     @staticmethod
@@ -117,28 +121,28 @@ class KilnController:
 
     def handle_control(self):
         websocket = self.get_websocket_from_request()
-        self.log.debug("websocket (control) opened")
+        log.debug("websocket (control) opened")
         try:
             while True:
                 message = websocket.receive()
                 if message:
-                    self.log.debug("Received (control): %s" % message)
+                    log.debug("Received (control): %s" % message)
                     msgdict = json.loads(message)
 
                     if msgdict.get("cmd") == "RUN":
-                        self.log.debug("RUN command received")
+                        log.debug("RUN command received")
                         # Reinitialize a real oven
                         self.oven = RealOven()
-                        self.log.debug("Real oven created")
+                        log.debug("Real oven created")
                         self.oven_watcher.set_oven(self.oven)  # Update the oven_watcher with the real oven
                         self.oven.set_ovenwatcher(self.oven_watcher)
 
                         self.process_run_command(msgdict)
 
                     elif msgdict.get("cmd") == "SIMULATE":
-                        self.log.debug("SIMULATE command received")
+                        log.debug("SIMULATE command received")
                         # Reinitialize the simulated oven and set the oven_watcher
-                        self.log.info("Simulated oven created")
+                        log.info("Simulated oven created")
                         self.oven = SimulatedOven()
                         self.oven_watcher.set_oven(self.oven)
                         self.oven.set_ovenwatcher(self.oven_watcher)
@@ -146,20 +150,20 @@ class KilnController:
                         self.process_run_command(msgdict)
 
                     elif msgdict.get("cmd") == "STOP":
-                        self.log.info("Stop command received")
+                        log.info("Stop command received")
                         if self.oven:
                             self.oven.stop()
                         else:
-                            self.log.error("No oven initialized. Aborting.")
+                            log.error("No oven initialized. Aborting.")
                             bottle.abort()
 
                     # Add additional command handling here if necessary
 
         except WebSocketError as wse:
-            self.log.error(wse)
+            log.error(wse)
         finally:
             websocket.close()
-            self.log.debug("websocket (control) closed")
+            log.debug("websocket (control) closed")
 
     def process_run_command(self, msgdict):
         profile_obj = msgdict.get('profile')
@@ -169,141 +173,64 @@ class KilnController:
             self.oven.run_profile(profile)
             self.oven_watcher.record(profile)
         else:
-            self.log.error("No profile defined. Aborting.")
+            log.error("No profile defined. Aborting.")
             bottle.abort()
 
     def handle_storage(self):
         # Implementation of storage handling
         websocket = self.get_websocket_from_request()
-        self.log.debug("WebSocket (storage) opened")
+        log.debug("WebSocket (storage) opened")
         try:
             while True:
                 message = websocket.receive()
                 if not message:
                     break
-                self.log.debug("WebSocket (storage) received: %s" % message)
+                log.debug("WebSocket (storage) received: %s" % message)
 
                 if message == "GET":
-                    self.log.debug("GET command received")
-                    websocket.send(self.get_profiles())
+                    log.debug("GET command received")
+                    websocket.send(self.prof_man.get_profiles())
                 else:
                     try:
                         msgdict = json.loads(message)
-                        self.process_storage_command(msgdict, websocket)
+                        self.prof_man.process_storage_command(msgdict, websocket)
                     except json.JSONDecodeError as error:
-                        self.log.error(f"JSON decoding error: {error}")
+                        log.error(f"JSON decoding error: {error}")
 
         except WebSocketError as error:
-            self.log.error(f"Error with WebSocket in storage: {error}")
+            log.error(f"Error with WebSocket in storage: {error}")
         finally:
             websocket.close()
-            self.log.debug("WebSocket (storage) closed")
+            log.debug("WebSocket (storage) closed")
 
     def handle_config(self):
         websocket = self.get_websocket_from_request()
-        self.log.debug("websocket (config) opened")
+        log.debug("websocket (config) opened")
         try:
             websocket.send(self.get_config())
         except WebSocketError as error:
-            self.log.error(f"Error with WebSocket in Config: {error}")
+            log.error(f"Error with WebSocket in Config: {error}")
         finally:
             websocket.close()
-            self.log.debug("websocket (config) closed")
+            log.debug("websocket (config) closed")
 
     def handle_status(self):
-        self.log.debug("Handle Status Initialized")
+        log.debug("Handle Status Initialized")
         # Implementation of status handling
         websocket = self.get_websocket_from_request()
         if self.oven_watcher:
             self.oven_watcher.add_observer(websocket)
-            self.log.debug("OvenWatcher connected to websocket.")
-        self.log.debug("websocket (status) opened")
+            log.debug("OvenWatcher connected to websocket.")
+        log.debug("websocket (status) opened")
         try:
             while True:
                 message = websocket.receive()
                 websocket.send("Your message was: %r" % message)
         except WebSocketError as error:
-            self.log.error(f"Error with WebSocket in status: {error}")
+            log.error(f"Error with WebSocket in status: {error}")
         finally:
             websocket.close()
-            self.log.debug("websocket (status) closed")
-
-    def run(self):
-        ip = config.ip_address
-        port = config.listening_port
-        self.log.info(f"listening on {ip}:{port}")
-        server = WSGIServer((ip, port), self.app, handler_class=WebSocketHandler)
-        server.serve_forever()
-
-    def find_profile(self, selected_profile):
-
-        # given a selected_profile profile name, find it and return the parsed json profile object or None.
-
-        profiles = self.get_profiles()
-        json_profiles = json.loads(profiles)
-
-        # find the selected_profile profile
-        for profile in json_profiles:
-            if profile['name'] == selected_profile:
-                return profile
-        return None
-
-    def get_profiles(self):
-        try:
-            profile_files = os.listdir(self.profile_path)
-        except Exception as error:
-            self.log.error(f"Error loading profile path: {error}")
-            profile_files = []
-        profiles = []
-        for filename in profile_files:
-            with open(os.path.join(self.profile_path, filename), 'r') as f:
-                profiles.append(json.load(f))
-        return json.dumps(profiles)
-
-    def process_storage_command(self, msgdict, websocket):
-        cmd = msgdict.get("cmd")
-
-        if cmd == "DELETE":
-            self.handle_delete_command(msgdict, websocket)
-        elif cmd == "PUT":
-            self.handle_put_command(msgdict, websocket)
-
-    def handle_delete_command(self, msgdict, websocket):
-        self.log.debug("DELETE command received")
-        profile_obj = msgdict.get('profile')
-        response = "OK" if self.delete_profile(profile_obj) else "FAIL"
-        msgdict["resp"] = response
-        websocket.send(json.dumps(msgdict))
-
-    def handle_put_command(self, msgdict, websocket):
-        self.log.debug("PUT command received")
-        profile_obj = msgdict.get('profile')
-        force = True  # or extract from msgdict if necessary
-        response = "OK" if self.save_profile(profile_obj, force) else "FAIL"
-        msgdict["resp"] = response
-        self.log.debug(f"WebSocket (storage) sent: {json.dumps(msgdict)}")
-        websocket.send(json.dumps(msgdict))
-        websocket.send(self.get_profiles())
-
-    def save_profile(self, profile, force=False):
-        profile_json = json.dumps(profile)
-        filename = profile['name'] + ".json"
-        filepath = os.path.join(self.profile_path, filename)
-        if not force and os.path.exists(filepath):
-            self.log.error("Could not write, %s already exists" % filepath)
-            return False
-        with open(filepath, 'w+') as f:
-            f.write(profile_json)
-            f.close()
-        self.log.info("Wrote %s" % filepath)
-        return True
-
-    def delete_profile(self, profile):
-        filename = profile['name'] + ".json"
-        filepath = os.path.join(self.profile_path, filename)
-        os.remove(filepath)
-        self.log.info("Deleted %s" % filepath)
-        return True
+            log.debug("websocket (status) closed")
 
     def get_config(self):
         return json.dumps({"temp_scale": self.config.temp_scale,
@@ -314,6 +241,13 @@ class KilnController:
                            'kd': config.pid_kd,
                            "kwh_rate": config.kwh_rate,
                            "currency_type": config.currency_type})
+
+    def run(self):
+        ip = config.ip_address
+        port = config.listening_port
+        log.info(f"listening on {ip}:{port}")
+        server = WSGIServer((ip, port), self.app, handler_class=WebSocketHandler)
+        server.serve_forever()
 
 
 if __name__ == "__main__":

@@ -12,8 +12,8 @@ log_level = logging.INFO
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 
 # Server
-ip_address = "192.168.1.185"
-listening_port = 80
+ip_address = "localhost"
+listening_port = 8080
 
 ########################################################################
 #

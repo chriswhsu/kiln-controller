@@ -6,11 +6,11 @@ import threading
 import time
 
 import config
-from lib.heatOutput import HeatOutput
-from lib.killSwitch import KillSwitch
+from lib.heatoutput import HeatOutput
+from lib.killswitch import KillSwitch
 from lib.pid import PID
 from lib.profile import Profile
-from lib.tempSensor import TempSensorSimulated, TempSensorReal
+from lib.tempsensor import TempSensorSimulated, TempSensorReal
 
 log = logging.getLogger(__name__)
 
