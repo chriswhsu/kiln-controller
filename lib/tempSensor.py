@@ -84,6 +84,7 @@ class TempSensorReal(TempSensor):
 
     @staticmethod
     def get_avg_temp(temps, chop=20):
+        log.debug(f"Temps: {temps}")
         if not temps:
             return 0
 
