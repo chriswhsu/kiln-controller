@@ -92,4 +92,4 @@ class TempSensorReal(TempSensor):
         temps = sorted(temps)
         chop_count = int(len(temps) * chop_percentage)
         temps = temps[chop_count:-chop_count]
-        return sum(temps) / len(temps) if temps else 0
+        return round(sum(temps) / len(temps), 2) if temps else 0
