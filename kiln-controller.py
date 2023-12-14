@@ -58,7 +58,7 @@ class KilnController:
 
     def send_static(self, filename):
         log.debug(f"serving {filename}")
-        return bottle.static_file(filename, root=os.path.join(self.script_dir, "public"))
+        return bottle.static_file(filename, root=os.path.join(self.script_dir, "kiln_control"))
 
     @staticmethod
     def get_websocket_from_request():
@@ -113,7 +113,10 @@ class KilnController:
             bottle.abort()
             return
 
-        # self.oven.abort
+        # clean up the temporary oven
+        self.oven.die()  # Signal the thread to stop
+        self.oven.join()  # Wait for the thread to finish
+
         if oven_type == "REAL":
             log.debug("RUN command received - Initializing Real Oven")
             self.oven = RealOven()
