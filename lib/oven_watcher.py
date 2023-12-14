@@ -65,7 +65,7 @@ class OvenWatcher(threading.Thread):
             every_nth = max(1, total_points // (max_points - 1))  # Avoid division by zero
             points = sorted_temperature_history[::every_nth]
 
-        log.info(f"{self._add_id()} Returning {len(points)} points from the current run")
+        log.info(f"Returning {len(points)} points from the current run")
         return points
 
     def set_profile(self, profile: Profile):
@@ -80,7 +80,6 @@ class OvenWatcher(threading.Thread):
         }
         backlog_json = json.dumps(backlog)
         try:
-            log.debug(backlog_json)
             observer.send(backlog_json)
         except Exception as e:
             log.error(f"An error occurred: {e}")
@@ -99,13 +98,13 @@ class OvenWatcher(threading.Thread):
 
     def notify_all(self, message):
         message_json = json.dumps(message)
-        log.info(f"{self._add_id()}Sending to {len(self.observers)} clients: {message_json}")
-        for wsock in self.observers:
-            if wsock:
+        log.debug(f"{self._add_id()}Sending to {len(self.observers)} clients: {message_json}")
+        for socket_observer in self.observers:
+            if socket_observer:
                 try:
-                    wsock.send(message_json)
+                    socket_observer.send(message_json)
                 except Exception as e:
-                    log.error(f"{self._add_id()}Could not write to socket {wsock}: {e}")
-                    self.observers.remove(wsock)
+                    log.error(f"Could not write to socket {socket_observer}: {e}")
+                    self.observers.remove(socket_observer)
             else:
-                self.observers.remove(wsock)
+                self.observers.remove(socket_observer)
