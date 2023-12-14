@@ -113,6 +113,7 @@ class KilnController:
             bottle.abort()
             return
 
+        # self.oven.abort
         if oven_type == "REAL":
             log.debug("RUN command received - Initializing Real Oven")
             self.oven = RealOven()
@@ -125,9 +126,10 @@ class KilnController:
             return
 
         log.debug(f"{oven_type} Oven created")
+
         self.oven_watcher.set_oven(self.oven)
-        self.oven.run_profile(profile)
         self.oven_watcher.set_profile(profile)
+        self.oven.run_profile(profile)
 
     def handle_status(self):
         log.debug("Handle Status Initialized")
