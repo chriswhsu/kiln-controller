@@ -33,12 +33,17 @@ class OvenWatcher(threading.Thread):
 
             if oven_state == "RUNNING":
                 self.temperature_history.append(oven_status)
+                time.sleep(self.oven.time_step)
             elif oven_state == "COMPLETE":
                 self.temperature_history.append(oven_status)
+                time.sleep(3)
+            elif oven_state == "IDLE":
+                time.sleep(3)
+            else:
+                time.sleep(3)
             self.notify_all(oven_status)
-            time.sleep(self.oven.time_step)
 
-    def sampled_temp_history(self, max_points=100):
+    def sampled_temp_history(self, max_points=500):
         # First, sort the temperature history by 'runtime' (timestamp)
         sorted_temperature_history = sorted(self.temperature_history, key=lambda x: x['runtime'])
 
