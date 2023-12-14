@@ -509,7 +509,12 @@ function handleStateChange(data) {
 
     if (state === "RUNNING") {
         updateForRunningState(data);
-    } else {
+
+    }
+    else if (state === "COMPLETE") {
+        updateForRunningState(data);
+    }
+    else {
         updateForNonRunningState();
     }
 

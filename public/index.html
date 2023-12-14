@@ -56,7 +56,7 @@
         <div>
             <div class="progress progress-striped active">
                 <div aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="progress-bar" id="progressBar"
-                     role="progressbar" style="width: 0%">
+                     role="progressbar" style="width: 0">
                     <span class="sr-only"></span>
                 </div>
             </div>
@@ -65,7 +65,7 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <div class="pull-left" id="profile_selector">
-                <select class="select2" id="e2" style="margin-top: 4px"></select>
+                <label for="e2"></label><select class="select2" id="e2" style="margin-top: 4px"></select>
                 <button class="btn btn-default" id="btn_edit" onclick="enterEditMode()" type="button">
                     <span class="glyphicon glyphicon-edit"></span>
                 </button>
@@ -87,7 +87,7 @@
             <div id="edit" style="display:none;">
                 <div class="input-group">
                     <span class="input-group-addon">Schedule Name</span>
-                    <input class="form-control" id="form_profile_name" type="text"/>
+                    <label for="form_profile_name"></label><input class="form-control" id="form_profile_name" type="text"/>
                     <span class="input-group-btn">
                         <button class="btn btn-success" onclick="saveProfile();" type="button">Save</button>
                         <button class="btn btn-default" id="btn_exit" onclick="leaveEditMode()" type="button">
