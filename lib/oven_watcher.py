@@ -20,9 +20,17 @@ class OvenWatcher(threading.Thread):
         self.started = None
         self.observers = []
 
+    def _add_id(self):
+        """Helper method to standardize log messages with instance identifier."""
+        instance_id = id(self)
+        return f"[Instance: {instance_id}]"
+
     # Needed for swapping out oven after initial program initialization
     def set_oven(self, oven):
         self.oven = oven
+
+    def reset_temp_history(self):
+        self.temperature_history = []
 
     def run(self):
         self.started = datetime.datetime.now()
@@ -39,6 +47,8 @@ class OvenWatcher(threading.Thread):
                 self.temperature_history.append(oven_status)
                 time.sleep(config.idle_sample_time)
             elif oven_state == "IDLE":
+                if len(self.temperature_history) > 0:
+                    self.reset_temp_history()
                 time.sleep(config.idle_sample_time)
             else:
                 time.sleep(config.idle_sample_time)
@@ -55,7 +65,7 @@ class OvenWatcher(threading.Thread):
             every_nth = max(1, total_points // (max_points - 1))  # Avoid division by zero
             points = sorted_temperature_history[::every_nth]
 
-        log.info(f"Returning {len(points)} points from the current run")
+        log.info(f"{self._add_id()} Returning {len(points)} points from the current run")
         return points
 
     def set_profile(self, profile: Profile):
@@ -89,13 +99,13 @@ class OvenWatcher(threading.Thread):
 
     def notify_all(self, message):
         message_json = json.dumps(message)
-        log.debug("Sending to %d clients: %s" % (len(self.observers), message_json))
+        log.info(f"{self._add_id()}Sending to {len(self.observers)} clients: {message_json}")
         for wsock in self.observers:
             if wsock:
                 try:
                     wsock.send(message_json)
                 except Exception as e:
-                    log.error(f"Could not write to socket {wsock}: {e}")
+                    log.error(f"{self._add_id()}Could not write to socket {wsock}: {e}")
                     self.observers.remove(wsock)
             else:
                 self.observers.remove(wsock)

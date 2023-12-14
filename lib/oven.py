@@ -32,9 +32,14 @@ class Oven(threading.Thread):
         self.temperature = 0
         self.time_step = config.sensor_time_wait
         self.create_temp_sensor()
+        self._running = True
 
         # start thread
         self.start()
+
+    def die(self):
+        self._running = False
+
 
     def _reset_oven_state(self):
         self.cost = 0
@@ -154,7 +159,7 @@ class Oven(threading.Thread):
         raise NotImplementedError("This method should be overridden in child classes")
 
     def run(self):
-        while True:
+        while self._running:
             if self.state == "IDLE":
                 time.sleep(config.idle_sample_time)
                 self.update_temperature()
