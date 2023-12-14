@@ -28,11 +28,14 @@ class OvenWatcher(threading.Thread):
         self.temperature_history = []
 
         while True:
-            oven_state = self.oven.get_state()
+            oven_status = self.oven.get_status()
+            oven_state = oven_status.get("state")
 
-            if oven_state.get("state") == "RUNNING":
-                self.temperature_history.append(oven_state)
-            self.notify_all(oven_state)
+            if oven_state == "RUNNING":
+                self.temperature_history.append(oven_status)
+            elif oven_state == "COMPLETE":
+                self.temperature_history.append(oven_status)
+            self.notify_all(oven_status)
             time.sleep(self.oven.time_step)
 
     def sampled_temp_history(self, max_points=100):
@@ -48,7 +51,6 @@ class OvenWatcher(threading.Thread):
 
         log.info(f"Returning {len(points)} points from the current run")
         return points
-
 
     def set_profile(self, profile: Profile):
         self.active_profile = profile

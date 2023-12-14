@@ -36,31 +36,32 @@ class Oven(threading.Thread):
         # start thread
         self.start()
 
-    def _common_reset_abort_logic(self, state):
+    def _reset_oven_state(self):
         self.cost = 0
-        self.state = state
-        self.profile = None
-        self.start_time = 0
         self.runtime = 0
         self.total_time = 0
-        self.target = 0
-        self.heat = 0
-        self.pid = PID()
+        self.start_time = None
 
     def complete(self):
-        self._common_reset_abort_logic("COMPLETE")
+        self.state = "COMPLETE"
+        self.target = 0
+        self.heat = 0
 
     def abort(self):
-        self._common_reset_abort_logic("ABORTED")
+        self.state = "ABORTED"
+        self.target = 0
+        self.heat = 0
 
     def stop(self):
-        self._common_reset_abort_logic("STOPPED")
+        self.state = "STOP"
+        self.target = 0
+        self.heat = 0
 
     def create_temp_sensor(self):
         raise NotImplementedError("This method should be overridden in child classes")
 
     def run_profile(self, profile, startat=0):
-        self.complete()
+        self._reset_oven_state()  # Reset state at the start of a new run
 
         self.startat = startat * 60
         self.runtime = self.startat
@@ -139,7 +140,7 @@ class Oven(threading.Thread):
             'temperature': self.temperature,
             'target': self.target,
             'state': self.state,
-            'heat': self.heat,
+            'heat': round(self.heat, 2),
             'total_time': self.total_time,
             'profile': self.profile.name if self.profile else None}
         return state
@@ -156,7 +157,7 @@ class Oven(threading.Thread):
         while True:
             if self.state == "IDLE":
                 time.sleep(1)
-                continue
+                self.update_temperature()
             elif self.state == "RUNNING":
                 self.update_temperature()
                 self.update_cost()
@@ -166,8 +167,8 @@ class Oven(threading.Thread):
                 self.determine_heat()
                 self.reset_if_emergency()
                 self.reset_if_schedule_ended()
-            elif self.state == "COMPLETED":
+            elif self.state == "COMPLETE":
+                log.info("state completed")
                 time.sleep(1)
+                self.update_runtime()
                 self.update_temperature()
-
-
