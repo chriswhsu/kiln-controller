@@ -46,6 +46,9 @@ integral_limits = (0, 100)
 # temperature_average_samples times during and the average value is used.
 sensor_time_wait = 1
 
+# update temperature at this interval when not actively running a profile.
+idle_sample_time = 3
+
 ########################################################################
 #   Simulation parameters
 simulated_room_temp = 70.0  # deg F
@@ -165,3 +168,5 @@ automatic_restart_state_file = os.path.abspath(os.path.join(os.path.dirname(__fi
 # to load profiles from this repository by default.
 # See https://github.com/jbruce12000/kiln-profiles
 kiln_profiles_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), "storage", "profiles"))
+
+

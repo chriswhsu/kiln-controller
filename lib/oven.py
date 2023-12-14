@@ -53,7 +53,7 @@ class Oven(threading.Thread):
         self.heat = 0
 
     def stop(self):
-        self.state = "STOP"
+        self.state = "IDLE"
         self.target = 0
         self.heat = 0
 
@@ -156,7 +156,7 @@ class Oven(threading.Thread):
     def run(self):
         while True:
             if self.state == "IDLE":
-                time.sleep(3)
+                time.sleep(config.idle_sample_time)
                 self.update_temperature()
             elif self.state == "RUNNING":
                 self.update_temperature()
@@ -169,6 +169,8 @@ class Oven(threading.Thread):
                 self.reset_if_schedule_ended()
             elif self.state == "COMPLETE":
                 log.info("state completed")
-                time.sleep(3)
+                time.sleep(config.idle_sample_time)
                 self.update_runtime()
                 self.update_temperature()
+            else:
+                time.sleep(config.idle_sample_time)

@@ -4,6 +4,7 @@ import logging
 import threading
 import time
 
+import config
 from lib.profile import Profile
 
 log = logging.getLogger(__name__)
@@ -36,11 +37,11 @@ class OvenWatcher(threading.Thread):
                 time.sleep(self.oven.time_step)
             elif oven_state == "COMPLETE":
                 self.temperature_history.append(oven_status)
-                time.sleep(3)
+                time.sleep(config.idle_sample_time)
             elif oven_state == "IDLE":
-                time.sleep(3)
+                time.sleep(config.idle_sample_time)
             else:
-                time.sleep(3)
+                time.sleep(config.idle_sample_time)
             self.notify_all(oven_status)
 
     def sampled_temp_history(self, max_points=500):
