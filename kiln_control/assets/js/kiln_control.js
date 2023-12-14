@@ -14,14 +14,6 @@ let temp_scale_display = "";
 let kwh_rate = 0.0;
 let currency_type = "";
 
-// WebSocket Initialization
-let protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-let host = `${protocol}//${window.location.hostname}:${window.location.port}`;
-let ws_status = new WebSocket(`${host}/status`);
-let ws_control = new WebSocket(`${host}/control`);
-let ws_config = new WebSocket(`${host}/config`);
-let ws_storage = new WebSocket(`${host}/storage`);
-
 // Graph Setup
 graph.profile = {
     label: "Profile", data: [], points: {show: false}, color: "#75890c", draggable: false
@@ -784,6 +776,3 @@ $(document).ready(function () {
         initializeProfileSelector(); // Assumes you have this function defined elsewhere
     }
 });
-
-
-
