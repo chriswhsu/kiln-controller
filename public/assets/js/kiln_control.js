@@ -350,13 +350,10 @@ function getOptions() {
             lines: {
                 show: true
             },
-
             points: {
                 show: true, radius: 5, symbol: "circle"
             },
-
             shadowSize: 3
-
         },
 
         xaxis: {
@@ -433,7 +430,6 @@ function handleStatusOpen() {
         stackup_spacing: 10
     });
 }
-
 
 function handleStatusMessage(e) {
     console.log("received status data");
