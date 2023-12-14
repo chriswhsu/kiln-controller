@@ -24,19 +24,11 @@ let ws_storage = new WebSocket(`${host}/storage`);
 
 // Graph Setup
 graph.profile = {
-    label: "Profile",
-    data: [],
-    points: {show: false},
-    color: "#75890c",
-    draggable: false
+    label: "Profile", data: [], points: {show: false}, color: "#75890c", draggable: false
 };
 
 graph.live = {
-    label: "Live",
-    data: [],
-    points: {show: false},
-    color: "#d8d3c5",
-    draggable: false
+    label: "Live", data: [], points: {show: false}, color: "#d8d3c5", draggable: false
 };
 
 // Function Definitions
@@ -208,11 +200,9 @@ function timeTickFormatter(val, axis) {
 }
 
 function runTask() {
-    let cmd =
-        {
-            "cmd": "RUN",
-            "profile": profiles[selected_profile]
-        }
+    let cmd = {
+        "cmd": "RUN", "profile": profiles[selected_profile]
+    }
 
     graph.live.data = [];
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
@@ -222,11 +212,9 @@ function runTask() {
 }
 
 function runTaskSimulation() {
-    let cmd =
-        {
-            "cmd": "SIMULATE",
-            "profile": profiles[selected_profile]
-        }
+    let cmd = {
+        "cmd": "SIMULATE", "profile": profiles[selected_profile]
+    }
 
     graph.live.data = [];
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
@@ -323,9 +311,7 @@ function saveProfile() {
                 offset: {from: 'top', amount: 250}, // 'top', or 'bottom'
                 align: 'center', // ('left', 'right', or 'center')
                 width: 385, // (integer, or 'auto')
-                delay: 5000,
-                allow_dismiss: true,
-                stackup_spacing: 10 // spacing between consecutively stacked growls.
+                delay: 5000, allow_dismiss: true, stackup_spacing: 10 // spacing between consecutively stacked growls.
             });
 
             return false;
@@ -360,69 +346,52 @@ function getOptions() {
 
     return {
 
-        series:
-            {
-                lines:
-                    {
-                        show: true
-                    },
-
-                points:
-                    {
-                        show: true,
-                        radius: 5,
-                        symbol: "circle"
-                    },
-
-                shadowSize: 3
-
+        series: {
+            lines: {
+                show: true
             },
 
-        xaxis:
-            {
-                min: 0,
-                tickColor: 'rgba(216, 211, 197, 0.2)',
-                tickFormatter: timeTickFormatter,
-                tickSize: get_tick_size(),
-                font:
-                    {
-                        size: 14,
-                        lineHeight: 14, weight: "normal",
-                        family: "Digi",
-                        variant: "small-caps",
-                        color: "rgba(216, 211, 197, 0.85)"
-                    }
+            points: {
+                show: true, radius: 5, symbol: "circle"
             },
 
-        yaxis:
-            {
-                min: 0,
-                tickDecimals: 0,
-                draggable: false,
-                tickColor: 'rgba(216, 211, 197, 0.2)',
-                font:
-                    {
-                        size: 14,
-                        lineHeight: 14,
-                        weight: "normal",
-                        family: "Digi",
-                        variant: "small-caps",
-                        color: "rgba(216, 211, 197, 0.85)"
-                    }
-            },
+            shadowSize: 3
 
-        grid:
-            {
-                color: 'rgba(216, 211, 197, 0.55)',
-                borderWidth: 1,
-                labelMargin: 10,
-                mouseActiveRadius: 50
-            },
+        },
 
-        legend:
-            {
-                show: false
+        xaxis: {
+            min: 0,
+            tickColor: 'rgba(216, 211, 197, 0.2)',
+            tickFormatter: timeTickFormatter,
+            tickSize: get_tick_size(),
+            font: {
+                size: 14,
+                lineHeight: 14,
+                weight: "normal",
+                family: "Digi",
+                variant: "small-caps",
+                color: "rgba(216, 211, 197, 0.85)"
             }
+        },
+
+        yaxis: {
+            min: 0, tickDecimals: 0, draggable: false, tickColor: 'rgba(216, 211, 197, 0.2)', font: {
+                size: 14,
+                lineHeight: 14,
+                weight: "normal",
+                family: "Digi",
+                variant: "small-caps",
+                color: "rgba(216, 211, 197, 0.85)"
+            }
+        },
+
+        grid: {
+            color: 'rgba(216, 211, 197, 0.55)', borderWidth: 1, labelMargin: 10, mouseActiveRadius: 50
+        },
+
+        legend: {
+            show: false
+        }
     };
 }
 
@@ -555,8 +524,14 @@ function notifyRunCompleted(newState) {
     $('#target_temp').html('---');
     updateProgress(0);
     $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>Run completed. New State: " + newState + "</b>", {
-        ele: 'body', type: 'success', offset: {from: 'top', amount: 250},
-        align: 'center', width: 385, delay: 0, allow_dismiss: true, stackup_spacing: 10
+        ele: 'body',
+        type: 'success',
+        offset: {from: 'top', amount: 250},
+        align: 'center',
+        width: 385,
+        delay: 0,
+        allow_dismiss: true,
+        stackup_spacing: 10
     });
 }
 
@@ -749,8 +724,7 @@ function updateProfileSelector() {
         return a.name;
     });
 
-    if (valid_profile_names.length > 0 &&
-        $.inArray(selected_profile_name, valid_profile_names) === -1) {
+    if (valid_profile_names.length > 0 && $.inArray(selected_profile_name, valid_profile_names) === -1) {
         selected_profile = 0;
         selected_profile_name = valid_profile_names[0];
     }
@@ -771,9 +745,7 @@ function initializeProfileSelector() {
 
     // Initialize the profile selector with select2 plugin
     e2.select2({
-        placeholder: "Select Profile",
-        allowClear: true,
-        minimumResultsForSearch: -1
+        placeholder: "Select Profile", allowClear: true, minimumResultsForSearch: -1
     });
 
     // Event handler for when a new profile is selected
