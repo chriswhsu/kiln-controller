@@ -384,8 +384,8 @@ function getOptions() {
     };
 }
 
-function reconnectWebSocket(wsName) {
-    console.log(`Lost connection to ${wsName}. Reloading the page...`);
+function reconnectWebSocket() {
+    console.log(`Lost connection to webSocket. Reloading the page...`);
     // Optionally, you can use a delay before the refresh
     setTimeout(function () {
         location.reload();
@@ -448,18 +448,18 @@ function handleStatusClose() {
         stackup_spacing: 10
     });
     console.log("Status WebSocket closed. Attempting to reconnect...");
-    reconnectWebSocket('ws_status', `${host}/status`);
+    reconnectWebSocket();
 }
 
 
 function handleControlClose() {
     console.log("Control WebSocket closed. Attempting to reconnect...");
-    reconnectWebSocket('ws_control', `${host}/control`);
+    reconnectWebSocket();
 }
 
 function handleStatusError(error) {
     console.log("Status WebSocket encountered an error:", error);
-    // Your existing error logic...
+    reconnectWebSocket();
 }
 
 function handleBacklogData(data) {
