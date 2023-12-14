@@ -131,7 +131,7 @@ class Oven(threading.Thread):
             cost = 0
         self.cost += cost
 
-    def get_state(self):
+    def get_status(self):
 
         state = {
             'cost': round(self.cost, 2),
@@ -144,9 +144,9 @@ class Oven(threading.Thread):
             'profile': self.profile.name if self.profile else None}
         return state
 
-    def save_state(self):
+    def save_status(self):
         with open(config.automatic_restart_state_file, 'w', encoding='utf-8') as f:
-            json.dump(self.get_state(), f, ensure_ascii=False, indent=4)
+            json.dump(self.get_status(), f, ensure_ascii=False, indent=4)
 
     def update_temperature(self):
         # Placeholder method - overridden in child classes
@@ -157,7 +157,7 @@ class Oven(threading.Thread):
             if self.state == "IDLE":
                 time.sleep(1)
                 continue
-            if self.state == "RUNNING":
+            elif self.state == "RUNNING":
                 self.update_temperature()
                 self.update_cost()
                 self.kiln_must_catch_up()
@@ -166,4 +166,8 @@ class Oven(threading.Thread):
                 self.determine_heat()
                 self.reset_if_emergency()
                 self.reset_if_schedule_ended()
+            elif self.state == "COMPLETED":
+                time.sleep(1)
+                self.update_temperature()
+
 
