@@ -36,15 +36,19 @@ class OvenWatcher(threading.Thread):
             time.sleep(self.oven.time_step)
 
     def sampled_temp_history(self, max_points=100):
-        total_points = len(self.temperature_history)
+        # First, sort the temperature history by 'runtime' (timestamp)
+        sorted_temperature_history = sorted(self.temperature_history, key=lambda x: x['runtime'])
+
+        total_points = len(sorted_temperature_history)
         if total_points <= max_points:
-            points = self.temperature_history
+            points = sorted_temperature_history
         else:
             every_nth = max(1, total_points // (max_points - 1))  # Avoid division by zero
-            points = self.temperature_history[::every_nth]
+            points = sorted_temperature_history[::every_nth]
 
         log.info(f"Returning {len(points)} points from the current run")
         return points
+
 
     def set_profile(self, profile: Profile):
         self.active_profile = profile
