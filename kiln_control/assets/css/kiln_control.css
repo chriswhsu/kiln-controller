@@ -5,14 +5,20 @@ body {
 
 #status {
     display: flex;
+    background: #000000;
     flex-wrap: wrap; /* Allows items to wrap onto multiple lines if needed */
     justify-content: space-between; /* Spreads out the items evenly */
     margin-top: 15px;
     color: #272786;
-    border-radius: 7px;
+    border-radius: 5px;
     border: 1px solid #ddd;
-    box-shadow: 0 0 1.1em 0 rgba(0, 0, 0, 0.55);
-    padding: 10px;
+}
+
+
+#progress {
+    background: #000000;
+    border-radius: 5px;
+    padding: 5px;
 }
 
 .status-item {
@@ -27,7 +33,7 @@ body {
 .ds-title {
     font-size: 1em; /* Adjust font size as needed */
     margin-bottom: 5px; /* Spacing between title and data */
-    color: #272786;
+    color: #8e8ea8;
 }
 
 .display {
@@ -36,32 +42,49 @@ body {
     color: #4897de;
 }
 
-/* ... Include other CSS properties and media queries as necessary ... */
+.ds-target {
+    color: #75890c;
+}
 
+#cost {
+    color: #ad6b6b;
+}
+
+#act_temp {
+    color: #d8d3c5;
+}
 
 .ds-unit {
     font-family: "Arial", sans-serif;
-    font-size: 22px;
+    font-size: .6em;
     vertical-align: top;
     line-height: 32px;
     color: #d8d3c5;
     margin-left: 4px;
+}
+
+#target_temp_scale {
+    color: #75890c;
 }
 
 
 .ds-state {
     font-family: "Arial", sans-serif;
-    font-size: 22px;
+    font-size: 2em;
     vertical-align: top;
     line-height: 32px;
     color: #d8d3c5;
     margin-left: 4px;
 }
 
-
 /* For smaller screens */
 @media (max-width: 768px) {
-    .ds-title, .display {
+    .ds-title {
+        font-size: 1em; /* Smaller font size */
+        padding: 3px; /* Reduced padding */
+    }
+
+    .display {
         font-size: 1.5em; /* Smaller font size */
         padding: 3px; /* Reduced padding */
     }
@@ -105,10 +128,6 @@ body {
     text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.25), -1px -1px 0 rgba(0, 0, 0, 0.4);
     color: rgb(233, 233, 233);
     font-size: 20px;
-}
-
-.ds-target {
-    color: #75890c;
 }
 
 .ds-text {
