@@ -28,18 +28,17 @@ class RealOven(Oven):
         self.temp_sensor.start()
 
     def complete(self):
-        self.end_things()
+        self.output.cool(0)
+        super().complete()
 
     def abort(self):
-        self.end_things()
+        self.output.cool(0)
+        super().abort()
 
     def stop(self):
-        self.end_things()
-
-    def end_things(self):
-        log.info("Shutting down oven.")
-        super().complete()
         self.output.cool(0)
+        super().stop()
+
 
     # get actual temperature from sensor.
     def update_temperature(self):
