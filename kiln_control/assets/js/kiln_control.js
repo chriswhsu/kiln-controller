@@ -552,33 +552,31 @@ function updateForRunningState(data) {
     $('#target_temp').html(parseFloat(data.target).toFixed(1));
     $('#cost').html(currency_type + parseFloat(data.cost).toFixed(2));
 }
+
 function updateRunIndicator(isSimulation, state) {
     let icon = document.getElementById('run_icon');
     let text = document.getElementById('run_text');
     let progressBar = document.getElementById('progressBar');
 
-    if (state === 'IDLE') {
-        // Hide elements when in IDLE state
-        icon.style.display = 'none';
-        text.style.display = 'none';
-        progressBar.style.backgroundColor = ''; // Reset progress bar color
-    } else {
-        // Show elements when not in IDLE state
-        icon.style.display = 'block';
-        text.style.display = 'block';
-
+    if (state !== "IDLE") {
         if (isSimulation) {
             icon.innerHTML = '🔬'; // Example icon for simulation
             text.innerHTML = 'Running Simulation';
             text.style.color = '#4aa3c4FF'; // Example color, such as orange
             progressBar.style.backgroundColor = '#4AA3C4'; // Blue for simulation
         } else {
-            icon.innerHTML = '▶️'; // Example icon for actual run
-            text.innerHTML = 'Running Task';
-            progressBar.style.backgroundColor = 'green'; // Green for actual run
+            icon.innerHTML = '🔥'; // Flame icon for actual run
+            text.innerHTML = 'Heating Kiln';
+            text.style.color = '#e70808'; // Example color, such as green
+            progressBar.style.backgroundColor = '#e70808'; // Green for actual run
         }
+    } else {
+        icon.innerHTML = ''; // Clear icon when idle
+        text.innerHTML = ''; // Clear text when idle
+        progressBar.style.backgroundColor = ''; // Reset progress bar color
     }
 }
+
 
 function updateForNonRunningState(data) {
     $("#nav_start").show();
