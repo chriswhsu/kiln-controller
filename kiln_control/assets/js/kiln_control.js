@@ -570,7 +570,8 @@ function updateRunIndicator(isSimulation, state) {
         if (isSimulation) {
             icon.innerHTML = '🔬'; // Example icon for simulation
             text.innerHTML = 'Running Simulation';
-            progressBar.style.backgroundColor = 'blue'; // Blue for simulation
+            text.style.color = '#4aa3c4FF'; // Example color, such as orange
+            progressBar.style.backgroundColor = '#4AA3C4'; // Blue for simulation
         } else {
             icon.innerHTML = '▶️'; // Example icon for actual run
             text.innerHTML = 'Running Task';
