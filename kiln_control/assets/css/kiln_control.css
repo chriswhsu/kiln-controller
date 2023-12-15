@@ -1,41 +1,31 @@
+
 body {
-    background: #5d5145;
+    background: linear-gradient(to right, rgba(225, 245, 254, 0.7) 0%, rgb(238, 237, 236) 100%);
+    background-size: cover;
+    background-attachment: fixed;
     font-family: Arial, sans-serif;
+    color: #333; /* Darker text for better readability */
 }
+
 
 #status {
     display: flex;
-    background: #000000;
-    flex-wrap: nowrap; /* Prevents wrapping */
-    justify-content: space-between; /* Spreads out the items evenly */
+    background: rgba(255, 250, 250, 0.9); /* Soft white with slight opacity */
+    flex-wrap: nowrap;
+    justify-content: space-between;
     margin-top: 15px;
-    color: #272786;
+    color: #444; /* Slightly lighter text */
     border-radius: 5px;
-    border: 1px solid #dddddd;
-    overflow-x: auto; /* Allows horizontal scrolling if items don't fit */
-}
-
-#progress {
-    background: #5d5145;
-    border-radius: 5px;
-    padding: 5px 30px 5px 47px;
-    border: 1px solid #dddddd;
-
+    border: 1px solid #ccc; /* Lighter border */
 }
 
 .status-item {
-    flex-basis: calc(25% - 10px); /* Adjusts each item's base width */
-    margin: 5px; /* Provides spacing between items */
+    flex-basis: calc(25% - 10px);
+    margin: 5px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    text-align: center; /* Centers text within each status item */
-}
-
-.ds-title {
-    font-size: 1em; /* Adjust font size as needed */
-    margin-bottom: 5px; /* Spacing between title and data */
-    color: #8e8ea8;
+    text-align: center;
 }
 
 .display {
@@ -53,13 +43,13 @@ body {
 }
 
 #act_temp {
-    color: #d8d3c5;
+    color: #7e7b72;
 }
 
 .ds-unit {
     font-family: "Arial", sans-serif;
     font-size: .6em;
-    color: #d8d3c5;
+    color: #7e7b72;
     margin-left: 4px;
 }
 
@@ -69,7 +59,7 @@ body {
 
 
 .ds-state {
-    color: #d8d3c5;
+    color: #7e7b72;
 }
 
 /* For smaller screens */
@@ -161,34 +151,27 @@ body {
     font-size: 16px;
 }
 
-
 .panel-default {
-    border-radius: 7px;
-    box-shadow: 0 0 1.1em 0 rgba(0, 0, 0, 0.55);
-    margin-top: 15px;
-    background: #3F3E3A;
+    background: rgba(164, 164, 164, 0.9); /* Light background for panels */
+    border: 1px solid #ddd; /* Light gray border */
 }
 
 .panel-heading {
-    background: #fafafa url('//assets/images/page_bg.png') repeat-x;
     overflow: hidden;
-    padding: 10px;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
+    padding: 5px;
+    background: rgba(250, 250, 250, 0.9); /* Slightly different shade for the heading */
+
 }
 
 .panel-body {
-    box-shadow: inset 0 0 42px 0 #000;
-    border-bottom-left-radius: 7px;
-    border-bottom-right-radius: 7px;
-    background: rgba(0, 0, 0, 0.2)
+    background: rgba(136, 135, 135, 0.8); /* Soft white with slight opacity */
 }
 
 #profile_selector {
     border: 1px solid rgba(194, 194, 194, 0.7); /* More subtle border color */
     border-radius: 5px; /* Rounded corners */
     background: linear-gradient(to bottom, rgba(245, 245, 245, 1) 0%, rgba(229, 229, 229, 1) 100%); /* Smoother gradient */
-    padding: 2px 4px; /* Adjust padding for better spacing */
+    padding: 2px; /* Adjust padding for better spacing */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Enhanced shadow for depth */
     margin: 0; /* Adjust margin as needed */
     transition: all 0.3s ease; /* Smooth transition for hover effects */
