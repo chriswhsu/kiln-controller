@@ -96,6 +96,7 @@ class KilnController:
                     elif command == "STOP":
                         log.info("Stop command received")
                         if self.oven:
+                            log.info("Oven Exists")
                             self.oven.stop()
                         else:
                             log.error("No oven initialized. Aborting.")

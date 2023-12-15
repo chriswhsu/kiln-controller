@@ -47,7 +47,7 @@ integral_limits = (0, 100)
 sensor_time_wait = 1
 
 # update temperature at this interval when not actively running a profile.
-idle_sample_time = 3
+idle_sample_time = 2
 
 ########################################################################
 #   Simulation parameters
