@@ -40,7 +40,6 @@ class Oven(threading.Thread):
     def die(self):
         self._running = False
 
-
     def _reset_oven_state(self):
         self.cost = 0
         self.runtime = 0
@@ -161,6 +160,7 @@ class Oven(threading.Thread):
     def run(self):
         while self._running:
             if self.state == "IDLE":
+                log.info(f"runtime: {self.runtime}, state: {self.state}, temperature: {self.temperature}")
                 time.sleep(config.idle_sample_time)
                 self.update_temperature()
             elif self.state == "RUNNING":
@@ -173,7 +173,7 @@ class Oven(threading.Thread):
                 self.reset_if_emergency()
                 self.reset_if_schedule_ended()
             elif self.state == "COMPLETE":
-                log.info("state completed")
+                log.info(f"runtime: {self.runtime}, state: {self.state}, temperature: {self.temperature}")
                 time.sleep(config.idle_sample_time)
                 self.update_runtime()
                 self.update_temperature()
