@@ -64,16 +64,22 @@ function deleteProfile() {
 
 function updateProgress(percentage) {
     let progressBar = $('#progressBar');
-    if (state === "RUNNING") {
-
-        if (percentage > 100) percentage = 100;
+    if (state === "RUNNING" || state === "COMPLETE") {
+        if (percentage >= 100) {
+            percentage = 100;
+            progressBar.addClass('no-animation'); // Add class to stop animation
+        } else {
+            progressBar.removeClass('no-animation'); // Remove class to allow animation
+        }
         progressBar.css('width', percentage + '%');
-        if (percentage > 5) progressBar.html(parseInt(percentage) + '%');
-    } else {
-        progressBar.css('width', 0 + '%');
+        progressBar.html(parseInt(percentage) + '%');
+    } else if (state === "IDLE") {
+        progressBar.css('width', '0%');
         progressBar.html('');
+        progressBar.removeClass('no-animation'); // Ensure class is removed when idle
     }
 }
+
 
 function updateProfileTable() {
     let dps = 0;
@@ -590,7 +596,6 @@ function updateRunIndicator(isSimulation, state) {
     }
 }
 
-
 function updateForNonRunningState(data) {
     $("#nav_start").show();
     $("#nav_stop").hide();
@@ -598,6 +603,9 @@ function updateForNonRunningState(data) {
 
     $('#state').html('<p class="ds-text">' + state + '</p>');
 
+    if (state === "IDLE") {
+        updateProgress(0); // Reset progress bar when state changes back to IDLE
+    }
 }
 
 function updateUIElements(data) {

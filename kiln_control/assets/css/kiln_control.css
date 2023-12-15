@@ -151,6 +151,10 @@ body {
     font-size: 16px;
 }
 
+.no-animation {
+    animation: none !important;
+}
+
 .panel-default {
     background: rgba(164, 164, 164, 0.9); /* Light background for panels */
     border: 1px solid #ddd; /* Light gray border */
