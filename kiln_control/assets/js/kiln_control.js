@@ -521,6 +521,7 @@ function handleStateChange(data) {
     state_last = state;
 }
 
+
 function notifyRunCompleted(newState) {
     $('#target_temp').html('---');
     updateProgress(0);
@@ -536,6 +537,7 @@ function notifyRunCompleted(newState) {
     });
 }
 
+
 function updateForRunningState(data) {
     $("#nav_start").hide();
     $("#nav_stop").show();
@@ -544,14 +546,25 @@ function updateForRunningState(data) {
     graph.live.data.push([data.time_stamp, data.temperature]);
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 
-    let left = parseInt(data.total_time - data.time_stamp);
-    let eta = new Date(left * 1000).toISOString().substr(11, 8);
+    let timeDisplay;
+    if (data.state === "COMPLETE") {
+        // Calculate elapsed time since completion
+        let elapsedTime = new Date((data.time_stamp - data.total_time) * 1000).toISOString().substr(11, 8);
+        timeDisplay = `<span>+${elapsedTime}</span>`;
+    } else {
+        // Normal time display
+        let left = parseInt(data.total_time - data.time_stamp);
+        let eta = new Date(left * 1000).toISOString().substr(11, 8);
+        timeDisplay = `<span>${eta}</span>`;
+    }
 
     updateProgress(parseFloat(data.time_stamp) / parseFloat(data.total_time) * 100);
-    $('#state').html('<span>' + eta + '</span>');
+    $('#state').html(timeDisplay);
     $('#target_temp').html(parseFloat(data.target).toFixed(1));
     $('#cost').html(currency_type + parseFloat(data.cost).toFixed(2));
 }
+
+
 
 function updateRunIndicator(isSimulation, state) {
     let icon = document.getElementById('run_icon');
