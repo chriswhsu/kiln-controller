@@ -15,7 +15,7 @@ body {
     justify-content: space-between;
     margin-top: 15px;
     color: #444; /* Slightly lighter text */
-    border-radius: 5px;
+    border-radius: 7px 7px 0 0;
     border: 1px solid #ccc; /* Lighter border */
 }
 
@@ -138,11 +138,12 @@ body {
 }
 
 .progress {
-    background: #3f3e3a;
+    background: #cbcbcb;
     border-color: #000000;
     border-top: 1px solid #b9b6af;
     margin: 0;
-    -webkit-border-radius: 0 0 7px 7px;
+    border-radius: 0 0 7px 7px;;
+    margin-bottom: 5px;
 }
 
 .progress-bar {
@@ -154,13 +155,17 @@ body {
 .panel-default {
     background: rgba(164, 164, 164, 0.9); /* Light background for panels */
     border: 1px solid #ddd; /* Light gray border */
+    border-radius: 7px 7px 0 0;
 }
 
 .panel-heading {
     overflow: hidden;
     padding: 5px;
     background: rgba(250, 250, 250, 0.9); /* Slightly different shade for the heading */
+}
 
+#this_header {
+    background-image: linear-gradient(to bottom, #8c8b8b 0, #575757 100%);
 }
 
 .panel-body {
