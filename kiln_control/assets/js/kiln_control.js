@@ -538,9 +538,11 @@ function updateForRunningState(data) {
     let left = parseInt(data.total_time - data.runtime);
     let eta = new Date(left * 1000).toISOString().substr(11, 8);
 
+    console.log(data.runtime)
+    console.log(data.total_time)
     updateProgress(parseFloat(data.runtime) / parseFloat(data.total_time) * 100);
-    $('#state').html('<span class="glyphicon glyphicon-time" style="font-size: 22px; font-weight: normal"></span><span> </span><span style="font-family: Digi,monospace; font-size: 40px;">' + eta + '</span>');
-    $('#target_temp').html(parseInt(data.target));
+    $('#state').html('<span class="glyphicon glyphicon-time"></span><span>' + eta + '</span>');
+    $('#target_temp').html(parseFloat(data.target).toFixed(1));
     $('#cost').html(currency_type + parseFloat(data.cost).toFixed(2));
 }
 
@@ -551,7 +553,7 @@ function updateForNonRunningState() {
 }
 
 function updateUIElements(data) {
-    $('#act_temp').html(parseInt(data.temperature));
+    $('#act_temp').html(parseFloat(data.temperature).toFixed(1));
     $('#heat').html('<div class="bar"></div>');
 
     updateHeatingIndicator(data.heat);

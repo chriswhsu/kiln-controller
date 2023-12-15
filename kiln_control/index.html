@@ -25,38 +25,37 @@
 
 </head>
 <body>
-
-<div class="container">
-    <div id="status">
-        <div class="ds-title-panel">
-            <div class="ds-title">Sensor Temp</div>
-            <div class="ds-title">Target Temp</div>
-            <div class="ds-title">Cost</div>
-            <div class="ds-title ds-state">Status</div>
+    <div class="container">
+        <div id="status">
+            <!-- Grouping each header with its corresponding data -->
+            <div class="status-item">
+                <div class="ds-title">Sensor Temp</div>
+                <div class="display ds-num">
+                    <span id="act_temp"></span> <span class="ds-unit" id="act_temp_scale">&deg;F</span>
+                </div>
+            </div>
+            <div class="status-item">
+                <div class="ds-title">Target Temp</div>
+                <div class="display ds-num ds-target">
+                    <span id="target_temp"></span> <span class="ds-unit" id="target_temp_scale">&deg;F</span>
+                </div>
+            </div>
+            <div class="status-item">
+                <div class="ds-title">Cost</div>
+                <div class="display ds-num ds-cost">
+                    <span id="cost">0.00</span>
+                </div>
+            </div>
+            <div class="status-item">
+                <div class="ds-title">Status</div>
+                <div class="display ds-num ds-state" id="state"></div>
+            </div>
         </div>
-        <div class="clearfix"></div>
-        <div class="ds-panel">
-            <div class="display ds-num">
-                <span id="act_temp"></span> <span class="ds-unit" id="act_temp_scale">&deg;F</span>
-            </div>
-            <div class="display ds-num ds-target">
-                <span id="target_temp"></span> <span class="ds-unit" id="target_temp_scale">&deg;F</span>
-            </div>
-            <div class="display ds-num ds-cost">
-                <span id="cost">0.00</span>
-                <span class="ds-unit"></span>
-            </div>
-            <div class="display ds-num ds-text" id="state"></div>
-            <div class="display pull-right ds-state">
-                <span class="ds-led" id="heat">&#92;</span>
-                <span class="ds-led" id="hazard">&#92;</span>
-            </div>
-        </div>
-        <div class="clearfix"></div>
+    <div id="progress">
         <div>
             <div class="progress progress-striped active">
                 <div aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="progress-bar" id="progressBar"
-                     role="progressbar" style="width: 0">
+                     role="progressbar" style="width: 10px">
                     <span class="sr-only"></span>
                 </div>
             </div>
