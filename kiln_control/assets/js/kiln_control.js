@@ -538,8 +538,6 @@ function updateForRunningState(data) {
     let left = parseInt(data.total_time - data.runtime);
     let eta = new Date(left * 1000).toISOString().substr(11, 8);
 
-    console.log(data.runtime)
-    console.log(data.total_time)
     updateProgress(parseFloat(data.runtime) / parseFloat(data.total_time) * 100);
     $('#state').html('<span class="glyphicon glyphicon-time"></span><span> </span> <span>' + eta + '</span>');
     $('#target_temp').html(parseFloat(data.target).toFixed(1));

@@ -47,16 +47,19 @@ class Oven(threading.Thread):
         self.start_time = None
 
     def complete(self):
+        log.info('complete-->')
         self.state = "COMPLETE"
         self.target = 0
         self.heat = 0
 
     def abort(self):
+        log.info('abort-->')
         self.state = "ABORTED"
         self.target = 0
         self.heat = 0
 
     def stop(self):
+        log.info('stop-->')
         self.state = "IDLE"
         self.target = 0
         self.heat = 0
