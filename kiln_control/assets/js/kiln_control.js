@@ -515,7 +515,7 @@ function handleStateChange(data) {
         updateForRunningState(data);
     }
     else {
-        updateForNonRunningState();
+        updateForNonRunningState(data);
     }
 
     state_last = state;
@@ -540,7 +540,7 @@ function updateForRunningState(data) {
     $("#nav_start").hide();
     $("#nav_stop").show();
 
-    updateRunIndicator(data.is_simulation); // Pass the isSimulation flag to the function
+    updateRunIndicator(data.is_simulation, data.state); // Pass the isSimulation flag and state
     graph.live.data.push([data.time_stamp, data.temperature]);
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 
@@ -552,28 +552,40 @@ function updateForRunningState(data) {
     $('#target_temp').html(parseFloat(data.target).toFixed(1));
     $('#cost').html(currency_type + parseFloat(data.cost).toFixed(2));
 }
-
-function updateRunIndicator(isSimulation) {
+function updateRunIndicator(isSimulation, state) {
     let icon = document.getElementById('run_icon');
     let text = document.getElementById('run_text');
     let progressBar = document.getElementById('progressBar');
 
-    if (isSimulation) {
-        icon.innerHTML = '🔬'; // Example icon for simulation
-        text.innerHTML = 'Running Simulation';
-        progressBar.style.backgroundColor = 'blue'; // Blue for simulation
+    if (state === 'IDLE') {
+        // Hide elements when in IDLE state
+        icon.style.display = 'none';
+        text.style.display = 'none';
+        progressBar.style.backgroundColor = ''; // Reset progress bar color
     } else {
-        icon.innerHTML = '▶️'; // Example icon for actual run
-        text.innerHTML = 'Running Task';
-        progressBar.style.backgroundColor = 'green'; // Green for actual run
+        // Show elements when not in IDLE state
+        icon.style.display = 'block';
+        text.style.display = 'block';
+
+        if (isSimulation) {
+            icon.innerHTML = '🔬'; // Example icon for simulation
+            text.innerHTML = 'Running Simulation';
+            progressBar.style.backgroundColor = 'blue'; // Blue for simulation
+        } else {
+            icon.innerHTML = '▶️'; // Example icon for actual run
+            text.innerHTML = 'Running Task';
+            progressBar.style.backgroundColor = 'green'; // Green for actual run
+        }
     }
 }
 
-
-function updateForNonRunningState() {
+function updateForNonRunningState(data) {
     $("#nav_start").show();
     $("#nav_stop").hide();
+    updateRunIndicator(data.is_simulation, data.state); // Pass the isSimulation flag and state
+
     $('#state').html('<p class="ds-text">' + state + '</p>');
+
 }
 
 function updateUIElements(data) {
