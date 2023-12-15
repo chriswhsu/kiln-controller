@@ -539,7 +539,7 @@ function updateForRunningState(data) {
     let eta = new Date(left * 1000).toISOString().substr(11, 8);
 
     updateProgress(parseFloat(data.runtime) / parseFloat(data.total_time) * 100);
-    $('#state').html('<span class="glyphicon glyphicon-time"></span><span> </span> <span>' + eta + '</span>');
+    $('#state').html('<span>' + eta + '</span>');
     $('#target_temp').html(parseFloat(data.target).toFixed(1));
     $('#cost').html(currency_type + parseFloat(data.cost).toFixed(2));
 }
