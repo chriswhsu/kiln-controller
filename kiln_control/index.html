@@ -25,32 +25,38 @@
 
 </head>
 <body>
-    <div class="container">
-        <div id="status">
-            <!-- Grouping each header with its corresponding data -->
-            <div class="status-item">
-                <div class="ds-title">Kiln Temp</div>
-                <div class="display ds-num">
-                    <span id="act_temp"></span> <span class="ds-unit" id="act_temp_scale">&deg;F</span>
-                </div>
-            </div>
-            <div class="status-item">
-                <div class="ds-title">Target Temp</div>
-                <div class="display ds-num ds-target">
-                    <span id="target_temp">---</span> <span class="ds-unit" id="target_temp_scale">&deg;F</span>
-                </div>
-            </div>
-            <div class="status-item">
-                <div class="ds-title">Cost</div>
-                <div class="display ds-num ds-cost">
-                    <span id="cost">0.00</span>
-                </div>
-            </div>
-            <div class="status-item">
-                <div class="ds-title">Status</div>
-                <div class="display ds-num ds-state" id="state"></div>
+<div class="container">
+    <!-- Run Indicator Section -->
+    <div id="run_indicator" style="text-align: center; margin-bottom: 15px;">
+        <span id="run_icon" style="font-size: 24px;"></span> <!-- Icon for simulation or actual run -->
+        <span id="run_text" style="font-size: 18px; margin-left: 10px;"></span> <!-- Text for simulation or actual run -->
+    </div>
+
+    <div id="status">
+        <!-- Grouping each header with its corresponding data -->
+        <div class="status-item">
+            <div class="ds-title">Kiln Temp</div>
+            <div class="display ds-num">
+                <span id="act_temp"></span> <span class="ds-unit" id="act_temp_scale">&deg;F</span>
             </div>
         </div>
+        <div class="status-item">
+            <div class="ds-title">Target Temp</div>
+            <div class="display ds-num ds-target">
+                <span id="target_temp">---</span> <span class="ds-unit" id="target_temp_scale">&deg;F</span>
+            </div>
+        </div>
+        <div class="status-item">
+            <div class="ds-title">Cost</div>
+            <div class="display ds-num ds-cost">
+                <span id="cost">0.00</span>
+            </div>
+        </div>
+        <div class="status-item">
+            <div class="ds-title">Status</div>
+            <div class="display ds-num ds-state" id="state"></div>
+        </div>
+    </div>
     <div id="progress">
         <div>
             <div class="progress progress-striped active">

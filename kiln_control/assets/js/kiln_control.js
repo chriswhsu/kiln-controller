@@ -540,6 +540,7 @@ function updateForRunningState(data) {
     $("#nav_start").hide();
     $("#nav_stop").show();
 
+    updateRunIndicator(data.is_simulation); // Pass the isSimulation flag to the function
     graph.live.data.push([data.time_stamp, data.temperature]);
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 
@@ -567,6 +568,7 @@ function updateRunIndicator(isSimulation) {
         progressBar.style.backgroundColor = 'green'; // Green for actual run
     }
 }
+
 
 function updateForNonRunningState() {
     $("#nav_start").show();
