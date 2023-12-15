@@ -1,5 +1,5 @@
 body {
-    background: #eeedec;
+    background: #5d5145;
     font-family: Arial, sans-serif;
 }
 
@@ -11,14 +11,16 @@ body {
     margin-top: 15px;
     color: #272786;
     border-radius: 5px;
-    border: 1px solid #ddd;
+    border: 2px solid #dddddd;
 }
 
 
 #progress {
-    background: #000000;
+    background: #5d5145;
     border-radius: 5px;
-    padding: 5px;
+    padding: 5px 30px 5px 47px;
+    border: 2px solid #dddddd;
+
 }
 
 .status-item {

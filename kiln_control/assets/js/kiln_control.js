@@ -541,7 +541,7 @@ function updateForRunningState(data) {
     console.log(data.runtime)
     console.log(data.total_time)
     updateProgress(parseFloat(data.runtime) / parseFloat(data.total_time) * 100);
-    $('#state').html('<span class="glyphicon glyphicon-time"></span><span>' + eta + '</span>');
+    $('#state').html('<span class="glyphicon glyphicon-time"></span><span> </span> <span>' + eta + '</span>');
     $('#target_temp').html(parseFloat(data.target).toFixed(1));
     $('#cost').html(currency_type + parseFloat(data.cost).toFixed(2));
 }
