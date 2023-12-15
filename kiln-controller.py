@@ -113,7 +113,7 @@ class KilnController:
             bottle.abort()
             return
 
-        # clean up the temporary oven
+        # clean up the previous oven in case we are switching from Simulated to Real or Vice Versa
         self.oven.die()  # Signal the thread to stop
         self.oven.join()  # Wait for the thread to finish
 
