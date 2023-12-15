@@ -55,8 +55,8 @@ class OvenWatcher(threading.Thread):
             self.notify_all(oven_status)
 
     def sampled_temp_history(self, max_points=500):
-        # First, sort the temperature history by 'runtime' (timestamp)
-        sorted_temperature_history = sorted(self.temperature_history, key=lambda x: x['runtime'])
+        # First, sort the temperature history by 'time_stamp' (timestamp)
+        sorted_temperature_history = sorted(self.temperature_history, key=lambda x: x['time_stamp'])
 
         total_points = len(sorted_temperature_history)
         if total_points <= max_points:

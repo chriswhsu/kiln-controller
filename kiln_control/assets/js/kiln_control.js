@@ -481,7 +481,7 @@ function updateSelectedProfile(profileData) {
 
 function updateGraphWithLogData(logData) {
     $.each(logData, function (i, logEntry) {
-        graph.live.data.push([logEntry.runtime, logEntry.temperature]);
+        graph.live.data.push([logEntry.time_stamp, logEntry.temperature]);
     });
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 }
@@ -490,7 +490,15 @@ function updateApplicationState(data) {
     state = data.state;
     handleStateChange(data);
     updateUIElements(data);
+
+    // Disable or enable profile selector, edit, and new profile button based on the state
+    if (state !== "IDLE") {
+        $('#e2, #btn_edit, #btn_new').prop('disabled', true).addClass('disabled-button');
+    } else {
+        $('#e2, #btn_edit, #btn_new').prop('disabled', false).removeClass('disabled-button');
+    }
 }
+
 
 function handleStateChange(data) {
     if (state !== state_last) {
@@ -532,16 +540,32 @@ function updateForRunningState(data) {
     $("#nav_start").hide();
     $("#nav_stop").show();
 
-    graph.live.data.push([data.runtime, data.temperature]);
+    graph.live.data.push([data.time_stamp, data.temperature]);
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 
-    let left = parseInt(data.total_time - data.runtime);
+    let left = parseInt(data.total_time - data.time_stamp);
     let eta = new Date(left * 1000).toISOString().substr(11, 8);
 
-    updateProgress(parseFloat(data.runtime) / parseFloat(data.total_time) * 100);
+    updateProgress(parseFloat(data.time_stamp) / parseFloat(data.total_time) * 100);
     $('#state').html('<span>' + eta + '</span>');
     $('#target_temp').html(parseFloat(data.target).toFixed(1));
     $('#cost').html(currency_type + parseFloat(data.cost).toFixed(2));
+}
+
+function updateRunIndicator(isSimulation) {
+    let icon = document.getElementById('run_icon');
+    let text = document.getElementById('run_text');
+    let progressBar = document.getElementById('progressBar');
+
+    if (isSimulation) {
+        icon.innerHTML = '🔬'; // Example icon for simulation
+        text.innerHTML = 'Running Simulation';
+        progressBar.style.backgroundColor = 'blue'; // Blue for simulation
+    } else {
+        icon.innerHTML = '▶️'; // Example icon for actual run
+        text.innerHTML = 'Running Task';
+        progressBar.style.backgroundColor = 'green'; // Green for actual run
+    }
 }
 
 function updateForNonRunningState() {
@@ -653,7 +677,7 @@ function setupControlWebSocket() {
 function updateControlDisplay(controlData) {
     // Update the display based on control data
     // For example, updating live graph data
-    graph.live.data.push([controlData.runtime, controlData.temperature]);
+    graph.live.data.push([controlData.time_stamp, controlData.temperature]);
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 
     // Additional logic to update UI based on control data

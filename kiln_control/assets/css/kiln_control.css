@@ -86,6 +86,7 @@ body {
         flex-basis: 20%; /* Reduces width on smaller screens */
     }
 }
+
 .ds-input {
     color: #111111;
     font-family: "Digi", monospace;
@@ -93,7 +94,6 @@ body {
     box-shadow: inset 0 0 12px 0 #737270;
     text-align: right;
     padding: 0 7px 0 0;
-
 }
 
 .bar {
@@ -107,6 +107,20 @@ body {
     color: #000;
 / / position: absolute;
 / / bottom: 0;
+}
+
+.disabled-button {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.disabled-button:hover {
+    background-color: initial; /* Keep the background color unchanged on hover */
+}
+
+.select2-container--default.select2-container--disabled .select2-selection--single {
+    background-color: #eee; /* Light gray background for disabled select2 */
+    cursor: not-allowed;
 }
 
 .ds-led-hazard-active {
@@ -171,14 +185,18 @@ body {
 }
 
 #profile_selector {
-    border: 1px solid rgb(194, 194, 194);
-    -webkit-border-radius: 5px;
-    -moz-border-radius: 5px;
-    border-radius: 5px;
-    background: rgb(229, 229, 229);
-    background: linear-gradient(to bottom, rgba(229, 229, 229, 1) 0%, rgba(255, 255, 255, 1) 100%);
-    padding: 3px 5px;
-    box-shadow: 0 0 1.1em 0 rgba(0, 0, 0, 0.05), inset 0 0 0 0 #000;
+    border: 1px solid rgba(194, 194, 194, 0.7); /* More subtle border color */
+    border-radius: 5px; /* Rounded corners */
+    background: linear-gradient(to bottom, rgba(245, 245, 245, 1) 0%, rgba(229, 229, 229, 1) 100%); /* Smoother gradient */
+    padding: 2px 4px; /* Adjust padding for better spacing */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Enhanced shadow for depth */
+    margin: 0; /* Adjust margin as needed */
+    transition: all 0.3s ease; /* Smooth transition for hover effects */
+}
+
+#profile_selector:hover {
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(245, 245, 245, 1) 100%); /* Lighter gradient on hover */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Larger shadow on hover */
 }
 
 .select2-container {
@@ -252,14 +270,12 @@ body {
 .alert-success {
     background: rgb(164, 179, 87);
     background: linear-gradient(to bottom, rgba(164, 179, 87, 1) 0%, rgba(117, 137, 12, 1) 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#a4b357', endColorstr='#75890c', GradientType=0);
     color: #fff;
 }
 
 .alert-error {
     background: rgb(206, 57, 20);
     background: linear-gradient(to bottom, rgba(206, 57, 20, 1) 0%, rgba(163, 38, 0, 1) 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ce3914', endColorstr='#a32600', GradientType=0);
     color: #fff;
 }
 

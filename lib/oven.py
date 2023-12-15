@@ -15,6 +15,7 @@ class Oven(threading.Thread):
 
     def __init__(self):
         threading.Thread.__init__(self)
+        self.is_simulation = None
         self.kill_switch = None
         self.startat = 0
         self.pid = PID()
@@ -22,7 +23,7 @@ class Oven(threading.Thread):
         self.heat = 0
         self.target = 0
         self.start_time = None
-        self.runtime = 0
+        self.time_stamp = 0
         self.total_time = 0
         self.profile = None
         self.state = "IDLE"
@@ -42,7 +43,7 @@ class Oven(threading.Thread):
 
     def _reset_oven_state(self):
         self.cost = 0
-        self.runtime = 0
+        self.time_stamp = 0
         self.total_time = 0
         self.start_time = None
 
@@ -71,7 +72,7 @@ class Oven(threading.Thread):
         self._reset_oven_state()  # Reset state at the start of a new run
 
         self.startat = startat * 60
-        self.runtime = self.startat
+        self.time_stamp = self.startat
         self.start_time = datetime.datetime.now() - datetime.timedelta(seconds=self.startat)
         self.profile = profile
         self.total_time = profile.get_duration()
@@ -100,7 +101,7 @@ class Oven(threading.Thread):
 
         log.info(
                 f"temp={self.temperature:.2f}, target={self.target:.2f}, pid_output={pid_output:.2f}, "
-                f"heat_on={heat_on:.2f}, heat_off={heat_off:.2f}, run_time={self.runtime:.1f}"
+                f"heat_on={heat_on:.2f}, heat_off={heat_off:.2f}, run_time={self.time_stamp:.1f}"
         )
 
     def kiln_must_catch_up(self):
@@ -108,14 +109,14 @@ class Oven(threading.Thread):
             temperature_difference = self.target - self.temperature
             if temperature_difference > config.profile_pause_window:
                 log.info("kiln must catch up, too cold")
-                self.start_time = datetime.datetime.now() - datetime.timedelta(milliseconds=self.runtime * 1000)
+                self.start_time = datetime.datetime.now() - datetime.timedelta(milliseconds=self.time_stamp * 1000)
 
     def update_runtime(self):
         runtime_delta = datetime.datetime.now() - self.start_time
-        self.runtime = max(0.0, round(runtime_delta.total_seconds(), 2))
+        self.time_stamp = max(0.0, round(runtime_delta.total_seconds(), 2))
 
     def update_target_temp(self):
-        self.target = self.profile.get_target_temperature(self.runtime)
+        self.target = self.profile.get_target_temperature(self.time_stamp)
 
     def reset_if_emergency(self):
         # reset if the temperature is way TOO HOT, or other critical errors detected
@@ -127,7 +128,7 @@ class Oven(threading.Thread):
                 self.kill_switch.kill()  # Activate the kill switch as the last action
 
     def reset_if_schedule_ended(self):
-        if self.runtime > self.total_time:
+        if self.time_stamp > self.total_time:
             log.info("schedule ended, shutting down")
             log.info("total cost = %s%.2f" % (config.currency_type, self.cost))
             self.complete()
@@ -143,13 +144,14 @@ class Oven(threading.Thread):
 
         state = {
             'cost': round(self.cost, 2),
-            'runtime': round(self.runtime, 2),
+            'time_stamp': round(self.time_stamp, 2),
             'temperature': self.temperature,
             'target': self.target,
             'state': self.state,
             'heat': round(self.heat, 2),
             'total_time': self.total_time,
-            'profile': self.profile.name if self.profile else None}
+            'profile': self.profile.name if self.profile else None,
+            'is_simulation': self.is_simulation}
         return state
 
     def save_status(self):
@@ -163,7 +165,7 @@ class Oven(threading.Thread):
     def run(self):
         while self._running:
             if self.state == "IDLE":
-                log.info(f"runtime: {self.runtime}, state: {self.state}, temperature: {self.temperature}")
+                log.info(f"timestamp: {self.time_stamp}, state: {self.state}, temperature: {self.temperature}")
                 time.sleep(config.idle_sample_time)
                 self.update_temperature()
             elif self.state == "RUNNING":
@@ -176,7 +178,7 @@ class Oven(threading.Thread):
                 self.reset_if_emergency()
                 self.reset_if_schedule_ended()
             elif self.state == "COMPLETE":
-                log.info(f"runtime: {self.runtime}, state: {self.state}, temperature: {self.temperature}")
+                log.info(f"runtime: {self.time_stamp}, state: {self.state}, temperature: {self.temperature}")
                 time.sleep(config.idle_sample_time)
                 self.update_runtime()
                 self.update_temperature()

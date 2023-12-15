@@ -10,7 +10,7 @@ import sys
 # Define standard and PID headers for CSV file
 STD_HEADER = [
     'stamp',
-    'runtime',
+    'time_stamp',
     'temperature',
     'target',
     'state',

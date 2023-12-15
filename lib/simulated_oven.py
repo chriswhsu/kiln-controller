@@ -28,6 +28,7 @@ class SimulatedOven(Oven):
         super().__init__()
 
         self.temperature = config.simulated_room_temp
+        self.is_simulation = True
 
     def create_temp_sensor(self):
         self.temp_sensor = TempSensorSimulated()

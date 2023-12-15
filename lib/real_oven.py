@@ -21,7 +21,8 @@ class RealOven(Oven):
 
         # call parent init
         log.info("Starting real oven...")
-        Oven.__init__(self)
+        super().__init__()
+        self.is_simulation = False
 
     def create_temp_sensor(self):
         self.temp_sensor = TempSensorReal()
