@@ -535,7 +535,7 @@ function notifyRunCompleted(newState) {
         offset: {from: 'top', amount: 250},
         align: 'center',
         width: 385,
-        delay: 0,
+        delay: 5000,
         allow_dismiss: true,
         stackup_spacing: 10
     });
