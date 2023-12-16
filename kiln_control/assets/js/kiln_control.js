@@ -505,26 +505,24 @@ function updateApplicationState(data) {
     }
 }
 
-
 function handleStateChange(data) {
+    // Check if state has changed from the last recorded state
     if (state !== state_last) {
+        // Specific actions when transitioning out of the RUNNING state
         if (state_last === "RUNNING") {
-            notifyRunCompleted(state);
+            notifyRunCompleted(state, data.is_simulation);
         }
+
+        // Update the last known state
+        state_last = state;
     }
 
-    if (state === "RUNNING") {
+    // Perform actions based on the current state
+    if (state === "RUNNING" || state === "COMPLETE") {
         updateForRunningState(data);
-
-    }
-    else if (state === "COMPLETE") {
-        updateForRunningState(data);
-    }
-    else {
+    } else {
         updateForNonRunningState(data);
     }
-
-    state_last = state;
 }
 
 
@@ -566,35 +564,38 @@ function updateForRunningState(data) {
 
     updateProgress(parseFloat(data.time_stamp) / parseFloat(data.total_time) * 100);
     $('#state').html(timeDisplay);
-    $('#target_temp').html(parseFloat(data.target).toFixed(1));
+        // Update target temperature display
+    let targetTempDisplay = data.target === 0 ? '---' : parseFloat(data.target).toFixed(1);
+    $('#target_temp').html(targetTempDisplay);
     $('#cost').html(currency_type + parseFloat(data.cost).toFixed(2));
 }
-
-
-
 function updateRunIndicator(isSimulation, state) {
-    let icon = document.getElementById('run_icon');
-    let text = document.getElementById('run_text');
-    let progressBar = document.getElementById('progressBar');
+    const icon = document.getElementById('run_icon');
+    const text = document.getElementById('run_text');
+    const progressBar = document.getElementById('progressBar');
 
-    if (state !== "IDLE") {
-        if (isSimulation) {
-            icon.innerHTML = '🔬'; // Example icon for simulation
-            text.innerHTML = 'Running Simulation';
-            text.style.color = '#4aa3c4FF'; // Example color, such as orange
-            progressBar.style.backgroundColor = '#4AA3C4'; // Blue for simulation
-        } else {
-            icon.innerHTML = '🔥'; // Flame icon for actual run
-            text.innerHTML = 'Heating Kiln';
-            text.style.color = '#e70808'; // Example color, such as green
-            progressBar.style.backgroundColor = '#e70808'; // Green for actual run
-        }
-    } else {
-        icon.innerHTML = ''; // Clear icon when idle
-        text.innerHTML = ''; // Clear text when idle
-        progressBar.style.backgroundColor = ''; // Reset progress bar color
+    // Clearing styles for non-specific states
+    if (state !== "RUNNING" && state !== "COMPLETE") {
+        icon.innerHTML = '';
+        text.innerHTML = '';
+        progressBar.style.backgroundColor = '';
+        return;
+    }
+
+    // Setting styles specific to RUNNING state
+    if (state === "RUNNING") {
+        icon.innerHTML = isSimulation ? '🎛️' : '🔥';
+        text.innerHTML = isSimulation ? 'Running Simulation' : 'Heating Kiln';
+        text.style.color = isSimulation ? '#4aa3c4FF' : '#e70808';
+        progressBar.style.backgroundColor = isSimulation ? '#4AA3C4' : '#e70808';
+    }
+
+    // Setting text for COMPLETE state
+    if (state === "COMPLETE") {
+        text.innerHTML = isSimulation ? 'Simulation Complete' : 'Kiln Run Complete';
     }
 }
+
 
 function updateForNonRunningState(data) {
     $("#nav_start").show();
@@ -803,9 +804,6 @@ function initializeProfileSelector() {
     e2.on("change", function (e) {
         updateProfile(e.val);
     });
-
-    // Additional initialization logic, if needed
-    // ...
 }
 
 

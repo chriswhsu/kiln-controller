@@ -62,20 +62,70 @@ body {
     color: #7e7b72;
 }
 
-/* For smaller screens */
 @media (max-width: 768px) {
+    .panel-heading {
+        padding: 5px;
+        font-size: 0.8em;
+    }
+
+    .btn-group .btn {
+        padding: 5px 10px;
+        font-size: 0.8em;
+    }
+
+    #profile_selector {
+        width: 65%;
+        margin-right: 5px;
+    }
+
+    .select2-container {
+        width: 75% !important;
+    }
+
+    .select2-choice {
+        padding: 3px 5px;
+    }
+
+    .input-group {
+        flex-wrap: wrap;
+    }
+
+    .input-group-addon, .input-group .form-control {
+        font-size: 0.8em;
+    }
+
+    .input-group-btn > .btn, .input-group-btn > .btn-group > .btn {
+        font-size: 0.8em;
+    }
+
+    .panel-footer, .modal-footer {
+        padding: 5px 10px;
+    }
+
     .ds-title {
-        font-size: 0.8em; /* Smaller font size */
+        font-size: 0.8em;
     }
 
     .display {
-        font-size: 1.3em; /* Smaller font size */
+        font-size: 1.3em;
     }
 
     .status-item {
-        flex-basis: 20%; /* Reduces width on smaller screens */
+        flex-basis: 20%;
+    }
+
+    #profile_selector, #btn_edit, #btn_new {
+        display: inline-block;
+        margin-bottom: 0;
+    }
+
+    #this_header > .pull-left {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
     }
 }
+
 
 .ds-input {
     color: #111111;
@@ -134,7 +184,6 @@ body {
     border: none;
     width: initial;
     font-family: sans-serif;
-    font-size: 32px;
 }
 
 .progress {
