@@ -55,8 +55,8 @@ simulated_room_temp = 70.0  # deg F
 element_heat_capacity = 200.0  # J/K  heat capacity of heat element
 oven_heat_capacity = 1000.0  # J/K  heat capacity of oven
 oven_heating_power = 1450.0  # W    heating power of oven
-thermal_res_oven_to_environ = 0.5  # K/W  thermal resistance oven -> environment
-thermal_res_element_to_oven = 0.05  # K/W  thermal resistance heat element -> oven
+thermal_res_oven_to_environ = 1.2  # K/W  thermal resistance oven -> environment
+thermal_res_element_to_oven = 0.08  # K/W  thermal resistance heat element -> oven
 
 ########################################################################
 # Cost Information
