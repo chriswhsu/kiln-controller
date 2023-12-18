@@ -1,6 +1,5 @@
 import logging
-import time
-
+from gevent import sleep
 import config
 from lib.oven import Oven
 from lib.temp_sensor import TempSensorSimulated
@@ -48,7 +47,7 @@ class SimulatedOven(Oven):
                 f"{self.heat_transfer_rate_to_environ:.2f}W env"
         )
 
-        time.sleep(self.time_step)
+        sleep(self.time_step)
 
     def update_temperature(self):
         # temperature is set directly on member variable, no need to query temp sensor.

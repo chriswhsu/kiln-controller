@@ -380,54 +380,6 @@ function updateGraphWithLogData(logData) {
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 }
 
-function updateApplicationState(data) {
-    state = data.state;
-    handleStateChange(data);
-    updateUIElements(data);
-
-    // Disable or enable profile selector, edit, and new profile button based on the state
-    if (state !== "IDLE") {
-        $('#e2, #btn_edit, #btn_new').prop('disabled', true).addClass('disabled-button');
-    } else {
-        $('#e2, #btn_edit, #btn_new').prop('disabled', false).removeClass('disabled-button');
-    }
-}
-
-function handleStateChange(data) {
-    // Check if state has changed from the last recorded state
-    if (state !== state_last) {
-        // Specific actions when transitioning out of the RUNNING state
-        if (state_last === "RUNNING") {
-            notifyRunCompleted(state, data.is_simulation);
-        }
-
-        // Update the last known state
-        state_last = state;
-    }
-
-    // Perform actions based on the current state
-    if (state === "RUNNING" || state === "COMPLETE") {
-        updateForRunningState(data);
-    } else {
-        updateForNonRunningState(data);
-    }
-}
-
-
-function notifyRunCompleted(newState) {
-    $('#target_temp').html('---');
-    updateProgress(0);
-    $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>Run completed. New State: " + newState + "</b>", {
-        ele: 'body',
-        type: 'success',
-        offset: {from: 'top', amount: 250},
-        align: 'center',
-        width: 385,
-        delay: 5000,
-        allow_dismiss: true,
-        stackup_spacing: 10
-    });
-}
 
 
 function updateRunIndicator(isSimulation, state) {
@@ -483,44 +435,6 @@ function updateHazardIndicator(temperature) {
 }
 
 
-function setupConfigWebSocket() {
-    ws_config.onopen = function () {
-        // Request initial config on WebSocket open
-        ws_config.send('GET');
-    };
-
-    ws_config.onmessage = function (e) {
-        console.log("Config data received");
-        console.log(e.data);
-
-        let configData = JSON.parse(e.data);
-        updateConfigDisplay(configData);
-    };
-
-    ws_config.onclose = function () {
-        console.log("Config WebSocket closed");
-        // Additional logic for WebSocket close, if needed
-    };
-
-    ws_config.onerror = function (error) {
-        console.log("Config WebSocket error:", error);
-        // Handle errors here
-    };
-}
-
-
-function setupControlWebSocket() {
-
-    ws_control.onmessage = function (e) {
-        console.log("Control data received");
-        console.log(e.data);
-
-        let controlData = JSON.parse(e.data);
-        updateControlDisplay(controlData);
-    };
-}
-
-
 function updateProfileSelector() {
     console.log('updateProfileSelector')
     let e2 = $('#e2');
@@ -560,23 +474,6 @@ function initializeProfileSelector() {
     });
 }
 
-
-// // Function to initialize a WebSocket with event handlers
-// function initializeWebSocket(wsName) {
-//     window[wsName].onopen = handleStatusOpen;
-//     window[wsName].onmessage = handleStatusMessage;
-//     window[wsName].onerror = handleStatusError;
-//
-//     switch (wsName) {
-//         case 'ws_status':
-//             window[wsName].onclose = handleStatusClose;
-//             break;
-//         case 'ws_control':
-//             window[wsName].onclose = handleControlClose;
-//             break;
-//     }
-// }
-//
 
 // function handleStatusOpen() {
 //     console.log("Status Socket has been opened");
@@ -679,7 +576,7 @@ $(document).ready(function () {
 
     function handleStatusUpdate(data) {
         // Parse the incoming data
-        console.log(data)
+        console.log('handleStatusUpdate')
         let statusData = data;
 
         // Update global state
@@ -694,6 +591,9 @@ $(document).ready(function () {
             state_last = state;
         }
 
+        updateApplicationState(data);
+
+
         // Update UI based on the current state
         if (state === "RUNNING" || state === "COMPLETE") {
             updateForRunningState(statusData);
@@ -705,6 +605,40 @@ $(document).ready(function () {
         if (statusData.time_stamp && statusData.temperature) {
             graph.live.data.push([statusData.time_stamp, statusData.temperature]);
             graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+        }
+    }
+
+
+    function updateApplicationState(data) {
+        state = data.state;
+        handleStateChange(data);
+        updateUIElements(data);
+
+        // Disable or enable profile selector, edit, and new profile button based on the state
+        if (state !== "IDLE") {
+            $('#e2, #btn_edit, #btn_new').prop('disabled', true).addClass('disabled-button');
+        } else {
+            $('#e2, #btn_edit, #btn_new').prop('disabled', false).removeClass('disabled-button');
+        }
+    }
+
+    function handleStateChange(data) {
+        // Check if state has changed from the last recorded state
+        if (state !== state_last) {
+            // Specific actions when transitioning out of the RUNNING state
+            if (state_last === "RUNNING") {
+                notifyRunCompleted(state, data.is_simulation);
+            }
+
+            // Update the last known state
+            state_last = state;
+        }
+
+        // Perform actions based on the current state
+        if (state === "RUNNING" || state === "COMPLETE") {
+            updateForRunningState(data);
+        } else {
+            updateForNonRunningState(data);
         }
     }
 
@@ -724,6 +658,7 @@ $(document).ready(function () {
             stackup_spacing: 10
         });
     }
+
 
     function updateForRunningState(data) {
         $("#nav_start").hide();

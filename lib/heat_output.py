@@ -1,6 +1,5 @@
 import logging
-import time
-
+from gevent import sleep
 import config
 
 log = logging.getLogger(__name__)
@@ -26,9 +25,9 @@ class HeatOutput:
 
     def heat(self, sleep_for):
         self.GPIO.output(config.gpio_heat, self.GPIO.HIGH)
-        time.sleep(sleep_for)
+        sleep(sleep_for)
 
     def cool(self, sleep_for):
         # no active cooling, so sleep
         self.GPIO.output(config.gpio_heat, self.GPIO.LOW)
-        time.sleep(sleep_for)
+        sleep(sleep_for)

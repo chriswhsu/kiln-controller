@@ -1,7 +1,7 @@
 import datetime
 import logging
-import threading
-import time
+
+from gevent import Greenlet
 
 import config
 from lib.profile import Profile
@@ -9,20 +9,15 @@ from lib.profile import Profile
 log = logging.getLogger(__name__)
 
 
-class OvenWatcher(threading.Thread):
+class OvenWatcher(Greenlet):
     def __init__(self, oven, socketio=None, profile: Profile = None):
-        super().__init__()
+        super(OvenWatcher, self).__init__()
         self.temperature_history = None
-        self.started = None
-        self.daemon = True
+        self.start_time = None
         self.oven = oven
         self.socketio = socketio  # Store the SocketIO instance
         self.active_profile = profile
-
-    def notify_all(self, message):
-        # Emit message to all connected clients
-        self.socketio.emit('oven_update', message)
-        log.debug(f"{self._add_id()} Sent to clients: {message}")
+        self.greenlet = None
 
     def _add_id(self):
         """Helper method to standardize log messages with instance identifier."""
@@ -36,8 +31,8 @@ class OvenWatcher(threading.Thread):
     def reset_temp_history(self):
         self.temperature_history = []
 
-    def run(self):
-        self.started = datetime.datetime.now()
+    def _run(self):
+        self.start_time = datetime.datetime.now()
         self.temperature_history = []
 
         while True:
@@ -46,18 +41,19 @@ class OvenWatcher(threading.Thread):
 
             if oven_state == "RUNNING":
                 self.temperature_history.append(oven_status)
-                time.sleep(self.oven.time_step)
+                self.socketio.sleep(self.oven.time_step)
             elif oven_state == "COMPLETE":
                 self.temperature_history.append(oven_status)
-                time.sleep(config.idle_sample_time)
+                self.socketio.sleep(config.idle_sample_time)
             elif oven_state == "IDLE":
                 if len(self.temperature_history) > 0:
                     self.reset_temp_history()
-                time.sleep(config.idle_sample_time)
+                self.socketio.sleep(config.idle_sample_time)
             else:
-                time.sleep(config.idle_sample_time)
+                self.socketio.sleep(config.idle_sample_time)
 
             if self.socketio:
+                log.info("Emit oven_update")
                 self.socketio.emit('oven_update', oven_status)
 
     def sampled_temp_history(self, max_points=500):

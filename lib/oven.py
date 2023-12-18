@@ -1,20 +1,18 @@
 import datetime
 import json
 import logging
-import threading
-import time
-
+from gevent import sleep, Greenlet
 import config
 from lib.pid import PID
 
 log = logging.getLogger(__name__)
 
 
-class Oven(threading.Thread):
+class Oven(Greenlet):
     # parent oven class. this has all the common code for either a real or simulated oven
 
     def __init__(self):
-        threading.Thread.__init__(self)
+        super(Oven, self).__init__()
         self.is_simulation = None
         self.kill_switch = None
         self.startat = 0
@@ -142,6 +140,7 @@ class Oven(threading.Thread):
 
     def get_status(self):
 
+        self.temperature += 0.1
         state = {
             'cost': round(self.cost, 2),
             'time_stamp': round(self.time_stamp, 2),
@@ -162,11 +161,11 @@ class Oven(threading.Thread):
         # Placeholder method - overridden in child classes
         raise NotImplementedError("This method should be overridden in child classes")
 
-    def run(self):
+    def _run(self):
         while self._running:
             if self.state == "IDLE":
                 log.info(f"timestamp: {self.time_stamp}, state: {self.state}, temperature: {self.temperature}")
-                time.sleep(config.idle_sample_time)
+                sleep(config.idle_sample_time)
                 self.update_temperature()
             elif self.state == "RUNNING":
                 self.update_temperature()
@@ -179,8 +178,8 @@ class Oven(threading.Thread):
                 self.reset_if_schedule_ended()
             elif self.state == "COMPLETE":
                 log.info(f"runtime: {self.time_stamp}, state: {self.state}, temperature: {self.temperature}")
-                time.sleep(config.idle_sample_time)
+                sleep(config.idle_sample_time)
                 self.update_runtime()
                 self.update_temperature()
             else:
-                time.sleep(config.idle_sample_time)
+                sleep(config.idle_sample_time)

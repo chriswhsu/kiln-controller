@@ -34,7 +34,7 @@ class KilnController:
         self.profile_path = config.kiln_profiles_directory
 
         self.flask_app = Flask(__name__)
-        self.socketio = SocketIO(self.flask_app, cors_allowed_origins="*")
+        self.socketio = SocketIO(self.flask_app, cors_allowed_origins="*", logger=False, engineio_logger=False)
 
         # Initialize with the simulated oven
         self.oven = SimulatedOven()

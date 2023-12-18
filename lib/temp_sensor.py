@@ -1,8 +1,7 @@
 import collections
 import logging
-import threading
 import time
-
+from gevent import sleep, Greenlet
 import config
 
 log = logging.getLogger(__name__)
@@ -14,9 +13,9 @@ except ImportError as e:
     MAX31855 = None  # Placeholder for the MAX31855 class
 
 
-class TempSensor(threading.Thread):
+class TempSensor(Greenlet):
     def __init__(self):
-        threading.Thread.__init__(self)
+        super(TempSensor, self).__init__()
         self.daemon = True
         self.temperature = 0
         self.time_step = config.sensor_time_wait
@@ -49,7 +48,7 @@ class TempSensorReal(TempSensor):
                                      config.gpio_sensor_data,
                                      config.temp_scale)
 
-    def run(self):
+    def _run(self):
         while True:
             current_time = time.monotonic()
 
@@ -65,7 +64,7 @@ class TempSensorReal(TempSensor):
             else:
                 self.process_bad_temp()
 
-            time.sleep(self.sample_interval_seconds)
+            sleep(self.sample_interval_seconds)
 
     def read_temperature(self):
         temp = self.thermocouple.get()

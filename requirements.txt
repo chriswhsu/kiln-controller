@@ -1,11 +1,10 @@
-setuptools
-greenlet
-gevent
-gevent-websocket
+flask
+flask-socketio
+python-socketio
 RPi.GPIO
 Adafruit-GPIO
-websocket-client
-
 matplotlib
 pywemo
 pytest
+gevent
+gevent-websocket
