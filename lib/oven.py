@@ -1,7 +1,9 @@
 import datetime
 import json
 import logging
+
 from gevent import sleep, Greenlet
+
 import config
 from lib.pid import PID
 
@@ -140,7 +142,6 @@ class Oven(Greenlet):
 
     def get_status(self):
 
-        self.temperature += 0.1
         state = {
             'cost': round(self.cost, 2),
             'time_stamp': round(self.time_stamp, 2),
@@ -151,6 +152,7 @@ class Oven(Greenlet):
             'total_time': self.total_time,
             'profile': self.profile.name if self.profile else None,
             'is_simulation': self.is_simulation}
+        log.info(state)
         return state
 
     def save_status(self):

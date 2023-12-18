@@ -17,7 +17,6 @@
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 
 
-
     <link href="/kiln_control/assets/favicon.ico" rel="icon" type="image/x-icon">
 
     <link href="assets/css/bootstrap.min.css" rel="stylesheet"/>
@@ -83,12 +82,12 @@
             </div>
             <div class="pull-right" id="btn_controls" style="margin-top: 3px">
                 <div class="btn-group" id="nav_start" style="display:none">
-                    <button class="btn btn-default" onclick="runTaskSimulation();" type="button">Simulate</button>
+                    <button class="btn btn-default" id="simulateButton" type="button">Simulate</button>
                     <button class="btn btn-success" data-target="#jobSummaryModal" data-toggle="modal" type="button">
                         <span class="glyphicon glyphicon-play"></span> Start
                     </button>
                 </div>
-                <button class="btn btn-danger" id="nav_stop" onclick="abortTask()" style="display:none" type="button">
+                <button class="btn btn-danger" id="nav_stop" style="display:none" type="button">
                     <span class="glyphicon glyphicon-stop"></span> Stop
                 </button>
             </div>
@@ -154,8 +153,8 @@
                     <button class="btn btn-danger" data-dismiss="modal" style="width: 50%" type="button">No, take me
                         back
                     </button>
-                    <button class="btn btn-success" data-dismiss="modal" onclick="runTask()" style="width: 50%"
-                            type="button">Yes, start the Run
+                    <button class="btn btn-success" data-dismiss="modal" id="startRunButton" style="width: 50%" type="button">
+                        Yes, start the Run
                     </button>
                 </div>
             </div>

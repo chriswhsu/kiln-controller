@@ -381,7 +381,6 @@ function updateGraphWithLogData(logData) {
 }
 
 
-
 function updateRunIndicator(isSimulation, state) {
     const icon = document.getElementById('run_icon');
     const text = document.getElementById('run_text');
@@ -545,9 +544,21 @@ $(document).ready(function () {
     });
 
 
-    // Other functions (e.g., updateProfile, deleteProfile, etc.) remain the same
+    $('#simulateButton').click(function () {
+        runTaskSimulation();
+    });
+    // Bind the click event to the function
+    $('#startRunButton').click(function () {
+        runTask();
+    });
 
-    // Update functions to use Socket.IO
+    // Bind the click event to the function
+    $('#nav_stop').click(function () {
+        abortTask();
+    });
+
+
+
     function runTask() {
         let cmd = {
             "cmd": "RUN", "profile": profiles[selected_profile]
