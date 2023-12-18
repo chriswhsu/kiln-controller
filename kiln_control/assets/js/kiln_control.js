@@ -197,35 +197,6 @@ function timeTickFormatter(val, axis) {
     }
 }
 
-function runTask() {
-    let cmd = {
-        "cmd": "RUN", "profile": profiles[selected_profile]
-    }
-
-    graph.live.data = [];
-    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
-
-    ws_control.send(JSON.stringify(cmd));
-
-}
-
-function runTaskSimulation() {
-    let cmd = {
-        "cmd": "SIMULATE", "profile": profiles[selected_profile]
-    }
-
-    graph.live.data = [];
-    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
-
-    ws_control.send(JSON.stringify(cmd));
-
-}
-
-
-function abortTask() {
-    let cmd = {"cmd": "STOP"};
-    ws_control.send(JSON.stringify(cmd));
-}
 
 function enterNewMode() {
     state = "EDIT"
@@ -390,89 +361,6 @@ function getOptions() {
     };
 }
 
-function reconnectWebSocket() {
-    console.log(`Lost connection to webSocket. Reloading the page...`);
-    // Optionally, you can use a delay before the refresh
-    setTimeout(function () {
-        location.reload();
-    }, 1000); // Refresh the page after 1 second
-}
-
-// Function to initialize a WebSocket with event handlers
-function initializeWebSocket(wsName) {
-    window[wsName].onopen = handleStatusOpen;
-    window[wsName].onmessage = handleStatusMessage;
-    window[wsName].onerror = handleStatusError;
-
-    switch (wsName) {
-        case 'ws_status':
-            window[wsName].onclose = handleStatusClose;
-            break;
-        case 'ws_control':
-            window[wsName].onclose = handleControlClose;
-            break;
-    }
-}
-
-
-function handleStatusOpen() {
-    console.log("Status Socket has been opened");
-    $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span>Getting data from server", {
-        ele: 'body',
-        type: 'success',
-        offset: {from: 'top', amount: 250},
-        align: 'center',
-        width: 385,
-        delay: 2500,
-        allow_dismiss: true,
-        stackup_spacing: 10
-    });
-}
-
-function handleStatusMessage(e) {
-    console.log("received status data");
-    console.log(e.data);
-    let data = JSON.parse(e.data);  // This line was missing
-    if (data.type === "backlog") {
-        handleBacklogData(data);
-    }
-
-    if (state !== "EDIT") {
-        updateApplicationState(data);
-    }
-}
-
-function handleStatusClose() {
-    $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>ERROR 1:</b><br/>Status Websocket not available", {
-        ele: 'body',
-        type: 'error',
-        offset: {from: 'top', amount: 250},
-        align: 'center',
-        width: 385,
-        delay: 5000,
-        allow_dismiss: true,
-        stackup_spacing: 10
-    });
-    console.log("Status WebSocket closed. Attempting to reconnect...");
-    reconnectWebSocket();
-}
-
-
-function handleControlClose() {
-    console.log("Control WebSocket closed. Attempting to reconnect...");
-    reconnectWebSocket();
-}
-
-function handleStatusError(error) {
-    console.log("Status WebSocket encountered an error:", error);
-    reconnectWebSocket();
-}
-
-function handleBacklogData(data) {
-    updateSelectedProfile(data.profile);
-    updateGraphWithLogData(data.log);
-}
-
 function updateSelectedProfile(profileData) {
     if (profileData) {
         selected_profile_name = profileData.name;
@@ -542,33 +430,6 @@ function notifyRunCompleted(newState) {
 }
 
 
-function updateForRunningState(data) {
-    $("#nav_start").hide();
-    $("#nav_stop").show();
-
-    updateRunIndicator(data.is_simulation, data.state); // Pass the isSimulation flag and state
-    graph.live.data.push([data.time_stamp, data.temperature]);
-    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
-
-    let timeDisplay;
-    if (data.state === "COMPLETE") {
-        // Calculate elapsed time since completion
-        let elapsedTime = new Date((data.time_stamp - data.total_time) * 1000).toISOString().substr(11, 8);
-        timeDisplay = `<span>+${elapsedTime}</span>`;
-    } else {
-        // Normal time display
-        let left = parseInt(data.total_time - data.time_stamp);
-        let eta = new Date(left * 1000).toISOString().substr(11, 8);
-        timeDisplay = `<span>${eta}</span>`;
-    }
-
-    updateProgress(parseFloat(data.time_stamp) / parseFloat(data.total_time) * 100);
-    $('#state').html(timeDisplay);
-        // Update target temperature display
-    let targetTempDisplay = data.target === 0 ? '---' : parseFloat(data.target).toFixed(1);
-    $('#target_temp').html(targetTempDisplay);
-    $('#cost').html(currency_type + parseFloat(data.cost).toFixed(2));
-}
 function updateRunIndicator(isSimulation, state) {
     const icon = document.getElementById('run_icon');
     const text = document.getElementById('run_text');
@@ -596,18 +457,6 @@ function updateRunIndicator(isSimulation, state) {
     }
 }
 
-
-function updateForNonRunningState(data) {
-    $("#nav_start").show();
-    $("#nav_stop").hide();
-    updateRunIndicator(data.is_simulation, data.state); // Pass the isSimulation flag and state
-
-    $('#state').html('<p class="ds-text">' + state + '</p>');
-
-    if (state === "IDLE") {
-        updateProgress(0); // Reset progress bar when state changes back to IDLE
-    }
-}
 
 function updateUIElements(data) {
     $('#act_temp').html(parseFloat(data.temperature).toFixed(1));
@@ -659,36 +508,8 @@ function setupConfigWebSocket() {
     };
 }
 
-function updateConfigDisplay(configData) {
-    // Update temperature and timescale display based on received config
-    temp_scale = configData.temp_scale;
-    time_scale_slope = configData.time_scale_slope;
-    time_scale_profile = configData.time_scale_profile;
-    kwh_rate = configData.kwh_rate;
-    currency_type = configData.currency_type;
-
-    temp_scale_display = temp_scale === "c" ? "C" : "F";
-    $('#act_temp_scale').html('º' + temp_scale_display);
-    $('#target_temp_scale').html('º' + temp_scale_display);
-
-    switch (time_scale_profile) {
-        case "s":
-            time_scale_long = "Seconds";
-            break;
-        case "m":
-            time_scale_long = "Minutes";
-            break;
-        case "h":
-            time_scale_long = "Hours";
-            break;
-    }
-}
 
 function setupControlWebSocket() {
-    ws_control.onopen = function () {
-        console.log("Control Socket has been opened");
-        // Additional logic for WebSocket open, if needed
-    };
 
     ws_control.onmessage = function (e) {
         console.log("Control data received");
@@ -697,78 +518,11 @@ function setupControlWebSocket() {
         let controlData = JSON.parse(e.data);
         updateControlDisplay(controlData);
     };
-
-    ws_control.onclose = function () {
-        console.log("Control WebSocket closed");
-        // Additional logic for WebSocket close, if needed
-    };
-
-    ws_control.onerror = function (error) {
-        console.log("Control WebSocket error:", error);
-        // Handle errors here
-    };
 }
 
-function updateControlDisplay(controlData) {
-    // Update the display based on control data
-    // For example, updating live graph data
-    graph.live.data.push([controlData.time_stamp, controlData.temperature]);
-    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
-
-    // Additional logic to update UI based on control data
-    // ...
-}
-
-
-function setupStorageWebSocket() {
-    ws_storage.onopen = function () {
-        console.log("Storage WebSocket opened");
-        // Request initial profile data on WebSocket open
-        ws_storage.send('GET');
-    };
-
-    ws_storage.onmessage = function (e) {
-        console.log("Storage data received");
-        console.log(e.data);
-
-        let storageData = JSON.parse(e.data);
-        handleStorageMessage(storageData);
-    };
-
-    ws_storage.onclose = function () {
-        console.log("Storage WebSocket closed");
-        // Additional logic for WebSocket close, if needed
-    };
-
-    ws_storage.onerror = function (error) {
-        console.log("Storage WebSocket error:", error);
-        // Handle errors here
-    };
-}
-
-function handleStorageMessage(storageData) {
-    // Check if the message is a response or an error
-    if (storageData.resp && storageData.resp === "FAIL") {
-        if (confirm('Overwrite?')) {
-            storageData.force = true;
-            console.log("Sending: " + JSON.stringify(storageData));
-            ws_storage.send(JSON.stringify(storageData));
-        }
-        return;
-    }
-
-    // Handle profile data update
-    if (Array.isArray(storageData)) {
-        // Assuming storageData is an array of profiles
-        profiles = storageData;
-        updateProfileSelector();
-    }
-
-    // Additional logic to handle different types of storage messages
-    // ...
-}
 
 function updateProfileSelector() {
+    console.log('updateProfileSelector')
     let e2 = $('#e2');
     e2.find('option').remove().end();
 
@@ -807,28 +561,279 @@ function initializeProfileSelector() {
 }
 
 
+// // Function to initialize a WebSocket with event handlers
+// function initializeWebSocket(wsName) {
+//     window[wsName].onopen = handleStatusOpen;
+//     window[wsName].onmessage = handleStatusMessage;
+//     window[wsName].onerror = handleStatusError;
+//
+//     switch (wsName) {
+//         case 'ws_status':
+//             window[wsName].onclose = handleStatusClose;
+//             break;
+//         case 'ws_control':
+//             window[wsName].onclose = handleControlClose;
+//             break;
+//     }
+// }
+//
+
+// function handleStatusOpen() {
+//     console.log("Status Socket has been opened");
+//     $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span>Getting data from server", {
+//         ele: 'body',
+//         type: 'success',
+//         offset: {from: 'top', amount: 250},
+//         align: 'center',
+//         width: 385,
+//         delay: 2500,
+//         allow_dismiss: true,
+//         stackup_spacing: 10
+//     });
+// }
+
+// function handleStatusMessage(e) {
+//     console.log("received status data");
+//     console.log(e.data);
+//     let data = JSON.parse(e.data);  // This line was missing
+//     if (data.type === "backlog") {
+//         handleBacklogData(data);
+//     }
+//
+//     if (state !== "EDIT") {
+//         updateApplicationState(data);
+//     }
+// }
+
 $(document).ready(function () {
-    if (!("WebSocket" in window)) {
-        $('#chatLog, input, button, #examples').fadeOut("fast");
-        $('<p>Oh no, you need a browser that supports WebSockets. How about <a href="https://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');
-    } else {
-        // WebSocket URLs
-        let protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        let host = `${protocol}//${window.location.hostname}:${window.location.port}`;
+    let previouslyConnected = false;
 
-        // Initialize WebSocket connections
-        window.ws_status = new WebSocket(`${host}/status`);
-        window.ws_config = new WebSocket(`${host}/config`);
-        window.ws_control = new WebSocket(`${host}/control`);
-        window.ws_storage = new WebSocket(`${host}/storage`);
+    // Initialize Socket.IO client
+    let socket = io(`${window.location.protocol}//${window.location.hostname}:${window.location.port}`);
 
-        // Assign event handlers
-        initializeWebSocket('ws_status');
-        setupConfigWebSocket(); // Assumes you have this function defined elsewhere
-        setupControlWebSocket(); // Assumes you have this function defined elsewhere
-        setupStorageWebSocket(); // Assumes you have this function defined elsewhere
+    // Handle connection open
+    socket.on('connect', function () {
+        console.log("Connected to server via Socket.IO");
 
-        // Initialize Profile Selector
-        initializeProfileSelector(); // Assumes you have this function defined elsewhere
+        if (previouslyConnected) {
+            console.log("Reconnected to server, requesting backlog data.");
+            socket.emit('request_backlog'); // Request backlog data on reconnection
+        } else {
+            console.log("Request Config Data")
+            socket.emit('request_config'); // Request initial config on first connection
+            socket.emit('request_backlog'); // Request initial backlog data on first connection
+            socket.emit('request_profiles');
+        }
+
+        previouslyConnected = true;
+    });
+
+
+    socket.on('oven_update', handleStatusUpdate);
+    socket.on('backlog_data', handleBacklogData);
+    socket.on('config', updateConfigDisplay); // Linking updateConfigDisplay function
+    socket.on('control_response', updateControlDisplay);
+    socket.on('storage_response', handleProfileList);
+
+
+    // Handle connection errors
+    socket.on('connect_error', function (error) {
+        console.log("Connection Error: " + error);
+    });
+
+    // Handle disconnection
+    socket.on('disconnect', function () {
+        console.log("Disconnected from server");
+        previouslyConnected = true; // Mark as previously connected for reconnection logic
+    });
+
+
+    // Other functions (e.g., updateProfile, deleteProfile, etc.) remain the same
+
+    // Update functions to use Socket.IO
+    function runTask() {
+        let cmd = {
+            "cmd": "RUN", "profile": profiles[selected_profile]
+        };
+        graph.live.data = [];
+        graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+        socket.emit('control', cmd); // Send command via Socket.IO
     }
+
+    function runTaskSimulation() {
+        let cmd = {
+            "cmd": "SIMULATE", "profile": profiles[selected_profile]
+        };
+
+        graph.live.data = [];
+        graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+
+        // Use Socket.IO to emit the command
+        socket.emit('control', JSON.stringify(cmd));
+    }
+
+    function abortTask() {
+        let cmd = {"cmd": "STOP"};
+        socket.emit('control', JSON.stringify(cmd));
+    }
+
+    function handleStatusUpdate(data) {
+        // Parse the incoming data
+        console.log(data)
+        let statusData = data;
+
+        // Update global state
+        state = statusData.state;
+
+        // Handle state change
+        if (state !== state_last) {
+            if (state_last === "RUNNING" && state !== "RUNNING") {
+                // Notify completion if the previous state was RUNNING
+                notifyRunCompleted(statusData);
+            }
+            state_last = state;
+        }
+
+        // Update UI based on the current state
+        if (state === "RUNNING" || state === "COMPLETE") {
+            updateForRunningState(statusData);
+        } else {
+            updateForNonRunningState(statusData);
+        }
+
+        // Update the graph with live data
+        if (statusData.time_stamp && statusData.temperature) {
+            graph.live.data.push([statusData.time_stamp, statusData.temperature]);
+            graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+        }
+    }
+
+
+    function notifyRunCompleted(data) {
+        $('#target_temp').html('---');
+        updateProgress(0);
+        let completionMessage = data.is_simulation ? 'Simulation Complete' : 'Kiln Run Complete';
+        $.bootstrapGrowl(completionMessage, {
+            ele: 'body',
+            type: 'success',
+            offset: {from: 'top', amount: 250},
+            align: 'center',
+            width: 385,
+            delay: 5000,
+            allow_dismiss: true,
+            stackup_spacing: 10
+        });
+    }
+
+    function updateForRunningState(data) {
+        $("#nav_start").hide();
+        $("#nav_stop").show();
+
+        updateRunIndicator(data.is_simulation, data.state); // Pass the isSimulation flag and state
+        graph.live.data.push([data.time_stamp, data.temperature]);
+        graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+
+        let timeDisplay;
+        if (data.state === "COMPLETE") {
+            // Calculate elapsed time since completion
+            let elapsedTime = new Date((data.time_stamp - data.total_time) * 1000).toISOString().substr(11, 8);
+            timeDisplay = `<span>+${elapsedTime}</span>`;
+        } else {
+            // Normal time display
+            let left = parseInt(data.total_time - data.time_stamp);
+            let eta = new Date(left * 1000).toISOString().substr(11, 8);
+            timeDisplay = `<span>${eta}</span>`;
+        }
+
+        updateProgress(parseFloat(data.time_stamp) / parseFloat(data.total_time) * 100);
+        $('#state').html(timeDisplay);
+        // Update target temperature display
+        let targetTempDisplay = data.target === 0 ? '---' : parseFloat(data.target).toFixed(1);
+        $('#target_temp').html(targetTempDisplay);
+        $('#cost').html(currency_type + parseFloat(data.cost).toFixed(2));
+    }
+
+    function updateForNonRunningState(data) {
+        // Update UI for non-running state
+        $("#nav_start").show();
+        $("#nav_stop").hide();
+        updateRunIndicator(data.is_simulation, data.state);
+        $('#state').html('<p class="ds-text">' + state + '</p>');
+
+        // Reset progress bar if idle
+        if (state === "IDLE") {
+            updateProgress(0);
+        }
+    }
+
+    function handleBacklogData(data) {
+        updateSelectedProfile(data.profile);
+        updateGraphWithLogData(data.log);
+    }
+
+    function updateConfigDisplay(configData) {
+        console.log('updateConfigDisplay')
+        // Update temperature and timescale display based on received config
+        temp_scale = configData.temp_scale;
+        time_scale_slope = configData.time_scale_slope;
+        time_scale_profile = configData.time_scale_profile;
+        kwh_rate = configData.kwh_rate;
+        currency_type = configData.currency_type;
+
+        temp_scale_display = temp_scale === "c" ? "C" : "F";
+        $('#act_temp_scale').html('º' + temp_scale_display);
+        $('#target_temp_scale').html('º' + temp_scale_display);
+
+        switch (time_scale_profile) {
+            case "s":
+                time_scale_long = "Seconds";
+                break;
+            case "m":
+                time_scale_long = "Minutes";
+                break;
+            case "h":
+                time_scale_long = "Hours";
+                break;
+        }
+    }
+
+    function updateControlDisplay(controlData) {
+        // Update the display based on control data
+        // For example, updating live graph data
+        graph.live.data.push([controlData.time_stamp, controlData.temperature]);
+        graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+    }
+
+    //
+    //     if (storageData.resp && storageData.resp === "FAIL") {
+    //     if (confirm('Overwrite?')) {
+    //         storageData.force = true;
+    //         console.log("Sending: " + JSON.stringify(storageData));
+    //         ws_storage.send(JSON.stringify(storageData));
+    //     }
+    //     return;
+    // }
+
+
+    function handleProfileList(storageData) {
+        // Check if the message is a response or an error
+        console.log('handleProfileList');
+        try {
+            let profilesArray = JSON.parse(storageData);
+            if (Array.isArray(profilesArray)) {
+                profiles = profilesArray;
+                updateProfileSelector();
+            } else {
+                console.error("Received data is not an array.");
+            }
+        } catch (error) {
+            console.error("Error parsing received data: ", error);
+        }
+
+        // Additional logic to handle different types of storage messages
+        // ...
+    }
+
+    // Initialize Profile Selector remains the same
+    initializeProfileSelector();
 });

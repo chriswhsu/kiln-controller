@@ -1,5 +1,4 @@
 import datetime
-import json
 import logging
 import threading
 import time
@@ -11,14 +10,19 @@ log = logging.getLogger(__name__)
 
 
 class OvenWatcher(threading.Thread):
-    def __init__(self, oven, profile: Profile = None):
+    def __init__(self, oven, socketio=None, profile: Profile = None):
         super().__init__()
+        self.temperature_history = None
+        self.started = None
         self.daemon = True
         self.oven = oven
+        self.socketio = socketio  # Store the SocketIO instance
         self.active_profile = profile
-        self.temperature_history = []
-        self.started = None
-        self.observers = []
+
+    def notify_all(self, message):
+        # Emit message to all connected clients
+        self.socketio.emit('oven_update', message)
+        log.debug(f"{self._add_id()} Sent to clients: {message}")
 
     def _add_id(self):
         """Helper method to standardize log messages with instance identifier."""
@@ -52,7 +56,9 @@ class OvenWatcher(threading.Thread):
                 time.sleep(config.idle_sample_time)
             else:
                 time.sleep(config.idle_sample_time)
-            self.notify_all(oven_status)
+
+            if self.socketio:
+                self.socketio.emit('oven_update', oven_status)
 
     def sampled_temp_history(self, max_points=500):
         # First, sort the temperature history by 'time_stamp' (timestamp)
@@ -69,42 +75,33 @@ class OvenWatcher(threading.Thread):
         return points
 
     def set_profile(self, profile: Profile):
+        """Set the current profile and notify clients."""
         self.active_profile = profile
+        log.info(f"Profile set to: {profile.name}")
 
-    def add_observer(self, observer):
         profile_data = self.get_profile_data()
-        backlog = {
-            'type': "backlog",
-            'profile': profile_data,
-            'log': self.sampled_temp_history(),
-        }
-        backlog_json = json.dumps(backlog)
-        try:
-            observer.send(backlog_json)
-        except Exception as e:
-            log.error(f"An error occurred: {e}")
-            log.error("Could not send backlog to a new observer")
-
-        self.observers.append(observer)
+        if self.socketio and profile_data:
+            self.socketio.emit('profile_changed', profile_data)
+            log.debug("Profile change notification sent to clients.")
 
     def get_profile_data(self):
+        """Return the current profile data."""
         if self.active_profile:
             return {
+                "type": "profile",
                 "name": self.active_profile.name,
-                "data": self.active_profile.temp_cycle_steps,
-                "type": "profile"
+                "data": self.active_profile.temp_cycle_steps
             }
-        return None
+        return None  # Return None if there's no active profile
 
-    def notify_all(self, message):
-        message_json = json.dumps(message)
-        log.debug(f"{self._add_id()}Sending to {len(self.observers)} clients: {message_json}")
-        for socket_observer in self.observers:
-            if socket_observer:
-                try:
-                    socket_observer.send(message_json)
-                except Exception as e:
-                    log.error(f"Could not write to socket {socket_observer}: {e}")
-                    self.observers.remove(socket_observer)
-            else:
-                self.observers.remove(socket_observer)
+    def send_backlog(self):
+        """Sends backlog data to requesting clients."""
+        if self.socketio:
+            profile_data = self.get_profile_data()
+            backlog = {
+                'type': "backlog",
+                'profile': profile_data,
+                'log': self.sampled_temp_history(),
+            }
+            self.socketio.emit('backlog_data', backlog)
+            log.info("Backlog data sent to requesting client.")

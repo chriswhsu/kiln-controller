@@ -152,7 +152,7 @@ wemo_device_name = "Kiln"
 # automatic restarts - if you have a power brown-out and the raspberry pi
 # reboots, this restarts your kiln where it left off in the firing profile.
 # This only happens if power comes back before automatic_restart_window
-# is exceeded (in minutes). The kiln-controller.py process must start
+# is exceeded (in minutes). The kiln_controller.py process must start
 # automatically on boot-up for this to work.
 # DO NOT put automatic_restart_state_file anywhere in /tmp. It could be
 # cleaned up (deleted) by the OS on boot.

@@ -27,7 +27,11 @@ class PID:
             derivative_gain=config.pid_kd,
             setpoint=70,
             starting_output=0.0,
+            time_function=time.monotonic  # Required parameter for time function
     ):
+        self.time_function = time_function
+        self._max_output = None
+        self._min_output = None
         self.Kp, self.Ki, self.Kd = proportional_gain, integral_gain, derivative_gain
         self.setpoint = setpoint
         self.derivative_on_measurement = config.derivative_on_measurement
@@ -36,23 +40,39 @@ class PID:
         self._proportional = 0
         self._integral = 0
         self._derivative = 0
-        self._last_time = None
-        self._last_output = None
+        self._last_time = self.get_current_time()  # Use the injected time function
+        self._last_output = starting_output
         self._last_error = None
         self._last_input = None
-        self.time_fn = time.monotonic
-        self.reset()
         self._integral = _clamp(starting_output, self.int_limits)
+        self.reset()
+
+    def reset(self):
+        """
+        Reset the PID controller internals.
+
+        This sets each term to 0 as well as clearing the integral, the last output and the last
+        input (derivative calculation).
+        """
+        self._proportional = 0
+        self._integral = 0
+        self._derivative = 0
+        self._last_time = self.get_current_time()
+        self._last_output = None
+        self._last_input = 0  # Initialize _last_input to 0
+        self._last_error = 0  # Initialize _last_error to 0
+
+    def get_current_time(self):
+        return self.time_function()
 
     def compute(self, setpoint, actual_temp):
 
         self.setpoint = setpoint
 
-        now = self.time_fn()
+        now = self.get_current_time()
         elapsed_time = now - self._last_time if (now - self._last_time) else 1e-16
         error = self.setpoint - actual_temp
-        d_input = actual_temp - (self._last_input if (self._last_input is not None) else actual_temp)
-        d_error = error - (self._last_error if (self._last_error is not None) else error)
+        d_input, d_error = actual_temp - self._last_input, error - self._last_error
 
         self._proportional = self.Kp * error
 
@@ -78,14 +98,8 @@ class PID:
         return output / 100
 
     def __repr__(self):
-        return (
-            f'{self.__class__.__name__}('
-            f'proportional_gain={self.Kp!r}, integral_gain={self.Ki!r}, derivative_gain={self.Kd!r}, '
-            f'setpoint={self.setpoint!r}, '
-            f'output_limits={self.output_limits!r}, '
-            f'differential_on_measurement={self.derivative_on_measurement!r}, '
-            ')'
-        )
+        return (f'{self.__class__.__name__}(proportional_gain={self.Kp!r}, integral_gain={self.Ki!r}, derivative_gain={self.Kd!r}, setpoint={self.setpoint!r}, differential_on_measurement='
+                f'{self.derivative_on_measurement!r})')
 
     @property
     def components(self):
@@ -104,46 +118,3 @@ class PID:
     def tunings(self, tunings):
         """Set the PID tunings."""
         self.Kp, self.Ki, self.Kd = tunings
-
-    @property
-    def output_limits(self):
-        """
-        The current output limits as a 2-tuple: (lower, upper).
-        See also the *output_limits* parameter in :meth:`PID.__init__`.
-        """
-        return self._min_output, self._max_output
-
-    @output_limits.setter
-    def output_limits(self, limits):
-        """Set the output limits."""
-        if limits is None:
-            self._min_output, self._max_output = None, None
-            return
-
-        min_output, max_output = limits
-
-        if (None not in limits) and (max_output < min_output):
-            raise ValueError('lower limit must be less than upper limit')
-
-        self._min_output = min_output
-        self._max_output = max_output
-
-        self._integral = _clamp(self._integral, self.int_limits)
-        self._last_output = _clamp(self._last_output, self.out_limits)
-
-    def reset(self):
-        """
-        Reset the PID controller internals.
-
-        This sets each term to 0 as well as clearing the integral, the last output and the last
-        input (derivative calculation).
-        """
-        self._proportional = 0
-        self._integral = 0
-        self._derivative = 0
-
-        self._integral = _clamp(self._integral, self.int_limits)
-
-        self._last_time = self.time_fn()
-        self._last_output = None
-        self._last_input = None
