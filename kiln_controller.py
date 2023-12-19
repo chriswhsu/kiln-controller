@@ -114,6 +114,24 @@ class KilnController:
                 log.error(f"Error processing profile save: {error}")
                 emit('error', {'message': 'Error processing profile save'})
 
+
+        @self.socketio.on('delete_profile')
+        def _delete_profile(profile_name):
+            log.info(f"Profile to be deleted: {profile_name}")
+            try:
+                # Process the storage command and send response back
+                success = self.prof_man.delete_profile(profile_name)
+                if success:
+                    response = {'status': 'success', 'message': 'Profile deleted.'}
+                else:
+                    response = {'status': 'failure', 'message': 'Failed to delete profile'}
+                emit('server_response', response)
+            except Exception as error:
+                log.error(f"Error processing profile delete: {error}")
+                emit('error', {'message': 'Error processing profile delete'})
+
+
+
         @self.socketio.on('request_config')
         def handle_config():
             log.info("handle_config")

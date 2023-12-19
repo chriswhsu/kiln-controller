@@ -38,29 +38,6 @@ function updateProfile(id) {
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 }
 
-function deleteProfile() {
-    let profile = {"type": "profile", "data": "", "name": selected_profile_name};
-    let delete_struct = {"cmd": "DELETE", "profile": profile};
-
-    let delete_cmd = JSON.stringify(delete_struct);
-    console.log("Delete profile:" + selected_profile_name);
-
-    ws_storage.send(delete_cmd);
-
-    ws_storage.send('GET');
-    selected_profile_name = profiles[0].name;
-
-    state = "IDLE";
-    $('#edit').hide();
-    $('#profile_selector').show();
-    $('#btn_controls').show();
-    $('#status').slideDown();
-    $('#profile_table').slideUp();
-    $('#e2').select2('val', 0);
-    graph.profile.points.show = false;
-    graph.profile.draggable = false;
-    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
-}
 
 function updateProgress(percentage) {
     let progressBar = $('#progressBar');
@@ -484,6 +461,10 @@ $(document).ready(function () {
         saveProfile();
     });
 
+    $('#delete_profile').click(function () {
+        deleteProfile();
+    });
+
 
     function runTask() {
         let cmd = {
@@ -680,7 +661,7 @@ $(document).ready(function () {
 
     function handleServerResponse(response) {
         // You may want to add checks here to ensure 'response' has the right structure
-        displayBootstrapGrowl(response.message, response.type, 5); // Assuming a 5-second delay
+        displayBootstrapGrowl(response.message, response.type, 3); // Assuming a 5-second delay
     }
 
     function displayBootstrapGrowl(message, type, delay_seconds) {
@@ -745,4 +726,25 @@ $(document).ready(function () {
 
     // Initialize Profile Selector remains the same
     initializeProfileSelector();
+
+
+    function deleteProfile() {
+
+        console.log("Delete profile:" + selected_profile_name);
+
+        socket.emit('delete_profile', selected_profile_name);
+
+        selected_profile_name = profiles[0].name;
+
+        state = "IDLE";
+        $('#edit').hide();
+        $('#profile_selector').show();
+        $('#btn_controls').show();
+        $('#status').slideDown();
+        $('#profile_table').slideUp();
+        $('#e2').select2('val', 0);
+        graph.profile.points.show = false;
+        graph.profile.draggable = false;
+        graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+    }
 });

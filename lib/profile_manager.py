@@ -9,15 +9,8 @@ class ProfileManager:
     def __init__(self, profile_path):
         self.profile_path = profile_path
 
-    def handle_delete_command(self, msg_dict):
-        log.debug("DELETE command received")
-        profile_obj = msg_dict.get('profile')
-        response = "OK" if self.delete_profile(profile_obj) else "FAIL"
-        msg_dict["resp"] = response
-        # TODO Emit response.
-
     def delete_profile(self, profile):
-        filename = profile['name'] + ".json"
+        filename = profile + ".json"
         filepath = os.path.join(self.profile_path, filename)
         os.remove(filepath)
         log.info("Deleted %s" % filepath)
