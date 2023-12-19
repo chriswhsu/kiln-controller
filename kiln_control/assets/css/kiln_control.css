@@ -13,7 +13,7 @@ body {
     background: rgba(255, 250, 250, 0.9); /* Soft white with slight opacity */
     flex-wrap: nowrap;
     justify-content: space-between;
-    margin-top: 15px;
+    margin-top: 5px;
     color: #444; /* Slightly lighter text */
     border-radius: 7px 7px 0 0;
     border: 1px solid #ccc; /* Lighter border */
