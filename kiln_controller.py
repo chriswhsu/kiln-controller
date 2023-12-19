@@ -107,6 +107,7 @@ class KilnController:
                 success = self.prof_man.save_profile(msgdict)
                 if success:
                     response = {'status': 'success', 'message': 'Profile saved successfully'}
+                    emit('profile_list', self.prof_man.get_profiles())
                 else:
                     response = {'status': 'failure', 'message': 'Failed to save profile'}
                 emit('server_response', response)
@@ -123,13 +124,13 @@ class KilnController:
                 success = self.prof_man.delete_profile(profile_name)
                 if success:
                     response = {'status': 'success', 'message': 'Profile deleted.'}
+                    emit('profile_list', self.prof_man.get_profiles())
                 else:
                     response = {'status': 'failure', 'message': 'Failed to delete profile'}
                 emit('server_response', response)
             except Exception as error:
                 log.error(f"Error processing profile delete: {error}")
                 emit('error', {'message': 'Error processing profile delete'})
-
 
 
         @self.socketio.on('request_config')

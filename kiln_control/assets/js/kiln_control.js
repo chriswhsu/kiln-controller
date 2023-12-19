@@ -176,12 +176,13 @@ function timeTickFormatter(val, axis) {
 
 
 function enterNewMode() {
+    console.log("Enter New Mode")
     state = "EDIT"
     $('#status').slideUp();
     $('#edit').show();
     $('#profile_selector').hide();
     $('#btn_controls').hide();
-    $('#form_profile_name').attr('value', '').attr('placeholder', 'Please enter a name');
+    $('#form_profile_name').val('').attr('placeholder', 'Please enter a name');
     graph.profile.points.show = true;
     graph.profile.draggable = true;
     graph.profile.data = [];
@@ -190,6 +191,7 @@ function enterNewMode() {
 }
 
 function enterEditMode() {
+    console.log("Enter Edit Mode")
     state = "EDIT"
     $('#status').slideUp();
     $('#edit').show();
@@ -559,7 +561,6 @@ $(document).ready(function () {
         }
     }
 
-
     function notifyRunCompleted(data) {
         $('#target_temp').html('---');
         updateProgress(0);
@@ -568,7 +569,6 @@ $(document).ready(function () {
             ele: 'body', type: 'success', offset: {from: 'top', amount: 250}, align: 'center', width: 385, delay: 5000, allow_dismiss: true, stackup_spacing: 10
         });
     }
-
 
     function updateForRunningState(data) {
         $("#nav_start").hide();
@@ -648,16 +648,6 @@ $(document).ready(function () {
         graph.live.data.push([controlData.time_stamp, controlData.temperature]);
         graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
     }
-
-    //
-    //     if (storageData.resp && storageData.resp === "FAIL") {
-    //     if (confirm('Overwrite?')) {
-    //         storageData.force = true;
-    //         console.log("Sending: " + JSON.stringify(storageData));
-    //         ws_storage.send(JSON.stringify(storageData));
-    //     }
-    //     return;
-    // }
 
     function handleServerResponse(response) {
         // You may want to add checks here to ensure 'response' has the right structure
