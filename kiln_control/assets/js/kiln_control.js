@@ -230,7 +230,6 @@ function enterEditMode() {
 
 function leaveEditMode() {
     selected_profile_name = $('#form_profile_name').val();
-    ws_storage.send('GET');
     state = "IDLE";
     $('#edit').hide();
     $('#profile_selector').show();
@@ -264,40 +263,6 @@ function toggleTable() {
     $('#profile_table').slideToggle();
 }
 
-function saveProfile() {
-    name = $('#form_profile_name').val();
-    let rawdata = graph.plot.getData()[0].data
-    let data = [];
-    let last = -1;
-
-    for (let i = 0; i < rawdata.length; i++) {
-        if (rawdata[i][0] > last) {
-            data.push([rawdata[i][0], rawdata[i][1]]);
-        } else {
-            $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>ERROR 88:</b><br/>An oven is not a time-machine", {
-                ele: 'body', // which element to append to
-                type: 'alert', // (null, 'info', 'error', 'success')
-                offset: {from: 'top', amount: 250}, // 'top', or 'bottom'
-                align: 'center', // ('left', 'right', or 'center')
-                width: 385, // (integer, or 'auto')
-                delay: 5000, allow_dismiss: true, stackup_spacing: 10 // spacing between consecutively stacked growls.
-            });
-
-            return false;
-        }
-
-        last = rawdata[i][0];
-    }
-
-    let profile = {"type": "profile", "data": data, "name": name}
-    let put = {"cmd": "PUT", "profile": profile}
-
-    let put_cmd = JSON.stringify(put);
-
-    ws_storage.send(put_cmd);
-
-    leaveEditMode();
-}
 
 function get_tick_size() {
 //switch(time_scale_profile){
@@ -318,36 +283,20 @@ function getOptions() {
         series: {
             lines: {
                 show: true
-            },
-            points: {
+            }, points: {
                 show: true, radius: 5, symbol: "circle"
-            },
-            shadowSize: 3
+            }, shadowSize: 3
         },
 
         xaxis: {
-            min: 0,
-            tickColor: 'rgba(216, 211, 197, 0.2)',
-            tickFormatter: timeTickFormatter,
-            tickSize: get_tick_size(),
-            font: {
-                size: 14,
-                lineHeight: 14,
-                weight: "normal",
-                family: "Digi",
-                variant: "small-caps",
-                color: "rgba(216, 211, 197, 0.85)"
+            min: 0, tickColor: 'rgba(216, 211, 197, 0.2)', tickFormatter: timeTickFormatter, tickSize: get_tick_size(), font: {
+                size: 14, lineHeight: 14, weight: "normal", family: "Digi", variant: "small-caps", color: "rgba(216, 211, 197, 0.85)"
             }
         },
 
         yaxis: {
             min: 0, tickDecimals: 0, draggable: false, tickColor: 'rgba(216, 211, 197, 0.2)', font: {
-                size: 14,
-                lineHeight: 14,
-                weight: "normal",
-                family: "Digi",
-                variant: "small-caps",
-                color: "rgba(216, 211, 197, 0.85)"
+                size: 14, lineHeight: 14, weight: "normal", family: "Digi", variant: "small-caps", color: "rgba(216, 211, 197, 0.85)"
             }
         },
 
@@ -474,33 +423,6 @@ function initializeProfileSelector() {
 }
 
 
-// function handleStatusOpen() {
-//     console.log("Status Socket has been opened");
-//     $.bootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span>Getting data from server", {
-//         ele: 'body',
-//         type: 'success',
-//         offset: {from: 'top', amount: 250},
-//         align: 'center',
-//         width: 385,
-//         delay: 2500,
-//         allow_dismiss: true,
-//         stackup_spacing: 10
-//     });
-// }
-
-// function handleStatusMessage(e) {
-//     console.log("received status data");
-//     console.log(e.data);
-//     let data = JSON.parse(e.data);  // This line was missing
-//     if (data.type === "backlog") {
-//         handleBacklogData(data);
-//     }
-//
-//     if (state !== "EDIT") {
-//         updateApplicationState(data);
-//     }
-// }
-
 $(document).ready(function () {
     let previouslyConnected = false;
 
@@ -527,9 +449,11 @@ $(document).ready(function () {
 
     socket.on('oven_update', handleStatusUpdate);
     socket.on('backlog_data', handleBacklogData);
-    socket.on('config', updateConfigDisplay); // Linking updateConfigDisplay function
+    socket.on('config', updateConfigDisplay);
     socket.on('control_response', updateControlDisplay);
-    socket.on('storage_response', handleProfileList);
+    socket.on('profile_list', handleProfileList);
+    socket.on('server_response', handleServerResponse)
+    socket.on('error', handleServerResponse)
 
 
     // Handle connection errors
@@ -543,20 +467,22 @@ $(document).ready(function () {
         previouslyConnected = true; // Mark as previously connected for reconnection logic
     });
 
-
+    // Bind the click events to the corresponding function
     $('#simulateButton').click(function () {
         runTaskSimulation();
     });
-    // Bind the click event to the function
+
     $('#startRunButton').click(function () {
         runTask();
     });
 
-    // Bind the click event to the function
     $('#nav_stop').click(function () {
         abortTask();
     });
 
+    $('#save_profile').click(function () {
+        saveProfile();
+    });
 
 
     function runTask() {
@@ -603,7 +529,6 @@ $(document).ready(function () {
         }
 
         updateApplicationState(data);
-
 
         // Update UI based on the current state
         if (state === "RUNNING" || state === "COMPLETE") {
@@ -659,14 +584,7 @@ $(document).ready(function () {
         updateProgress(0);
         let completionMessage = data.is_simulation ? 'Simulation Complete' : 'Kiln Run Complete';
         $.bootstrapGrowl(completionMessage, {
-            ele: 'body',
-            type: 'success',
-            offset: {from: 'top', amount: 250},
-            align: 'center',
-            width: 385,
-            delay: 5000,
-            allow_dismiss: true,
-            stackup_spacing: 10
+            ele: 'body', type: 'success', offset: {from: 'top', amount: 250}, align: 'center', width: 385, delay: 5000, allow_dismiss: true, stackup_spacing: 10
         });
     }
 
@@ -760,10 +678,55 @@ $(document).ready(function () {
     //     return;
     // }
 
+    function handleServerResponse(response) {
+        // You may want to add checks here to ensure 'response' has the right structure
+        displayBootstrapGrowl(response.message, response.type, 5); // Assuming a 5-second delay
+    }
+
+    function displayBootstrapGrowl(message, type, delay_seconds) {
+        $.bootstrapGrowl(message, {
+            ele: 'body', // Element to append to
+            type: type, // Can be 'info', 'error', 'success', etc.
+            offset: {from: 'top', amount: 250}, // Positioning
+            align: 'center', // Alignment
+            width: 385, // Width of the growl message
+            delay: delay_seconds * 1000, // Display duration in milliseconds
+            allow_dismiss: true, // Allow the user to dismiss the growl
+            stackup_spacing: 10 // Spacing between consecutively stacked growls
+        });
+    }
+
+
+    function saveProfile() {
+        name = $('#form_profile_name').val();
+        let rawdata = graph.plot.getData()[0].data
+        let data = [];
+        let last = -1;
+
+        for (let i = 0; i < rawdata.length; i++) {
+            if (rawdata[i][0] > last) {
+                data.push([rawdata[i][0], rawdata[i][1]]);
+            } else {
+                displayBootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>ERROR 88:</b><br/>An oven is not a time-machine", 5)
+                return false;
+            }
+            last = rawdata[i][0];
+        }
+
+        let profile = {"type": "profile", "data": data, "name": name}
+        let put = {"cmd": "PUT", "profile": profile}
+
+        let put_cmd = JSON.stringify(put);
+
+        socket.emit('save_profile', put);
+
+        leaveEditMode();
+    }
 
     function handleProfileList(storageData) {
         // Check if the message is a response or an error
         console.log('handleProfileList');
+        console.log(storageData)
         try {
             let profilesArray = JSON.parse(storageData);
             if (Array.isArray(profilesArray)) {

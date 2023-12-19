@@ -61,7 +61,7 @@ class KilnController:
         def handle_request_profiles():
             log.info('request_profiles.')
             # Assuming 'oven_watcher' is an instance of OvenWatcher
-            emit('storage_response', self.prof_man.get_profiles())
+            emit('profile_list', self.prof_man.get_profiles())
 
         @self.socketio.on('control')
         def handle_control(json_data):
@@ -99,23 +99,20 @@ class KilnController:
                 log.error(f"JSON decoding error: {error}")
                 emit('error', {'message': 'JSON decoding error'})
 
-        @self.socketio.on('storage')
-        def handle_storage(data):
-            # 'data' contains the message sent from the client
-            log.debug("WebSocket (storage) received: %s" % data)
-
-            if data == "GET":
-                log.debug("GET command received")
-                # Use emit to send data back to the client
-            else:
-                try:
-                    msgdict = json.loads(data)
-                    # Process the storage command and send response back
-                    response = self.prof_man.process_storage_command(msgdict)
-                    emit('storage_response', response)
-                except json.JSONDecodeError as error:
-                    log.error(f"JSON decoding error: {error}")
-                    emit('error', {'message': 'JSON decoding error'})
+        @self.socketio.on('save_profile')
+        def _save_profile(msgdict):
+            log.debug(f"Profile to be saved received: {msgdict}")
+            try:
+                # Process the storage command and send response back
+                success = self.prof_man.save_profile(msgdict)
+                if success:
+                    response = {'status': 'success', 'message': 'Profile saved successfully'}
+                else:
+                    response = {'status': 'failure', 'message': 'Failed to save profile'}
+                emit('server_response', response)
+            except Exception as error:
+                log.error(f"Error processing profile save: {error}")
+                emit('error', {'message': 'Error processing profile save'})
 
         @self.socketio.on('request_config')
         def handle_config():
@@ -149,7 +146,8 @@ class KilnController:
 
         self.oven.run_profile(profile)
 
-    def get_config(self):
+    @staticmethod
+    def get_config():
         return json.dumps({"temp_scale": config.temp_scale,
                            "time_scale_slope": config.time_scale_slope,
                            "time_scale_profile": config.time_scale_profile,
