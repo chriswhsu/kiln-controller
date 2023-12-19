@@ -12,7 +12,7 @@ let time_scale_profile = "s";
 let time_scale_long = "Seconds";
 let temp_scale_display = "";
 let kwh_rate = 0.0;
-let currency_type = "";
+let currency_type = "$";
 
 // Graph Setup
 graph.profile = {
@@ -403,7 +403,6 @@ function initializeProfileSelector() {
 
 
 $(document).ready(function () {
-    let previouslyConnected = false;
 
     // Initialize Socket.IO client
     let socket = io(`${window.location.protocol}//${window.location.hostname}:${window.location.port}`);
@@ -412,23 +411,17 @@ $(document).ready(function () {
     socket.on('connect', function () {
         console.log("Connected to server via Socket.IO");
 
-        if (previouslyConnected) {
-            console.log("Reconnected to server, requesting backlog data.");
-            socket.emit('request_backlog'); // Request backlog data on reconnection
-        } else {
-            console.log("Request Config Data")
-            socket.emit('request_config'); // Request initial config on first connection
-            socket.emit('request_backlog'); // Request initial backlog data on first connection
-            socket.emit('request_profiles');
-        }
+        console.log("Request Config Data")
+        socket.emit('request_config'); // Request initial config on first connection
+        socket.emit('request_backlog'); // Request initial backlog data on first connection
+        socket.emit('request_profiles');
 
-        previouslyConnected = true;
     });
 
 
     socket.on('oven_update', handleStatusUpdate);
     socket.on('backlog_data', handleBacklogData);
-    socket.on('config', updateConfigDisplay);
+    socket.on('get_config', updateConfigDisplay);
     socket.on('control_response', updateControlDisplay);
     socket.on('profile_list', handleProfileList);
     socket.on('server_response', handleServerResponse)
@@ -496,7 +489,7 @@ $(document).ready(function () {
 
     function handleStatusUpdate(data) {
         // Parse the incoming data
-        console.log('handleStatusUpdate')
+        console.log('handleStatusUpdate:' + data)
         let statusData = data;
 
         // Update global state

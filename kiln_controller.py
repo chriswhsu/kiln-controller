@@ -115,7 +115,6 @@ class KilnController:
                 log.error(f"Error processing profile save: {error}")
                 emit('error', {'message': 'Error processing profile save'})
 
-
         @self.socketio.on('delete_profile')
         def _delete_profile(profile_name):
             log.info(f"Profile to be deleted: {profile_name}")
@@ -132,12 +131,11 @@ class KilnController:
                 log.error(f"Error processing profile delete: {error}")
                 emit('error', {'message': 'Error processing profile delete'})
 
-
         @self.socketio.on('request_config')
         def handle_config():
             log.info("handle_config")
             # Send config data
-            emit('config', self.get_config())
+            emit('get_config', self.get_config())
 
     def initialize_and_run_oven(self, oven_type, profile):
         if not profile:
@@ -167,14 +165,14 @@ class KilnController:
 
     @staticmethod
     def get_config():
-        return json.dumps({"temp_scale": config.temp_scale,
-                           "time_scale_slope": config.time_scale_slope,
-                           "time_scale_profile": config.time_scale_profile,
-                           'kp': config.pid_kp,
-                           'ki': config.pid_ki,
-                           'kd': config.pid_kd,
-                           "kwh_rate": config.kwh_rate,
-                           "currency_type": config.currency_type})
+        return {"temp_scale": config.temp_scale,
+                "time_scale_slope": config.time_scale_slope,
+                "time_scale_profile": config.time_scale_profile,
+                'kp': config.pid_kp,
+                'ki': config.pid_ki,
+                'kd': config.pid_kd,
+                "kwh_rate": config.kwh_rate,
+                "currency_type": config.currency_type}
 
     def run(self):
         ip = config.ip_address
