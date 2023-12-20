@@ -21,9 +21,6 @@ class TempSensor(Greenlet):
         self.time_step = config.sensor_time_wait
         self.noConnection = self.shortToGround = self.shortToVCC = self.unknownError = False
 
-    def run(self):
-        pass
-
 
 class TempSensorSimulated(TempSensor):
     # not much here, just need to be able to set the temperature
