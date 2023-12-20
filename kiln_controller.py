@@ -6,11 +6,10 @@ import sys
 from flask import Flask, abort, redirect, send_from_directory
 from flask_socketio import SocketIO, emit
 
+from lib.oven_factory import OvenFactory
 from lib.oven_watcher import OvenWatcher
 from lib.profile import Profile
 from lib.profile_manager import ProfileManager
-from lib.real_oven import RealOven
-from lib.simulated_oven import SimulatedOven
 
 log = logging.getLogger(__name__)
 
@@ -24,9 +23,10 @@ except ImportError as e:
 
 class KilnController:
 
-    def __init__(self):
+    def __init__(self, config):
 
         logging.basicConfig(level=config.log_level, format=config.log_format)
+        self.config = config
         log.info("Initializing the kiln controller")
         self.prof_man = ProfileManager(config.kiln_profiles_directory)
 
@@ -37,7 +37,7 @@ class KilnController:
         self.socketio = SocketIO(self.flask_app, cors_allowed_origins="*", logger=False, engineio_logger=False)
 
         # Initialize with the simulated oven
-        self.oven = SimulatedOven()
+        self.oven = OvenFactory.create_oven(OvenFactory.SIMULATED)
 
         # Create OvenWatcher instance with oven and socketio
         self.oven_watcher = OvenWatcher(self.oven, self.socketio)
@@ -80,11 +80,11 @@ class KilnController:
                 # Handle different commands
                 if command == "RUN":
                     log.debug("RUN command received")
-                    self.initialize_and_run_oven("REAL", profile)
+                    self.initialize_and_run_oven(OvenFactory.REAL, profile)
 
                 elif command == "SIMULATE":
                     log.debug("SIMULATE command received")
-                    self.initialize_and_run_oven("SIMULATED", profile)
+                    self.initialize_and_run_oven(OvenFactory.SIMULATED, profile)
 
                 elif command == "STOP":
                     log.info("Stop command received")
@@ -138,50 +138,49 @@ class KilnController:
             emit('get_config', self.get_config())
 
     def initialize_and_run_oven(self, oven_type, profile):
+        log.info(f"Initializing and running oven. Oven type: {oven_type}, Profile: {profile}")
+
         if not profile:
             log.error("No profile defined. Aborting.")
             abort(400, 'Expected WebSocket request.')
 
-        # clean up the previous oven in case we are switching from Simulated to Real or Vice Versa
+        log.info("Cleaning up previous oven state.")
         self.oven.die()  # Signal the thread to stop
         self.oven.join()  # Wait for the thread to finish
 
-        if oven_type == "REAL":
-            log.debug("RUN command received - Initializing Real Oven")
-            self.oven = RealOven()
-        elif oven_type == "SIMULATED":
-            log.debug("SIMULATE command received - Initializing Simulated Oven")
-            self.oven = SimulatedOven()
-        else:
-            log.error(f"Invalid oven type: {oven_type}. Aborting.")
+        try:
+            log.info(f"Creating oven of type: {oven_type}")
+            self.oven = OvenFactory.create_oven(oven_type)  # Using a factory to create an oven instance
+            log.debug(f"Oven of type {oven_type} created successfully.")
+        except Exception as e:
+            log.error(f"Error while creating oven: {str(e)}")
             abort(400, 'Expected WebSocket request.')
 
-        log.debug(f"{oven_type} Oven created")
-
+        log.info(f"Setting oven watcher with oven: {self.oven} and profile: {profile}")
         self.oven_watcher.set_oven(self.oven)
         self.oven_watcher.set_profile(profile)
 
+        log.info(f"Running oven profile: {profile}")
         self.oven.run_profile(profile)
 
-    @staticmethod
-    def get_config():
-        return {"temp_scale": config.temp_scale,
-                "time_scale_slope": config.time_scale_slope,
-                "time_scale_profile": config.time_scale_profile,
-                'kp': config.pid_kp,
-                'ki': config.pid_ki,
-                'kd': config.pid_kd,
-                "kwh_rate": config.kwh_rate,
-                "currency_type": config.currency_type}
+    def get_config(self):
+        return {"temp_scale": self.config.temp_scale,
+                "time_scale_slope": self.config.time_scale_slope,
+                "time_scale_profile": self.config.time_scale_profile,
+                'kp': self.config.pid_kp,
+                'ki': self.config.pid_ki,
+                'kd': self.config.pid_kd,
+                "kwh_rate": self.config.kwh_rate,
+                "currency_type": self.config.currency_type}
 
     def run(self):
-        ip = config.ip_address
-        port = config.listening_port
+        ip = self.config.ip_address
+        port = self.config.listening_port
         log.info(f"Listening on {ip}:{port}")
         # Run the Flask app with the integrated SocketIO server
-        self.socketio.run(self.flask_app, host=ip, port=port)
+        self.socketio.run(self.flask_app, host=ip, port=port, log_output=True, use_reloader=False)
 
 
 if __name__ == "__main__":
-    kiln_controller = KilnController()
+    kiln_controller = KilnController(config=config)
     kiln_controller.run()
