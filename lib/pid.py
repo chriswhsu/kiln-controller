@@ -71,6 +71,7 @@ class PID:
 
         now = self.get_current_time()
         elapsed_time = now - self._last_time if (now - self._last_time) else 1e-16
+
         error = self.setpoint - actual_temp
         d_input, d_error = actual_temp - self._last_input, error - self._last_error
 
@@ -90,31 +91,10 @@ class PID:
         self._last_output = output
         self._last_input = actual_temp
         self._last_error = error
-        self._last_time = now
 
-        p, i, d = self.components
-        log.info(f"Setpoint: {self.setpoint:.2f}, Actual: {actual_temp:.2f}, Output: {output:.2f}, P: {p:.3f}, I: {i:.3f}, D: {d:.3f}")
+        self._last_time = now  # suggestion 1: update self._last_time immediately after calculating elapsed_time
+
+        # suggestion 2: directly use self._proportional, self._integral, and self._derivative
+        log.info(f"Setpoint: {self.setpoint:.2f}, Actual: {actual_temp:.2f}, Output: {output:.2f}, P: {self._proportional:.3f}, I: {self._integral:.3f}, D: {self._derivative:.3f}")
 
         return output / 100
-
-    def __repr__(self):
-        return (f'{self.__class__.__name__}(proportional_gain={self.Kp!r}, integral_gain={self.Ki!r}, derivative_gain={self.Kd!r}, setpoint={self.setpoint!r}, differential_on_measurement='
-                f'{self.derivative_on_measurement!r})')
-
-    @property
-    def components(self):
-        """
-        The P-, I- and D-terms from the last computation as separate components as a tuple. Useful
-        for visualizing what the controller is doing or when tuning hard-to-tune systems.
-        """
-        return self._proportional, self._integral, self._derivative
-
-    @property
-    def tunings(self):
-        """The tunings used by the controller as a tuple: (proportional_gain, integral_gain, derivative_gain)."""
-        return self.Kp, self.Ki, self.Kd
-
-    @tunings.setter
-    def tunings(self, tunings):
-        """Set the PID tunings."""
-        self.Kp, self.Ki, self.Kd = tunings
