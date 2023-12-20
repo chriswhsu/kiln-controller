@@ -68,7 +68,7 @@ class TempSensorReal(TempSensor):
         log.debug(f"Temp: {temp}")
 
         is_bad_value = self.thermocouple.noConnection or self.thermocouple.unknownError
-        if not config.ignore_tc_short_errors:
+        if not self.config.ignore_tc_short_errors:
             is_bad_value |= self.thermocouple.shortToGround or self.thermocouple.shortToVCC
 
         return temp, is_bad_value
