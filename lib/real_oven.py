@@ -1,6 +1,5 @@
 import logging
 
-import config
 from lib.heat_output import HeatOutput
 from lib.kill_switch import KillSwitch
 from lib.oven import Oven
@@ -11,18 +10,19 @@ log = logging.getLogger(__name__)
 
 class RealOven(Oven):
 
-    def __init__(self):
+    def __init__(self, configuration):
+        self.config = configuration
+        if self.config.kill_switch_enabled:
+            self.kill_switch = KillSwitch(self.config)
 
-        if config.kill_switch_enabled:
-            self.kill_switch = KillSwitch()
-
-        self.output = HeatOutput()
+        self.output = HeatOutput(self.config)
         self.complete()
 
         # call parent init
         log.info("Starting real oven...")
-        super().__init__()
         self.is_simulation = False
+
+        super().__init__(configuration)
 
     def create_temp_sensor(self):
         self.temp_sensor = TempSensorReal()
@@ -43,7 +43,7 @@ class RealOven(Oven):
 
     # get actual temperature from sensor.
     def update_temperature(self):
-        self.temperature = self.temp_sensor.temperature + config.thermocouple_offset
+        self.temperature = self.temp_sensor.temperature + self.config.thermocouple_offset
 
     def apply_heat(self, pid):
         heat_on = float(self.time_step * pid)

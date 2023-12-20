@@ -4,7 +4,6 @@ import logging
 
 from gevent import sleep, Greenlet
 
-import config
 from lib.pid import PID
 
 log = logging.getLogger(__name__)
@@ -13,12 +12,13 @@ log = logging.getLogger(__name__)
 class Oven(Greenlet):
     # parent oven class. this has all the common code for either a real or simulated oven
 
-    def __init__(self):
+    def __init__(self, configuration):
         super(Oven, self).__init__()
+        self.config = configuration
         self.is_simulation = None
         self.kill_switch = None
         self.startat = 0
-        self.pid = PID()
+        self.pid = PID(configuration=self.config)
         # heating or not?
         self.heat = 0
         self.target = 0
@@ -31,7 +31,7 @@ class Oven(Greenlet):
         self.temp_sensor = None
         self.daemon = True
         self.temperature = 0
-        self.time_step = config.sensor_time_wait
+        self.time_step = self.config.sensor_time_wait
         self.create_temp_sensor()
         self._running = True
 
@@ -105,9 +105,9 @@ class Oven(Greenlet):
         )
 
     def kiln_must_catch_up(self):
-        if config.kiln_must_catch_up:
+        if self.config.kiln_must_catch_up:
             temperature_difference = self.target - self.temperature
-            if temperature_difference > config.profile_pause_window:
+            if temperature_difference > self.config.profile_pause_window:
                 log.info("kiln must catch up, too cold")
                 self.start_time = datetime.datetime.now() - datetime.timedelta(milliseconds=self.time_stamp * 1000)
 
@@ -120,7 +120,7 @@ class Oven(Greenlet):
 
     def reset_if_emergency(self):
         # reset if the temperature is way TOO HOT, or other critical errors detected
-        if self.temperature >= config.emergency_shutoff_temp:
+        if self.temperature >= self.config.emergency_shutoff_temp:
             log.error("Emergency!!! Temperature too high.")
             self.abort()
             if self.kill_switch:
@@ -130,12 +130,12 @@ class Oven(Greenlet):
     def reset_if_schedule_ended(self):
         if self.time_stamp > self.total_time:
             log.info("schedule ended, shutting down")
-            log.info("total cost = %s%.2f" % (config.currency_type, self.cost))
+            log.info("total cost = %s%.2f" % (self.config.currency_type, self.cost))
             self.complete()
 
     def update_cost(self):
         if self.heat:
-            cost = (config.kwh_rate * config.kw_elements) * (self.heat / 3600)
+            cost = (self.config.kwh_rate * self.config.kw_elements) * (self.heat / 3600)
         else:
             cost = 0
         self.cost += cost
@@ -163,7 +163,7 @@ class Oven(Greenlet):
         while self._running:
             if self.state == "IDLE":
                 log.info(f"timestamp: {self.time_stamp}, state: {self.state}, temperature: {self.temperature}")
-                sleep(config.idle_sample_time)
+                sleep(self.config.idle_sample_time)
                 self.update_temperature()
             elif self.state == "RUNNING":
                 self.update_temperature()
@@ -176,8 +176,8 @@ class Oven(Greenlet):
                 self.reset_if_schedule_ended()
             elif self.state == "COMPLETE":
                 log.info(f"runtime: {self.time_stamp}, state: {self.state}, temperature: {self.temperature}")
-                sleep(config.idle_sample_time)
+                sleep(self.config.idle_sample_time)
                 self.update_runtime()
                 self.update_temperature()
             else:
-                sleep(config.idle_sample_time)
+                sleep(self.config.idle_sample_time)

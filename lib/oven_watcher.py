@@ -3,15 +3,15 @@ import logging
 
 from gevent import Greenlet
 
-import config
 from lib.profile import Profile
 
 log = logging.getLogger(__name__)
 
 
 class OvenWatcher(Greenlet):
-    def __init__(self, oven, socketio=None, profile: Profile = None):
+    def __init__(self, oven, configuration, socketio=None, profile: Profile = None):
         super(OvenWatcher, self).__init__()
+        self.config = configuration
         self.temperature_history = None
         self.start_time = None
         self.oven = oven
@@ -44,13 +44,13 @@ class OvenWatcher(Greenlet):
                 self.socketio.sleep(self.oven.time_step)
             elif oven_state == "COMPLETE":
                 self.temperature_history.append(oven_status)
-                self.socketio.sleep(config.idle_sample_time)
+                self.socketio.sleep(self.config.idle_sample_time)
             elif oven_state == "IDLE":
                 if len(self.temperature_history) > 0:
                     self.reset_temp_history()
-                self.socketio.sleep(config.idle_sample_time)
+                self.socketio.sleep(self.config.idle_sample_time)
             else:
-                self.socketio.sleep(config.idle_sample_time)
+                self.socketio.sleep(self.config.idle_sample_time)
 
             if self.socketio:
                 log.info("Emit oven_update")

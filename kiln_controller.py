@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import sys
 
 from flask import Flask, abort, redirect, send_from_directory
 from flask_socketio import SocketIO, emit
@@ -13,34 +12,29 @@ from lib.profile_manager import ProfileManager
 
 log = logging.getLogger(__name__)
 
-try:
-    import config
-except ImportError as e:
-    log.error(f"Error importing config: {e}")
-    log.error("Copy config.py.EXAMPLE to config.py and adapt it for your setup.")
-    sys.exit(1)
+import config_file
 
 
 class KilnController:
 
-    def __init__(self, config):
+    def __init__(self, configuration):
 
-        logging.basicConfig(level=config.log_level, format=config.log_format)
-        self.config = config
+        logging.basicConfig(level=configuration.log_level, format=configuration.log_format)
+        self.config = configuration
         log.info("Initializing the kiln controller")
-        self.prof_man = ProfileManager(config.kiln_profiles_directory)
+        self.prof_man = ProfileManager(self.config.kiln_profiles_directory)
 
         self.script_dir = os.path.dirname(os.path.realpath(__file__))
-        self.profile_path = config.kiln_profiles_directory
+        self.profile_path = self.config.kiln_profiles_directory
 
         self.flask_app = Flask(__name__)
         self.socketio = SocketIO(self.flask_app, cors_allowed_origins="*", logger=False, engineio_logger=False)
 
         # Initialize with the simulated oven
-        self.oven = OvenFactory.create_oven(OvenFactory.SIMULATED)
+        self.oven = OvenFactory.create_oven(OvenFactory.SIMULATED, self.config)
 
         # Create OvenWatcher instance with oven and socketio
-        self.oven_watcher = OvenWatcher(self.oven, self.socketio)
+        self.oven_watcher = OvenWatcher(self.oven, self.config, self.socketio)
         self.oven_watcher.start()
 
         @self.flask_app.route('/')
@@ -150,7 +144,7 @@ class KilnController:
 
         try:
             log.info(f"Creating oven of type: {oven_type}")
-            self.oven = OvenFactory.create_oven(oven_type)  # Using a factory to create an oven instance
+            self.oven = OvenFactory.create_oven(oven_type, self.config)  # Using a factory to create an oven instance
             log.debug(f"Oven of type {oven_type} created successfully.")
         except Exception as e:
             log.error(f"Error while creating oven: {str(e)}")
@@ -182,5 +176,5 @@ class KilnController:
 
 
 if __name__ == "__main__":
-    kiln_controller = KilnController(config=config)
+    kiln_controller = KilnController(configuration=config_file)
     kiln_controller.run()

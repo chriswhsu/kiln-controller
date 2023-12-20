@@ -1,8 +1,6 @@
 import logging
 import time
 
-import config
-
 log = logging.getLogger(__name__)
 
 
@@ -22,21 +20,22 @@ class PID:
 
     def __init__(
             self,
-            proportional_gain=config.pid_kp,
-            integral_gain=config.pid_ki,
-            derivative_gain=config.pid_kd,
+            configuration,
             setpoint=70,
             starting_output=0.0,
             time_function=time.monotonic  # Required parameter for time function
     ):
+        self.config = configuration
         self.time_function = time_function
         self._max_output = None
         self._min_output = None
-        self.Kp, self.Ki, self.Kd = proportional_gain, integral_gain, derivative_gain
+        self.Kp = self.config.pid_kp
+        self.Ki = self.config.pid_ki
+        self.Kd = self.config.pid_kd
         self.setpoint = setpoint
-        self.derivative_on_measurement = config.derivative_on_measurement
-        self.out_limits = config.output_limits
-        self.int_limits = config.integral_limits
+        self.derivative_on_measurement = self.config.derivative_on_measurement
+        self.out_limits = self.config.output_limits
+        self.int_limits = self.config.integral_limits
         self._proportional = 0
         self._integral = 0
         self._derivative = 0

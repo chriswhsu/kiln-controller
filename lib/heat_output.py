@@ -1,12 +1,12 @@
 import logging
 from gevent import sleep
-import config
 
 log = logging.getLogger(__name__)
 
 
 class HeatOutput:
-    def __init__(self):
+    def __init__(self, configuration):
+        self.config = configuration
         self.GPIO = None
         self.active = False
         self.load_libs()
@@ -16,7 +16,7 @@ class HeatOutput:
             import RPi.GPIO as GPIO
             GPIO.setmode(GPIO.BCM)
             GPIO.setwarnings(False)
-            GPIO.setup(config.gpio_heat, GPIO.OUT)
+            GPIO.setup(self.config.gpio_heat, GPIO.OUT)
             self.active = True
             self.GPIO = GPIO
         except Exception as e:
@@ -24,10 +24,10 @@ class HeatOutput:
             self.active = False
 
     def heat(self, sleep_for):
-        self.GPIO.output(config.gpio_heat, self.GPIO.HIGH)
+        self.GPIO.output(self.config.gpio_heat, self.GPIO.HIGH)
         sleep(sleep_for)
 
     def cool(self, sleep_for):
         # no active cooling, so sleep
-        self.GPIO.output(config.gpio_heat, self.GPIO.LOW)
+        self.GPIO.output(self.config.gpio_heat, self.GPIO.LOW)
         sleep(sleep_for)

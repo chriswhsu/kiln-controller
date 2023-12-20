@@ -7,10 +7,10 @@ class OvenFactory:
     SIMULATED = 'SIMULATED'
 
     @staticmethod
-    def create_oven(type):
+    def create_oven(type, configuration):
         if type == OvenFactory.REAL:
-            return RealOven()
+            return RealOven(configuration)
         elif type == OvenFactory.SIMULATED:
-            return SimulatedOven()
+            return SimulatedOven(configuration)
         else:
             raise Exception(f"Invalid oven type: {type}")

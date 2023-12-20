@@ -2,7 +2,6 @@ import collections
 import logging
 import time
 from gevent import sleep, Greenlet
-import config
 
 log = logging.getLogger(__name__)
 
@@ -14,24 +13,25 @@ except ImportError as e:
 
 
 class TempSensor(Greenlet):
-    def __init__(self):
+    def __init__(self, configuration):
         super(TempSensor, self).__init__()
+        self.config = configuration
         self.daemon = True
         self.temperature = 0
-        self.time_step = config.sensor_time_wait
+        self.time_step = self.config.sensor_time_wait
         self.noConnection = self.shortToGround = self.shortToVCC = self.unknownError = False
 
 
 class TempSensorSimulated(TempSensor):
     # not much here, just need to be able to set the temperature
 
-    def __init__(self):
-        TempSensor.__init__(self)
+    def __init__(self, configuration):
+        super().__init__(configuration)
 
 
 class TempSensorReal(TempSensor):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, configuration):
+        super().__init__(configuration)
         self.sample_interval_seconds = 0.25  # Gather samples 4 times per second
         self.update_interval_seconds = 1  # Update temperature every 1 second
         self.sliding_window_seconds = 3
@@ -40,10 +40,10 @@ class TempSensorReal(TempSensor):
         self.last_update_time = time.monotonic()
 
         log.info("Initializing MAX31855")
-        self.thermocouple = MAX31855(config.gpio_sensor_cs,
-                                     config.gpio_sensor_clock,
-                                     config.gpio_sensor_data,
-                                     config.temp_scale)
+        self.thermocouple = MAX31855(self.config.gpio_sensor_cs,
+                                     self.config.gpio_sensor_clock,
+                                     self.config.gpio_sensor_data,
+                                     self.config.temp_scale)
 
     def _run(self):
         while True:

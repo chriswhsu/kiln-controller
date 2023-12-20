@@ -1,6 +1,5 @@
 import logging
 from gevent import sleep
-import config
 from lib.oven import Oven
 from lib.temp_sensor import TempSensorSimulated
 
@@ -9,28 +8,29 @@ log = logging.getLogger(__name__)
 
 class SimulatedOven(Oven):
 
-    def __init__(self):
+    def __init__(self, configuration):
+        self.config = configuration
         self.element_to_oven_heat_transfer = 0
         self.heat_transfer_rate_to_environ = 0
         self.heat_energy = 0
-        self.environ_temp = config.simulated_room_temp
-        self.elem_heat_capacity = config.element_heat_capacity
-        self.c_oven = config.oven_heat_capacity
-        self.p_heat = config.oven_heating_power
-        self.oven_resistance = config.thermal_res_oven_to_environ
-        self.element_resistance = config.thermal_res_element_to_oven
+        self.environ_temp = self.config.simulated_room_temp
+        self.elem_heat_capacity = self.config.element_heat_capacity
+        self.c_oven = self.config.oven_heat_capacity
+        self.p_heat = self.config.oven_heating_power
+        self.oven_resistance = self.config.thermal_res_oven_to_environ
+        self.element_resistance = self.config.thermal_res_element_to_oven
 
         # set temps to the temp of the surrounding environment
         self.element_temperature = self.environ_temp  # deg F temp of heating element
         log.info("SimulatedOven starting")
 
-        super().__init__()
+        super().__init__(configuration)
 
-        self.temperature = config.simulated_room_temp
+        self.temperature = configuration.simulated_room_temp
         self.is_simulation = True
 
     def create_temp_sensor(self):
-        self.temp_sensor = TempSensorSimulated()
+        self.temp_sensor = TempSensorSimulated(self.config)
         # Doesn't really do anything, but start anyway.
         self.temp_sensor.start()
 
