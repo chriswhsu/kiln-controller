@@ -149,20 +149,6 @@ kill_switch_enabled = False
 wemo_device_name = "Kiln"
 
 ########################################################################
-# automatic restarts - if you have a power brown-out and the raspberry pi
-# reboots, this restarts your kiln where it left off in the firing profile.
-# This only happens if power comes back before automatic_restart_window
-# is exceeded (in minutes). The kiln_controller.py process must start
-# automatically on boot-up for this to work.
-# DO NOT put automatic_restart_state_file anywhere in /tmp. It could be
-# cleaned up (deleted) by the OS on boot.
-# The state file is written to disk every sensor_time_wait seconds (2s by default)
-# and is written in the same directory as config.py.
-automatic_restarts = False
-automatic_restart_window = 5  # max minutes since power outage
-automatic_restart_state_file = os.path.abspath(os.path.join(os.path.dirname(__file__), 'state.json'))
-
-########################################################################
 # load kiln profiles from this directory
 # created a repo where anyone can contribute profiles. The objective is
 # to load profiles from this repository by default.

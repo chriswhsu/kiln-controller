@@ -155,10 +155,6 @@ class Oven(Greenlet):
         log.info(state)
         return state
 
-    def save_status(self):
-        with open(config.automatic_restart_state_file, 'w', encoding='utf-8') as f:
-            json.dump(self.get_status(), f, ensure_ascii=False, indent=4)
-
     def update_temperature(self):
         # Placeholder method - overridden in child classes
         raise NotImplementedError("This method should be overridden in child classes")
