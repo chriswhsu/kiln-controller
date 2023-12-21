@@ -28,14 +28,18 @@ function updateProfile(id) {
     selected_profile = id;
     selected_profile_name = profiles[id].name;
     let job_seconds = profiles[id].data.length === 0 ? 0 : parseInt(profiles[id].data[profiles[id].data.length - 1][0]);
-    let kwh = (3850 * job_seconds / 3600 / 1000).toFixed(2);
-    let cost = (kwh * kwh_rate).toFixed(2);
+    let kwh = formatNumber(3850 * job_seconds / 3600 / 1000);
+    let cost = formatNumber(kwh * kwh_rate);
     let job_time = new Date(job_seconds * 1000).toISOString().slice(11, 19);
-    $('#sel_prof').html(profiles[id].name);
-    $('#sel_prof_eta').html(job_time);
-    $('#sel_prof_cost').html(kwh + ' kWh (' + currency_type + cost + ')');
+    $('#sel_prof').text(profiles[id].name);
+    $('#sel_prof_eta').text(job_time);
+    $('#sel_prof_cost').html(`${kwh} kWh (${currency_type}${cost})`);
     graph.profile.data = profiles[id].data;
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+}
+
+function formatNumber(number) {
+    return number.toFixed(2);
 }
 
 

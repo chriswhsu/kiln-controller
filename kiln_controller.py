@@ -5,14 +5,13 @@ import os
 from flask import Flask, abort, redirect, send_from_directory
 from flask_socketio import SocketIO, emit
 
+import config_file
 from lib.oven_factory import OvenFactory
 from lib.oven_watcher import OvenWatcher
 from lib.profile import Profile
 from lib.profile_manager import ProfileManager
 
 log = logging.getLogger(__name__)
-
-import config_file
 
 
 class KilnController:
