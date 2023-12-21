@@ -28,8 +28,8 @@ function updateProfile(id) {
     selected_profile = id;
     selected_profile_name = profiles[id].name;
     let job_seconds = profiles[id].data.length === 0 ? 0 : parseInt(profiles[id].data[profiles[id].data.length - 1][0]);
-    let kwh = formatNumber(3850 * job_seconds / 3600 / 1000);
-    let cost = formatNumber(kwh * kwh_rate);
+    let kwh = (3850 * job_seconds / 3600 / 1000).toFixed(2);
+    let cost = (kwh * kwh_rate).toFixed(2);
     let job_time = new Date(job_seconds * 1000).toISOString().slice(11, 19);
     $('#sel_prof').text(profiles[id].name);
     $('#sel_prof_eta').text(job_time);
