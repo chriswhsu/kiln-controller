@@ -94,28 +94,30 @@ function updateProfileTable() {
 
     html += '</table></div>';
 
-    $('#profile_table').html(html);
+    document.getElementById('profile_table').innerHTML = html;
 
     //Link table to graph
-    $(".form-control").change(function () {
-        let id = $(this)[0].id; //e.currentTarget.attributes.id
-        let value = parseInt($(this)[0].value);
-        let fields = id.split("-");
-        let col = parseInt(fields[1]);
-        let row = parseInt(fields[2]);
+    let formControls = document.getElementsByClassName('form-control');
+    for (let i = 0; i < formControls.length; i++) {
+        formControls[i].addEventListener('change', function () {
+            let id = this.id;
+            let value = parseInt(this.value);
+            let fields = id.split("-");
+            let col = parseInt(fields[1]);
+            let row = parseInt(fields[2]);
 
-        if (graph.profile.data.length > 0) {
-            if (col === 0) {
-                graph.profile.data[row][col] = timeProfileFormatter(value, false);
-            } else {
-                graph.profile.data[row][col] = value;
+            if (graph.profile.data.length > 0) {
+                if (col === 0) {
+                    graph.profile.data[row][col] = timeProfileFormatter(value, false);
+                } else {
+                    graph.profile.data[row][col] = value;
+                }
+
+                graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
             }
-
-            graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
-        }
-        updateProfileTable();
-
-    });
+            updateProfileTable();
+        });
+    }
 }
 
 function timeProfileFormatter(val, down) {
