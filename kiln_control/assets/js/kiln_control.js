@@ -1,6 +1,6 @@
 // Global Variables
-let state = "----";
-let state_last = "";
+let currentState = "----";
+let lastState = "";
 let graph = {profile: {}, live: {}};
 let profiles = [];
 let selected_profile = 0;
@@ -48,7 +48,7 @@ function formatNumber(number) {
 
 function updateProgress(percentage) {
     let progressBar = $('#progressBar');
-    if (state === "RUNNING" || state === "COMPLETE") {
+    if (currentState === "RUNNING" || currentState === "COMPLETE") {
         percentage = Math.min(percentage, 100);
         if (percentage === 100) {
             progressBar.addClass('no-animation'); // Add class to stop animation
@@ -57,7 +57,7 @@ function updateProgress(percentage) {
         }
         progressBar.css('width', percentage + '%');
         progressBar.html(Math.floor(percentage) + '%');
-    } else if (state === "IDLE") {
+    } else if (currentState === "IDLE") {
         progressBar.css('width', '0%');
         progressBar.html('');
         progressBar.removeClass('no-animation'); // Ensure class is removed when idle
@@ -187,7 +187,7 @@ function timeTickFormatter(val, axis) {
 
 function enterNewMode() {
     console.log("Enter New Mode")
-    state = "EDIT"
+    currentState = "EDIT"
     $('#status').slideUp();
     $('#edit').show();
     $('#profile_selector').hide();
@@ -202,7 +202,7 @@ function enterNewMode() {
 
 function enterEditMode() {
     console.log("Enter Edit Mode")
-    state = "EDIT"
+    currentState = "EDIT"
     $('#status').slideUp();
     $('#edit').show();
     $('#profile_selector').hide();
@@ -219,7 +219,7 @@ function enterEditMode() {
 
 function leaveEditMode() {
     selected_profile_name = $('#form_profile_name').val();
-    state = "IDLE";
+    currentState = "IDLE";
     $('#edit').hide();
     $('#profile_selector').show();
     $('#btn_controls').show();
@@ -529,21 +529,21 @@ $(document).ready(function () {
         let statusData = data;
 
         // Update global state
-        state = statusData.state;
+        currentState = statusData.state;
 
         // Handle state change
-        if (state !== state_last) {
-            if (state_last === "RUNNING" && state !== "RUNNING") {
+        if (currentState !== lastState) {
+            if (lastState === "RUNNING" && currentState !== "RUNNING") {
                 // Notify completion if the previous state was RUNNING
                 notifyRunCompleted(statusData);
             }
-            state_last = state;
+            lastState = currentState;
         }
 
         updateApplicationState(data);
 
         // Update UI based on the current state
-        if (state === "RUNNING" || state === "COMPLETE") {
+        if (currentState === "RUNNING" || currentState === "COMPLETE") {
             updateForRunningState(statusData);
         } else {
             updateForNonRunningState(statusData);
@@ -558,12 +558,12 @@ $(document).ready(function () {
 
 
     function updateApplicationState(data) {
-        state = data.state;
+        currentState = data.state;
         handleStateChange(data);
         updateUIElements(data);
 
         // Disable or enable profile selector, edit, and new profile button based on the state
-        if (state !== "IDLE") {
+        if (currentState !== "IDLE") {
             $('#e2, #btn_edit, #btn_new').prop('disabled', true).addClass('disabled-button');
         } else {
             $('#e2, #btn_edit, #btn_new').prop('disabled', false).removeClass('disabled-button');
@@ -572,18 +572,18 @@ $(document).ready(function () {
 
     function handleStateChange(data) {
         // Check if state has changed from the last recorded state
-        if (state !== state_last) {
+        if (currentState !== lastState) {
             // Specific actions when transitioning out of the RUNNING state
-            if (state_last === "RUNNING") {
-                notifyRunCompleted(state, data.is_simulation);
+            if (lastState === "RUNNING") {
+                notifyRunCompleted(currentState, data.is_simulation);
             }
 
             // Update the last known state
-            state_last = state;
+            lastState = currentState;
         }
 
         // Perform actions based on the current state
-        if (state === "RUNNING" || state === "COMPLETE") {
+        if (currentState === "RUNNING" || currentState === "COMPLETE") {
             updateForRunningState(data);
         } else {
             updateForNonRunningState(data);
@@ -632,10 +632,10 @@ $(document).ready(function () {
         $("#nav_start").show();
         $("#nav_stop").hide();
         updateRunIndicator(data.is_simulation, data.state);
-        $('#state').html('<p class="ds-text">' + state + '</p>');
+        $('#state').html('<p class="ds-text">' + currentState + '</p>');
 
         // Reset progress bar if idle
-        if (state === "IDLE") {
+        if (currentState === "IDLE") {
             updateProgress(0);
         }
     }
@@ -755,7 +755,7 @@ $(document).ready(function () {
 
         selected_profile_name = profiles[0].name;
 
-        state = "IDLE";
+        currentState = "IDLE";
         $('#edit').hide();
         $('#profile_selector').show();
         $('#btn_controls').show();
