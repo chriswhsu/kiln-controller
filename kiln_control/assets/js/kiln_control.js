@@ -58,6 +58,8 @@ function updateProgress(percentage) {
         progressBar.css('width', '0%');
         progressBar.html('');
         progressBar.removeClass('no-animation'); // Ensure class is removed when idle
+        graph.live.data = []; // Clear the history line
+
     }
 }
 

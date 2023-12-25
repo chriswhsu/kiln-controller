@@ -34,6 +34,10 @@ class SimulatedOven(Oven):
         # Doesn't really do anything, but start anyway.
         self.temp_sensor.start()
 
+    def stop(self):
+        self.heat_energy = 0
+        super().stop()
+
     def apply_heat(self, pid):
         # Determine the proportion of the time step the heater is on
         self.heat = max(0.0, float(self.time_step * pid))
@@ -41,7 +45,7 @@ class SimulatedOven(Oven):
         # Calculate the heating energy based on the proportion of time the heater is on
         self.heat_energy = self.p_heat * self.heat
 
-        log.debug(
+        log.info(
                 f"simulation: -> {self.p_heat * pid:.2f}W heater: {self.element_temperature:.2f} -> "
                 f"{self.element_to_oven_heat_transfer:.2f}W oven: {self.temperature:.2f} -> "
                 f"{self.heat_transfer_rate_to_environ:.2f}W env"
@@ -56,20 +60,29 @@ class SimulatedOven(Oven):
 
     def simulate_temp_changes(self):
         oven_temp = self.temperature
-        log.debug(f"heat_energy: {self.heat_energy}")
+        log.info(f"Initial oven_temp: {oven_temp}")
+        log.debug(f"Initial heat_energy: {self.heat_energy}")
+        log.debug(f"Element Heat Capacity: {self.elem_heat_capacity}")
+
         # temperature change of heat element by heating
         self.element_temperature += self.heat_energy / self.elem_heat_capacity
+        log.debug(f"Element temperature after heating: {self.element_temperature}")
 
         # energy flux heat_el -> oven
         self.element_to_oven_heat_transfer = (self.element_temperature - oven_temp) / self.element_resistance
+        log.debug(f"Energy flux from element to oven: {self.element_to_oven_heat_transfer}")
 
         # temperature change of oven and heating element
         oven_temp += self.element_to_oven_heat_transfer * self.time_step / self.c_oven
         self.element_temperature -= self.element_to_oven_heat_transfer * self.time_step / self.elem_heat_capacity
+        log.debug(f"Oven temperature after energy flux: {oven_temp}")
+        log.debug(f"Element temperature after energy flux: {self.element_temperature}")
 
         # temperature change of oven by cooling to environment
         self.heat_transfer_rate_to_environ = (oven_temp - self.environ_temp) / self.oven_resistance
         oven_temp -= self.heat_transfer_rate_to_environ * self.time_step / self.c_oven
+        log.debug(f"Heat transfer rate to environment: {self.heat_transfer_rate_to_environ}")
+        log.debug(f"Oven temperature after adjusting for environment: {oven_temp}")
 
         self.temperature = round(oven_temp, 2)
-        log.debug(f"Set simulated oven temp to {self.temperature}")
+        log.info(f"Final simulated oven temperature: {self.temperature}")
