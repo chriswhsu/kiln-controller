@@ -265,34 +265,60 @@ function get_tick_size() {
     return 3600;
 }
 
-function getOptions() {
+const AXIS_FONT = {
+    size: 14,
+    lineHeight: 14,
+    weight: "normal",
+    family: "Digi",
+    variant: "small-caps",
+    color: "rgba(216, 211, 197, 0.85)"
+};
+const TICK_COLOR = 'rgba(216, 211, 197, 0.2)';
+const GRID_COLOR = 'rgba(216, 211, 197, 0.55)';
 
+function generateXAxis() {
     return {
+        min: 0,
+        tickColor: TICK_COLOR,
+        tickFormatter: timeTickFormatter,
+        tickSize: get_tick_size(),
+        font: AXIS_FONT
+    }
+}
 
+
+function generateYAxis() {
+    return {
+        min: 0,
+        tickDecimals: 0,
+        draggable: false,
+        tickColor: TICK_COLOR,
+        font: AXIS_FONT
+    }
+}
+
+
+function getOptions() {
+    return {
         series: {
             lines: {
                 show: true
-            }, points: {
-                show: true, radius: 5, symbol: "circle"
-            }, shadowSize: 3
+            },
+            points: {
+                show: true,
+                radius: 5,
+                symbol: "circle"
+            },
+            shadowSize: 3
         },
-
-        xaxis: {
-            min: 0, tickColor: 'rgba(216, 211, 197, 0.2)', tickFormatter: timeTickFormatter, tickSize: get_tick_size(), font: {
-                size: 14, lineHeight: 14, weight: "normal", family: "Digi", variant: "small-caps", color: "rgba(216, 211, 197, 0.85)"
-            }
-        },
-
-        yaxis: {
-            min: 0, tickDecimals: 0, draggable: false, tickColor: 'rgba(216, 211, 197, 0.2)', font: {
-                size: 14, lineHeight: 14, weight: "normal", family: "Digi", variant: "small-caps", color: "rgba(216, 211, 197, 0.85)"
-            }
-        },
-
+        xaxis: generateXAxis(),
+        yaxis: generateYAxis(),
         grid: {
-            color: 'rgba(216, 211, 197, 0.55)', borderWidth: 1, labelMargin: 10, mouseActiveRadius: 50
+            color: GRID_COLOR,
+            borderWidth: 1,
+            labelMargin: 10,
+            mouseActiveRadius: 50
         },
-
         legend: {
             show: false
         }
