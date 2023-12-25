@@ -102,8 +102,8 @@ function updateProfileTable() {
 
     //Link table to graph
     let formControls = document.getElementsByClassName('form-control');
-    for (let i = 0; i < formControls.length; i++) {
-        formControls[i].addEventListener('change', function () {
+    Array.prototype.forEach.call(formControls, function (formControl) {
+        formControl.addEventListener('change', function () {
             let id = this.id;
             let value = parseInt(this.value);
             let fields = id.split("-");
@@ -121,7 +121,7 @@ function updateProfileTable() {
             }
             updateProfileTable();
         });
-    }
+    });
 }
 
 function timeProfileFormatter(val, down) {
