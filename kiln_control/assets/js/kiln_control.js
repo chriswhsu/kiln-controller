@@ -25,16 +25,19 @@ graph.live = {
 
 // Function Definitions
 function updateProfile(id) {
+    // Store the profile in a variable
+    let profile = profiles[id];
+
     selected_profile = id;
-    selected_profile_name = profiles[id].name;
-    let job_seconds = profiles[id].data.length === 0 ? 0 : parseInt(profiles[id].data[profiles[id].data.length - 1][0]);
+    selected_profile_name = profile.name;
+    let job_seconds = profile.data.length === 0 ? 0 : parseInt(profile.data[profile.data.length - 1][0]);
     let kwh = (3850 * job_seconds / 3600 / 1000).toFixed(2);
     let cost = (kwh * kwh_rate).toFixed(2);
     let job_time = new Date(job_seconds * 1000).toISOString().slice(11, 19);
-    $('#sel_prof').text(profiles[id].name);
-    $('#sel_prof_eta').text(job_time);
-    $('#sel_prof_cost').html(`${kwh} kWh (${currency_type}${cost})`);
-    graph.profile.data = profiles[id].data;
+    document.getElementById('sel_prof').textContent = profile.name;
+    document.getElementById('sel_prof_eta').textContent = job_time;
+    document.getElementById('sel_prof_cost').innerHTML = `${kwh} kWh (${currency_type}${cost})`;
+    graph.profile.data = profile.data;
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 }
 
@@ -46,20 +49,19 @@ function formatNumber(number) {
 function updateProgress(percentage) {
     let progressBar = $('#progressBar');
     if (state === "RUNNING" || state === "COMPLETE") {
-        if (percentage >= 100) {
-            percentage = 100;
+        percentage = Math.min(percentage, 100);
+        if (percentage === 100) {
             progressBar.addClass('no-animation'); // Add class to stop animation
         } else {
             progressBar.removeClass('no-animation'); // Remove class to allow animation
         }
         progressBar.css('width', percentage + '%');
-        progressBar.html(parseInt(percentage) + '%');
+        progressBar.html(Math.floor(percentage) + '%');
     } else if (state === "IDLE") {
         progressBar.css('width', '0%');
         progressBar.html('');
         progressBar.removeClass('no-animation'); // Ensure class is removed when idle
-        graph.live.data = []; // Clear the history line
-
+        graph.live.data.length = 0; // Clear the history line
     }
 }
 
