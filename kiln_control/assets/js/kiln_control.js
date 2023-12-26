@@ -3,7 +3,7 @@ let currentState = "----";
 let lastState = "";
 let graph = {profile: {}, live: {}};
 let profiles = [];
-let selected_profile = 0;
+let selectedProfile = 0;
 let selected_profile_name = "";
 // F or C
 let temp_scale = "";
@@ -24,11 +24,11 @@ graph.live = {
 };
 
 // Function Definitions
-function updateProfile(id) {
+function updateProfile(profileId) {
     // Store the profile in a variable
-    let profile = profiles[id];
+    let profile = profiles[profileId];
 
-    selected_profile = id;
+    selectedProfile = profileId;
     selected_profile_name = profile.name;
     let job_seconds = profile.data.length === 0 ? 0 : parseInt(profile.data[profile.data.length - 1][0]);
     let kwh = (3850 * job_seconds / 3600 / 1000).toFixed(2);
@@ -210,7 +210,7 @@ function enterEditMode() {
     $('#profile_table').slideDown();
 
     console.log(profiles);
-    $('#form_profile_name').val(profiles[selected_profile].name);
+    $('#form_profile_name').val(profiles[selectedProfile].name);
     graph.profile.points.show = true;
     graph.profile.draggable = true;
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
@@ -408,14 +408,14 @@ function updateProfileSelector() {
     });
 
     if (valid_profile_names.length > 0 && $.inArray(selected_profile_name, valid_profile_names) === -1) {
-        selected_profile = 0;
+        selectedProfile = 0;
         selected_profile_name = valid_profile_names[0];
     }
 
     profiles.forEach(function (profile, i) {
         e2.append('<option value="' + i + '">' + profile.name + '</option>');
         if (profile.name === selected_profile_name) {
-            selected_profile = i;
+            selectedProfile = i;
             e2.select2('val', i);
             updateProfile(i);
         }
@@ -499,7 +499,7 @@ $(document).ready(function () {
 
     function runTask() {
         let cmd = {
-            "cmd": "RUN", "profile": profiles[selected_profile]
+            "cmd": "RUN", "profile": profiles[selectedProfile]
         };
         graph.live.data = [];
         graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
@@ -508,7 +508,7 @@ $(document).ready(function () {
 
     function runTaskSimulation() {
         let cmd = {
-            "cmd": "SIMULATE", "profile": profiles[selected_profile]
+            "cmd": "SIMULATE", "profile": profiles[selectedProfile]
         };
 
         graph.live.data = [];
