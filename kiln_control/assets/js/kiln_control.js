@@ -79,20 +79,28 @@ function updateProfileTable() {
         if (i >= 1) dps = ((graph.profile.data[i][1] - graph.profile.data[i - 1][1]) / (graph.profile.data[i][0] - graph.profile.data[i - 1][0]) * 10) / 10;
         if (dps > 0) {
             slope = "up";
-            color = "rgba(206, 5, 5, 1)";
+            color = "rgb(210,161,161)";
         } else if (dps < 0) {
             slope = "down";
-            color = "rgba(23, 108, 204, 1)";
+            color = "rgb(120,146,176)";
             dps *= -1;
         } else if (dps === 0) {
             slope = "right";
-            color = "grey";
+            color = "rgb(176,177,178)";
         }
 
         html += '<tr><td><h4>' + (i + 1) + '</h4></td>';
         html += '<td><input type="text" class="form-control" id="profiletable-0-' + i + '" value="' + timeProfileFormatter(graph.profile.data[i][0], true) + '" style="width: 60px" /></td>';
         html += '<td><input type="text" class="form-control" id="profiletable-1-' + i + '" value="' + graph.profile.data[i][1] + '" style="width: 60px" /></td>';
-        html += '<td><div class="input-group"><span class="glyphicon glyphicon-circle-arrow-' + slope + ' input-group-addon ds-trend" style="background: ' + color + '"></span><input type="text" class="form-control ds-input" readonly value="' + formatDPS(dps) + '" style="width: 100px" /></div></td>';
+        html += `
+                  <td>
+                    <div class="input-group">
+                      <span class="input-group-addon" style="background: ${color}">
+                        <i class="fas fa-arrow-circle-${slope} fa-lg"></i>
+                      </span>
+                      <input type="text" class="form-control ds-input" readonly value="${formatDPS(dps)}" style="width: 100px" />
+                    </div>
+                  </td>`;
         html += '<td>&nbsp;</td></tr>';
     }
 
