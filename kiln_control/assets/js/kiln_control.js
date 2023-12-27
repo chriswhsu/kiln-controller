@@ -4,13 +4,13 @@ let lastState = "";
 let graph = {profile: {}, live: {}};
 let profiles = [];
 let selectedProfile = 0;
-let selected_profile_name = "";
+let selectedProfileName = "";
 // F or C
-let temp_scale = "";
-let time_scale_slope = "s";
-let time_scale_profile = "s";
-let time_scale_long = "Seconds";
-let temp_scale_display = "";
+let tempScale = "";
+let timeScaleSlope = "s";
+let timeScaleProfile = "s";
+let timeScaleLong = "Seconds";
+let tempScaleDisplay = "";
 let kwh_rate = 0.0;
 let currency_type = "$";
 
@@ -29,7 +29,7 @@ function updateProfile(profileId) {
     let profile = profiles[profileId];
 
     selectedProfile = profileId;
-    selected_profile_name = profile.name;
+    selectedProfileName = profile.name;
     let job_seconds = profile.data.length === 0 ? 0 : parseInt(profile.data[profile.data.length - 1][0]);
     let kwh = (3850 * job_seconds / 3600 / 1000).toFixed(2);
     let cost = (kwh * kwh_rate).toFixed(2);
@@ -72,7 +72,7 @@ function updateProfileTable() {
     let color = "";
 
     let html = '<h3>Schedule Points</h3><div class="table-responsive" style="overflow: hidden"><table class="table table-striped">';
-    html += '<tr><th style="width: 50px">#</th><th>Target Time in ' + time_scale_long + '</th><th>Target Temperature in °' + temp_scale_display + '</th><th>Slope in &deg;' + temp_scale_display + '/' + time_scale_slope + '</th><th></th></tr>';
+    html += '<tr><th style="width: 50px">#</th><th>Target Time in ' + timeScaleLong + '</th><th>Target Temperature in °' + tempScaleDisplay + '</th><th>Slope in &deg;' + tempScaleDisplay + '/' + timeScaleSlope + '</th><th></th></tr>';
 
     for (let i = 0; i < graph.profile.data.length; i++) {
 
@@ -126,7 +126,7 @@ function updateProfileTable() {
 
 function timeProfileFormatter(val, down) {
     let rval = val
-    switch (time_scale_profile) {
+    switch (timeScaleProfile) {
         case "m":
             if (down) {
                 rval = val / 60;
@@ -147,10 +147,10 @@ function timeProfileFormatter(val, down) {
 
 function formatDPS(val) {
     let tval = val;
-    if (time_scale_slope === "m") {
+    if (timeScaleSlope === "m") {
         tval = val * 60;
     }
-    if (time_scale_slope === "h") {
+    if (timeScaleSlope === "h") {
         tval = (val * 60) * 60;
     }
     return Math.round(tval);
@@ -158,7 +158,7 @@ function formatDPS(val) {
 
 function hazardTemp() {
 
-    if (temp_scale === "f") {
+    if (tempScale === "f") {
         return (1500 * 9 / 5) + 32
     } else {
         return 1500
@@ -218,7 +218,7 @@ function enterEditMode() {
 }
 
 function leaveEditMode() {
-    selected_profile_name = $('#form_profile_name').val();
+    selectedProfileName = $('#form_profile_name').val();
     currentState = "IDLE";
     $('#edit').hide();
     $('#profile_selector').show();
@@ -327,7 +327,7 @@ function getOptions() {
 
 function updateSelectedProfile(profileData) {
     if (profileData) {
-        selected_profile_name = profileData.name;
+        selectedProfileName = profileData.name;
         $.each(profiles, function (i, profile) {
             if (profile.name === profileData.name) {
                 updateProfile(i);
@@ -407,14 +407,14 @@ function updateProfileSelector() {
         return a.name;
     });
 
-    if (valid_profile_names.length > 0 && $.inArray(selected_profile_name, valid_profile_names) === -1) {
+    if (valid_profile_names.length > 0 && $.inArray(selectedProfileName, valid_profile_names) === -1) {
         selectedProfile = 0;
-        selected_profile_name = valid_profile_names[0];
+        selectedProfileName = valid_profile_names[0];
     }
 
     profiles.forEach(function (profile, i) {
         e2.append('<option value="' + i + '">' + profile.name + '</option>');
-        if (profile.name === selected_profile_name) {
+        if (profile.name === selectedProfileName) {
             selectedProfile = i;
             e2.select2('val', i);
             updateProfile(i);
@@ -648,25 +648,25 @@ $(document).ready(function () {
     function updateConfigDisplay(configData) {
         console.log('updateConfigDisplay')
         // Update temperature and timescale display based on received config
-        temp_scale = configData.temp_scale;
-        time_scale_slope = configData.time_scale_slope;
-        time_scale_profile = configData.time_scale_profile;
+        tempScale = configData.temp_scale;
+        timeScaleSlope = configData.time_scale_slope;
+        timeScaleProfile = configData.time_scale_profile;
         kwh_rate = configData.kwh_rate;
         currency_type = configData.currency_type;
 
-        temp_scale_display = temp_scale === "c" ? "C" : "F";
-        $('#act_temp_scale').html('º' + temp_scale_display);
-        $('#target_temp_scale').html('º' + temp_scale_display);
+        tempScaleDisplay = tempScale === "c" ? "C" : "F";
+        $('#act_temp_scale').html('º' + tempScaleDisplay);
+        $('#target_temp_scale').html('º' + tempScaleDisplay);
 
-        switch (time_scale_profile) {
+        switch (timeScaleProfile) {
             case "s":
-                time_scale_long = "Seconds";
+                timeScaleLong = "Seconds";
                 break;
             case "m":
-                time_scale_long = "Minutes";
+                timeScaleLong = "Minutes";
                 break;
             case "h":
-                time_scale_long = "Hours";
+                timeScaleLong = "Hours";
                 break;
         }
     }
@@ -749,11 +749,11 @@ $(document).ready(function () {
 
     function deleteProfile() {
 
-        console.log("Delete profile:" + selected_profile_name);
+        console.log("Delete profile:" + selectedProfileName);
 
-        socket.emit('delete_profile', selected_profile_name);
+        socket.emit('delete_profile', selectedProfileName);
 
-        selected_profile_name = profiles[0].name;
+        selectedProfileName = profiles[0].name;
 
         currentState = "IDLE";
         $('#edit').hide();
