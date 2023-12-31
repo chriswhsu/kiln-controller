@@ -432,15 +432,15 @@ function updateProfileSelector() {
 
 
 function initializeProfileSelector() {
-    let e2 = $('#e2');
+    let profileSelector = $('#e2');
 
     // Initialize the profile selector with select2 plugin
-    e2.select2({
+    profileSelector.select2({
         placeholder: "Select Profile", allowClear: true, minimumResultsForSearch: -1
     });
 
     // Event handler for when a new profile is selected
-    e2.on("change", function (e) {
+    profileSelector.on("change", function (e) {
         updateProfile(e.val);
     });
 }
@@ -450,6 +450,9 @@ $(document).ready(function () {
 
     // Initialize Socket.IO client
     let socket = io(`${window.location.protocol}//${window.location.hostname}:${window.location.port}`);
+
+    initializeProfileSelector();
+
 
     // Handle connection open
     socket.on('connect', function () {
@@ -756,14 +759,7 @@ $(document).ready(function () {
         } catch (error) {
             console.error("Error parsing received data: ", error);
         }
-
-        // Additional logic to handle different types of storage messages
-        // ...
     }
-
-    // Initialize Profile Selector remains the same
-    initializeProfileSelector();
-
 
     function deleteProfile() {
 
