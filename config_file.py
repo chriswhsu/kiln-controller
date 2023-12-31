@@ -77,7 +77,7 @@ currency_type = "$"  # Currency Symbol to show when calculating cost to run job
 
 temp_scale = "f"  # c = Celsius | f = Fahrenheit - Unit to display
 time_scale_slope = "h"  # s = Seconds | m = Minutes | h = Hours - Slope displayed in temp_scale per time_scale_slope
-time_scale_profile = "m"  # s = Seconds | m = Minutes | h = Hours - Enter and view target time in time_scale_profile
+time_scale_profile = "h"  # s = Seconds | m = Minutes | h = Hours - Enter and view target time in time_scale_profile
 
 # If the current temperature is below the profile pause window,
 # delay the schedule until it goes back inside. This allows for heating

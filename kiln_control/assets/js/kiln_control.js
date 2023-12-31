@@ -8,7 +8,7 @@ let selectedProfileName = "";
 // F or C
 let tempScale = "";
 let timeScaleSlope = "s";
-let timeScaleProfile = "s";
+let timeScaleProfile = "h";
 let timeScaleLong = "Seconds";
 let tempScaleDisplay = "";
 let kwh_rate = 0.0;
@@ -262,15 +262,14 @@ function toggleTable() {
 
 
 function get_tick_size() {
-//switch(time_scale_profile){
-//  case "s":
-//    return 1;
-//  case "m":
-//    return 60;
-//  case "h":
-//    return 3600;
-//  }
-    return 3600;
+    switch (timeScaleProfile) {
+        case "s":
+            return 1;
+        case "m":
+            return 60;
+        case "h":
+            return 3600;
+    }
 }
 
 const AXIS_FONT = {
