@@ -7,9 +7,9 @@ let selectedProfile = 0;
 let selectedProfileName = "";
 // F or C
 let tempScale = "";
-let timeScaleSlope = "s";
+let timeScaleSlope = "h";
 let timeScaleProfile = "h";
-let timeScaleLong = "Seconds";
+let timeScaleLong = "Hours";
 let tempScaleDisplay = "";
 let kwh_rate = 0.0;
 let currency_type = "$";
