@@ -505,6 +505,10 @@ $(document).ready(function () {
     });
 
 
+    $('#btn_exit').click(function () {
+        cancelProfileEdit();
+    });
+
     function runTask() {
         let cmd = {
             "cmd": "RUN", "profile": profiles[selectedProfile]
@@ -705,6 +709,11 @@ $(document).ready(function () {
     }
 
 
+    function cancelProfileEdit() {
+        socket.emit('request_profiles');
+        leaveEditMode();
+    }
+
     function saveProfile() {
         name = $('#form_profile_name').val();
         let rawdata = graph.plot.getData()[0].data
@@ -726,6 +735,7 @@ $(document).ready(function () {
 
         let put_cmd = JSON.stringify(put);
 
+        // This call will also push profiles after save.
         socket.emit('save_profile', put);
 
         leaveEditMode();
