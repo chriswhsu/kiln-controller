@@ -72,7 +72,7 @@ function updateProfileTable() {
     let color = "";
 
     let html = '<h3>Schedule Points</h3><div class="table-responsive" style="overflow: hidden"><table class="table table-striped">';
-    html += '<tr><th style="width: 50px">#</th><th>Target Time in ' + timeScaleLong + '</th><th>Target Temperature in °' + tempScaleDisplay + '</th><th>Slope in &deg;' + tempScaleDisplay + '/' + timeScaleSlope + '</th><th></th></tr>';
+    html += '<tr><th style="width: 50px">#</th><th>Target Time in ' + timeScaleLong + '</th><th>Target Temperature in °' + tempScaleDisplay + '</th><th>Slope in &deg;' + tempScaleDisplay + ' / ' + timeScaleSlope + '</th><th></th></tr>';
 
     for (let i = 0; i < graph.profile.data.length; i++) {
 
@@ -113,7 +113,7 @@ function updateProfileTable() {
     Array.prototype.forEach.call(formControls, function (formControl) {
         formControl.addEventListener('change', function () {
             let id = this.id;
-            let value = parseInt(this.value);
+            let value = parseFloat(this.value);
             let fields = id.split("-");
             let col = parseInt(fields[1]);
             let row = parseInt(fields[2]);
@@ -150,7 +150,7 @@ function timeProfileFormatter(val, down) {
             }
             break;
     }
-    return Math.round(rval);
+    return Math.round(rval * 10) / 10;
 }
 
 function formatDPS(val) {
