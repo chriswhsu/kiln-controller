@@ -7,9 +7,9 @@ let selectedProfile = 0;
 let selectedProfileName = "";
 // F or C
 let tempScale = "";
-let timeScaleSlope = "h";
-let timeScaleProfile = "h";
-let timeScaleLong = "Hours";
+let timeScaleSlope = "";
+let timeScaleProfile = "";
+let timeScaleLong = "";
 let tempScaleDisplay = "";
 let kwh_rate = 0.0;
 let currency_type = "$";
@@ -96,7 +96,7 @@ function updateProfileTable() {
                   <td>
                     <div class="input-group">
                       <span class="input-group-addon" style="background: ${color}">
-                        <i class="fas fa-arrow-circle-${slope} fa-lg"></i>
+                        <i class="fas fa-arrow-circle-${slope} fa-lg black-icon"></i>
                       </span>
                       <input type="text" class="form-control ds-input" readonly value="${formatDPS(dps)}" style="width: 100px" />
                     </div>
