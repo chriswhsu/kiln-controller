@@ -40,7 +40,6 @@ class RealOven(Oven):
         self.output.cool(0)
         super().stop()
 
-
     # get actual temperature from sensor.
     def update_temperature(self):
         self.temperature = self.temp_sensor.temperature + self.config.thermocouple_offset
@@ -49,9 +48,7 @@ class RealOven(Oven):
         heat_on = float(self.time_step * pid)
         heat_off = float(self.time_step * (1 - pid))
 
-        self.heat = 0.0
-        if heat_on > 0:
-            self.heat = 1.0
+        self.heat = pid
 
         if heat_on:
             self.output.heat(heat_on)

@@ -42,7 +42,11 @@ body {
     color: #ad6b6b;
 }
 
-#act_temp {
+.orange_text {
+    color: darkorange;
+}
+
+#actTemp {
     color: #7e7b72;
 }
 

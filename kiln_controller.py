@@ -61,10 +61,9 @@ class KilnController:
             log.debug("WebSocket (control) received: %s" % json_data)
             try:
                 # Parse the received data
-                msgdict = json.loads(json_data)
-                command = msgdict.get("cmd")
+                command = json_data.get("cmd")
 
-                profile_dict = msgdict.get('profile')
+                profile_dict = json_data.get('profile')
                 if profile_dict:
                     profile = Profile(profile_dict=profile_dict)
                 else:
@@ -125,7 +124,7 @@ class KilnController:
                 emit('error', {'message': 'Error processing profile delete'})
 
         @self.socketio.on('request_config')
-        def handle_config():
+        def _handle_config():
             log.info("handle_config")
             # Send config data
             emit('get_config', self.get_config())

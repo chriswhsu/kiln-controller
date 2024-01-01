@@ -30,8 +30,8 @@
 <div class="container">
     <!-- Run Indicator Section -->
     <div id="run_indicator" style="text-align: center; margin-top: 8px">
-        <span id="run_icon" style="font-size: 24px;"></span> <!-- Icon for simulation or actual run -->
-        <span id="run_text" style="font-size: 18px; margin-left: 10px;"></span> <!-- Text for simulation or actual run -->
+        <span id="run_icon" style="font-size: 24px;"></span>
+        <span id="run_text" style="font-size: 18px; margin-left: 10px;"></span>
     </div>
 
     <div id="status">
@@ -39,13 +39,19 @@
         <div class="status-item">
             <div class="ds-title">Kiln Temp</div>
             <div class="display ds-num">
-                <span id="act_temp"></span> <span class="ds-unit" id="act_temp_scale">&deg;F</span>
+                <span id="actTemp"></span> <span class="ds-unit" id="act_temp_scale">&deg;F</span>
             </div>
         </div>
         <div class="status-item">
             <div class="ds-title">Target Temp</div>
             <div class="display ds-num ds-target">
                 <span id="target_temp">---</span> <span class="ds-unit" id="target_temp_scale">&deg;F</span>
+            </div>
+        </div>
+        <div class="status-item">
+            <div class="ds-title">Heat %</div>
+            <div class="display ds-num ds-target orange_text">
+                <span id="percentHeat">99</span><span>%</span>
             </div>
         </div>
         <div class="status-item">

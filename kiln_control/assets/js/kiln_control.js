@@ -381,27 +381,6 @@ function updateRunIndicator(isSimulation, state) {
 
 
 function updateUIElements(data) {
-    $('#act_temp').html(parseFloat(data.temperature).toFixed(1));
-    $('#heat').html('<div class="bar"></div>');
-
-    updateHeatingIndicator(data.heat);
-    updateHazardIndicator(data.temperature);
-}
-
-function updateHeatingIndicator(heatValue) {
-    if (heatValue > 0) {
-        $('#heat').addClass("ds-led-heat-active");
-    } else {
-        $('#heat').removeClass("ds-led-heat-active");
-    }
-}
-
-function updateHazardIndicator(temperature) {
-    if (temperature > hazardTemp()) {
-        $('#hazard').addClass("ds-led-hazard-active");
-    } else {
-        $('#hazard').removeClass("ds-led-hazard-active");
-    }
 }
 
 
@@ -491,7 +470,7 @@ $(document).ready(function () {
     });
 
     $('#startRunButton').click(function () {
-        runTask();
+        runProfile();
     });
 
     $('#nav_stop').click(function () {
@@ -511,10 +490,11 @@ $(document).ready(function () {
         cancelProfileEdit();
     });
 
-    function runTask() {
+    function runProfile() {
         let cmd = {
             "cmd": "RUN", "profile": profiles[selectedProfile]
         };
+        console.log("Run Profile")
         graph.live.data = [];
         graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
         socket.emit('control', cmd); // Send command via Socket.IO
@@ -572,9 +552,13 @@ $(document).ready(function () {
 
 
     function updateApplicationState(data) {
+        console.log('heat: ' + data.heat)
+        let heatPercent = (parseFloat(data.heat) * 100).toFixed(0)
         currentState = data.state;
         handleStateChange(data);
-        updateUIElements(data);
+        $('#actTemp').html(parseFloat(data.temperature).toFixed(1));
+        $('#percentHeat').html(heatPercent);
+
 
         // Disable or enable profile selector, edit, and new profile button based on the state
         if (currentState !== "IDLE") {
