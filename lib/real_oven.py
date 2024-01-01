@@ -25,7 +25,7 @@ class RealOven(Oven):
         super().__init__(configuration)
 
     def create_temp_sensor(self):
-        self.temp_sensor = TempSensorReal()
+        self.temp_sensor = TempSensorReal(self.config)
         self.temp_sensor.start()
 
     def complete(self):
