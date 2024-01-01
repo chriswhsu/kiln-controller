@@ -509,12 +509,12 @@ $(document).ready(function () {
         graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 
         // Use Socket.IO to emit the command
-        socket.emit('control', JSON.stringify(cmd));
+        socket.emit('control', cmd);
     }
 
     function abortTask() {
         let cmd = {"cmd": "STOP"};
-        socket.emit('control', JSON.stringify(cmd));
+        socket.emit('control', cmd);
     }
 
     function handleStatusUpdate(data) {
