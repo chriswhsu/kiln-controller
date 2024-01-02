@@ -179,7 +179,7 @@ function calculateEndTime(desiredSlope, prevTime, prevTemp, currTemp) {
     let deltaTime = desiredSlope != 0 ? deltaTemp / desiredSlope : 0;
 
     // Calculate end time using previous time and calculated time
-    let endTime = prevTime + deltaTime * 3600; // you may round as your need
+    let endTime = prevTime + timeProfileFormatter(deltaTime, false); // you may round as your need
 
     return endTime;
 }
@@ -202,7 +202,7 @@ function timeProfileFormatter(val, down) {
             }
             break;
     }
-    return Math.round(rval * 10) / 10;
+    return Math.round(rval * 100) / 100;
 }
 
 
