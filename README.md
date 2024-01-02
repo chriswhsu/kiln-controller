@@ -27,8 +27,7 @@ Turns a Raspberry Pi into an inexpensive, web-enabled kiln controller.
  * Accurate Kiln Operation Simulation
  * Adaptive Schedule Management for Slow Heating Conditions
  * Integral Wind-Up Prevention for Off-Set Point Temperatures
- * Automatic Restart Functionality in Power Outages or Similar Events
- * Integrated Wemo Switch Control for Over-Temperature Safety Kill Switch
+   ] * Integrated Wemo Switch Control for Over-Temperature Safety Kill Switch
 
 
 **Run Kiln Schedule**
@@ -141,4 +140,5 @@ If you're having trouble with hardware, I did too.  Here is a [troubleshooting g
 
 ## Origin
 This project was originally forked from https://github.com/apollo-ng/picoReflow but has diverged a large amount.
-Support for active cooling or fan cooling has been removed since kilns are generally not actively cooled.
+Support for active cooling or fan cooling has been removed since kilns are generally not actively cooled. I have
+switch from Bottle to Flask for better Socket communications.
