@@ -71,7 +71,7 @@ function updateProfileTable() {
     let color = "";
 
     let html = '<h3>Schedule Points</h3><div class="table-responsive" style="overflow: hidden"><table class="table table-striped">';
-    html += '<tr><th style="width: 50px">#</th><th>Target Time in ' + timeScaleLong + '</th><th>Target Temperature in °' + tempScaleDisplay + '</th><th>Desired Slope </th> <th>Slope in &deg;' + tempScaleDisplay + ' / ' + timeScaleSlope + '</th><th></th></tr>';
+    html += '<tr><th style="width: 50px">#</th><th>Target Time in ' + timeScaleLong + '</th><th>Target Temperature in °' + tempScaleDisplay + '</th><th>Desired Slope (+/-) </th> <th>Slope in &deg;' + tempScaleDisplay + ' / ' + timeScaleSlope + '</th><th></th></tr>';
 
     for (let i = 0; i < graph.profile.data.length; i++) {
         if (i >= 1) dps = ((graph.profile.data[i][1] - graph.profile.data[i - 1][1]) / (graph.profile.data[i][0] - graph.profile.data[i - 1][0]) * 10) / 10;
