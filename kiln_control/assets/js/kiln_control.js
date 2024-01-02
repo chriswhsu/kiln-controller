@@ -65,18 +65,17 @@ function updateProgress(percentage) {
     }
 }
 
-
 function updateProfileTable() {
     let dps = 0;
     let slope = "";
     let color = "";
 
     let html = '<h3>Schedule Points</h3><div class="table-responsive" style="overflow: hidden"><table class="table table-striped">';
-    html += '<tr><th style="width: 50px">#</th><th>Target Time in ' + timeScaleLong + '</th><th>Target Temperature in °' + tempScaleDisplay + '</th><th>Slope in &deg;' + tempScaleDisplay + ' / ' + timeScaleSlope + '</th><th></th></tr>';
+    html += '<tr><th style="width: 50px">#</th><th>Target Time in ' + timeScaleLong + '</th><th>Target Temperature in °' + tempScaleDisplay + '</th><th>Desired Slope </th> <th>Slope in &deg;' + tempScaleDisplay + ' / ' + timeScaleSlope + '</th><th></th></tr>';
 
     for (let i = 0; i < graph.profile.data.length; i++) {
-
         if (i >= 1) dps = ((graph.profile.data[i][1] - graph.profile.data[i - 1][1]) / (graph.profile.data[i][0] - graph.profile.data[i - 1][0]) * 10) / 10;
+
         if (dps > 0) {
             slope = "up";
             color = "rgb(210,161,161)";
@@ -89,18 +88,21 @@ function updateProfileTable() {
             color = "rgb(176,177,178)";
         }
 
+        let desiredSlopeId = 'desiredSlope-' + i;
+
         html += '<tr><td><h4>' + (i + 1) + '</h4></td>';
         html += '<td><input type="text" class="form-control" id="profiletable-0-' + i + '" value="' + timeProfileFormatter(graph.profile.data[i][0], true) + '" style="width: 60px" /></td>';
         html += '<td><input type="text" class="form-control" id="profiletable-1-' + i + '" value="' + graph.profile.data[i][1] + '" style="width: 60px" /></td>';
+        html += '<td><input type="text" class="form-control" id="' + desiredSlopeId + '" value="" style="width: 60px" /></td>';
         html += `
-                  <td>
-                    <div class="input-group">
-                      <span class="input-group-addon" style="background: ${color}">
-                        <i class="fas fa-arrow-circle-${slope} fa-lg black-icon"></i>
-                      </span>
-                      <input type="text" class="form-control ds-input" readonly value="${formatDPS(dps)}" style="width: 100px" />
-                    </div>
-                  </td>`;
+        <td>
+            <div class="input-group">
+            <span class="input-group-addon" style="background: ${color}">
+                <i class="fas fa-arrow-circle-${slope} fa-lg black-icon"></i>
+            </span>
+            <input type="text" class="form-control ds-input" readonly value="${formatDegreesPerTime(dps)}" style="width: 100px" />
+            </div>
+        </td>`;
         html += '<td>&nbsp;</td></tr>';
     }
 
@@ -108,11 +110,48 @@ function updateProfileTable() {
 
     document.getElementById('profile_table').innerHTML = html;
 
-    //Link table to graph
+    // After the HTML is updated, attach blur event to each desiredSlope field
+    for (let i = 0; i < graph.profile.data.length; i++) {
+        let desiredSlopeField = document.getElementById('desiredSlope-' + i)
+
+        if (desiredSlopeField) {
+            // Attach blur event to the current desiredSlopeField
+            desiredSlopeField.addEventListener('blur', function () {
+                let desiredSlope = parseFloat(this.value);
+
+                // Check if the desiredSlope is not a NaN
+                if (!isNaN(desiredSlope) && desiredSlope != 0) {
+                    let prevTime = graph.profile.data[i - 1][0];
+                    let prevTemp = graph.profile.data[i - 1][1];
+                    let currTemp = graph.profile.data[i][1];
+                    let endTime = calculateEndTime(desiredSlope, prevTime, prevTemp, currTemp);
+
+                    let formattedEndTime = timeProfileFormatter(endTime, true)
+
+                    // Set the endTime on UI
+                    let element = document.getElementById('profiletable-0-' + i);
+                    element.value = formattedEndTime;
+                    // Dispatch the change event manually
+                    element.dispatchEvent(new Event('change'));
+
+                    // Reset the desiredSlope field after using it
+                    this.value = "";
+                }
+            });
+        }
+    }
+
+// Link table to graph
     let formControls = document.getElementsByClassName('form-control');
     Array.prototype.forEach.call(formControls, function (formControl) {
         formControl.addEventListener('change', function () {
             let id = this.id;
+
+            // Ignoring desiredSlope field
+            if (id.startsWith('desiredSlope')) {
+                return;
+            }
+
             let value = parseFloat(this.value);
             let fields = id.split("-");
             let col = parseInt(fields[1]);
@@ -124,12 +163,25 @@ function updateProfileTable() {
                 } else {
                     graph.profile.data[row][col] = value;
                 }
-
                 graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
             }
             updateProfileTable();
         });
     });
+}
+
+function calculateEndTime(desiredSlope, prevTime, prevTemp, currTemp) {
+    // Change in temperature
+    let deltaTemp = currTemp - prevTemp;
+
+    // Calculate time needed for the desired slope
+    // Prevent division by zero when desiredSlope is zero by checking it first
+    let deltaTime = desiredSlope != 0 ? deltaTemp / desiredSlope : 0;
+
+    // Calculate end time using previous time and calculated time
+    let endTime = prevTime + deltaTime * 3600; // you may round as your need
+
+    return endTime;
 }
 
 function timeProfileFormatter(val, down) {
@@ -153,15 +205,16 @@ function timeProfileFormatter(val, down) {
     return Math.round(rval * 10) / 10;
 }
 
-function formatDPS(val) {
-    let tval = val;
+
+function formatDegreesPerTime(val) {
+    let degreesPerTime = val;
     if (timeScaleSlope === "m") {
-        tval = val * 60;
+        degreesPerTime = val * 60;
     }
     if (timeScaleSlope === "h") {
-        tval = (val * 60) * 60;
+        degreesPerTime = (val * 60) * 60;
     }
-    return Math.round(tval);
+    return Math.round(degreesPerTime);
 }
 
 function hazardTemp() {
