@@ -192,50 +192,55 @@ function timeTickFormatter(val, axis) {
     }
 }
 
-
-function enterNewMode() {
-    console.log("Enter New Mode")
-    currentState = "EDIT"
+function enterMode(mode) {
+    console.log(`Enter ${mode} Mode`);
+    currentState = "EDIT";
     $('#status').slideUp();
     $('#edit').show();
     $('#profile_selector').hide();
     $('#btn_controls').hide();
-    $('#form_profile_name').val('').attr('placeholder', 'Please enter a name');
+    $('#progress').hide();
+    $('#profile_table').slideDown();
+
     graph.profile.points.show = true;
     graph.profile.draggable = true;
-    graph.profile.data = [];
+
+    if (mode === "New") {
+        $('#form_profile_name').val('').attr('placeholder', 'Please enter a name');
+        graph.profile.data = [];
+    } else if (mode === "Edit") {
+        console.log(profiles);
+        $('#form_profile_name').val(profiles[selectedProfile].name);
+    }
+
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
     updateProfileTable();
+}
+
+function enterNewMode() {
+    enterMode("New");
 }
 
 function enterEditMode() {
-    console.log("Enter Edit Mode")
-    currentState = "EDIT"
-    $('#status').slideUp();
-    $('#edit').show();
-    $('#profile_selector').hide();
-    $('#btn_controls').hide();
-    $('#profile_table').slideDown();
-
-    console.log(profiles);
-    $('#form_profile_name').val(profiles[selectedProfile].name);
-    graph.profile.points.show = true;
-    graph.profile.draggable = true;
-    graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
-    updateProfileTable();
+    enterMode("Edit");
 }
 
-function leaveEditMode() {
-    selectedProfileName = $('#form_profile_name').val();
+function showControls() {
     currentState = "IDLE";
     $('#edit').hide();
     $('#profile_selector').show();
     $('#btn_controls').show();
+    $('#progress').show();
     $('#status').slideDown();
     $('#profile_table').slideUp();
     graph.profile.points.show = false;
     graph.profile.draggable = false;
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+}
+
+function leaveEditMode() {
+    selectedProfileName = $('#form_profile_name').val();
+    showControls();
 }
 
 function newPoint() {
@@ -702,6 +707,12 @@ $(document).ready(function () {
 
     function saveProfile() {
         name = $('#form_profile_name').val();
+
+        if (!name.trim()) {
+            displayBootstrapGrowl("Profile name cannot be blank.", 'error', 3);
+            return;
+        }
+
         let rawdata = graph.plot.getData()[0].data
         let data = [];
         let last = -1;
@@ -710,7 +721,7 @@ $(document).ready(function () {
             if (rawdata[i][0] > last) {
                 data.push([rawdata[i][0], rawdata[i][1]]);
             } else {
-                displayBootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>ERROR 88:</b><br/>An oven is not a time-machine", 5)
+                displayBootstrapGrowl("<span class=\"glyphicon glyphicon-exclamation-sign\"></span> <b>ERROR 88:</b><br/>An oven is not a time-machine", 'error', 3)
                 return false;
             }
             last = rawdata[i][0];
@@ -751,16 +762,8 @@ $(document).ready(function () {
         socket.emit('delete_profile', selectedProfileName);
 
         selectedProfileName = profiles[0].name;
-
-        currentState = "IDLE";
-        $('#edit').hide();
-        $('#profile_selector').show();
-        $('#btn_controls').show();
-        $('#status').slideDown();
-        $('#profile_table').slideUp();
         $('#e2').select2('val', 0);
-        graph.profile.points.show = false;
-        graph.profile.draggable = false;
-        graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+
+        showControls()
     }
 });
