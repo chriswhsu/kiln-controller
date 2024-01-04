@@ -577,7 +577,7 @@ $(document).ready(function () {
 
     function handleStatusUpdate(data) {
         // Parse the incoming data
-        console.log('handleStatusUpdate:' + data)
+        console.log('handleStatusUpdate:' + JSON.stringify(data));
         let statusData = data;
 
         // Update global state
