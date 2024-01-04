@@ -1,6 +1,6 @@
 import datetime
-import json
 import logging
+import time
 
 from gevent import sleep, Greenlet
 
@@ -32,6 +32,11 @@ class Oven(Greenlet):
         self.daemon = True
         self.temperature = 0
         self.time_step = self.config.sensor_time_wait
+        # used for safety check to make sure if heat is being applied
+        # we are close to temp or temp is increasing.
+        self.previous_temperature = None
+        self.stable_temp_start_time = None
+
         self.create_temp_sensor()
         self._running = True
 
@@ -159,6 +164,42 @@ class Oven(Greenlet):
         # Placeholder method - overridden in child classes
         raise NotImplementedError("This method should be overridden in child classes")
 
+    def check_temperature_increase(self):
+        # Fetch current time
+        current_time = time.monotonic()
+
+        # Log current time, temperature and target temperature
+        log.debug(f"*******Current time: {current_time}, temp: {self.temperature}, target: {self.target}")
+
+        # Check if heat is being applied and temperature is 50 degrees below target
+        if self.heat > 0 and self.temperature < self.target - self.config.abort_temp_diff_threshold:
+            log.debug("*****below target")
+
+            # Verify if current temperature is not increasing compared to previous temperature
+            if self.previous_temperature is not None and self.temperature <= self.previous_temperature + self.config.temp_increase_threshold:
+                log.debug(f"***not increasing temperature")
+
+                # If it's the first time we notice that the temperature is not increasing
+                if self.stable_temp_start_time is None:
+                    self.stable_temp_start_time = current_time
+
+                # If the temperature has not increased for the time window defined (e.g., 2 minutes)
+                elif (current_time - self.stable_temp_start_time) >= self.config.abort_threshold_minutes * 60:
+                    # Log an error message and abort if the temperature is not increasing for the given threshold time
+                    log.error(
+                            F'Temperature more than {self.config.abort_temp_diff_threshold} degrees below the target for over {self.config.abort_threshold_minutes} minutes during heating, aborting!')
+                    self.abort()
+            else:  # if temperature is increasing, reset stable_temp_start_time
+                log.debug("****temp increasing")
+                self.stable_temp_start_time = None
+
+        else:  # if not heating or temperature is not 50 degrees below target, reset stable_temp_start_time
+            log.debug(f"*****temperature on target or not heating.")
+            self.stable_temp_start_time = None
+
+        # Update previous temperature for the next function call
+        self.previous_temperature = self.temperature
+
     def _run(self):
         while self._running:
             if self.state == "IDLE":
@@ -172,6 +213,7 @@ class Oven(Greenlet):
                 self.update_runtime()
                 self.update_target_temp()
                 self.determine_heat()
+                self.check_temperature_increase()
                 self.reset_if_emergency()
                 self.reset_if_schedule_ended()
             elif self.state == "COMPLETE":

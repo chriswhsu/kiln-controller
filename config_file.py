@@ -49,9 +49,16 @@ sensor_time_wait = 1
 # update temperature at this interval when not actively running a profile.
 idle_sample_time = 2
 
+# abort if we've applied heat and temperature is 50 deg below setpoint for this many minutes.
+abort_threshold_minutes = 1
+# abort if heating for more than the above number of minutes and temp is off by this much or more.
+abort_temp_diff_threshold = 50
+# unless the temperature is rising by at least this much per cycle.
+temp_increase_threshold = 0.3
+
 ########################################################################
 #   Simulation parameters
-simulated_room_temp = 70.0  # deg F
+simulated_room_temp = 60.0  # deg F
 element_heat_capacity = 200.0  # J/K  heat capacity of heat element
 oven_heat_capacity = 1000.0  # J/K  heat capacity of oven
 oven_heating_power = 1450.0  # W    heating power of oven
