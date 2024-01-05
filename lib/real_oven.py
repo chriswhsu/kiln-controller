@@ -12,9 +12,6 @@ class RealOven(Oven):
 
     def __init__(self, configuration):
         self.config = configuration
-        if self.config.kill_switch_enabled:
-            self.kill_switch = KillSwitch(self.config)
-
         self.output = HeatOutput(self.config)
         self.complete()
 

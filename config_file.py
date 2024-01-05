@@ -151,10 +151,6 @@ ignore_tc_short_errors = False
 # an optional wemo swtich configured below if you are using a <15 Amp kiln.
 emergency_shutoff_temp = 1200  # don't go above 1200, glass never needs heating higher.
 
-# Wemo Backup Switch Control
-kill_switch_enabled = False
-wemo_device_name = "Kiln"
-
 ########################################################################
 # load kiln profiles from this directory
 # created a repo where anyone can contribute profiles. The objective is

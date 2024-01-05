@@ -16,7 +16,6 @@ class Oven(Greenlet):
         super(Oven, self).__init__()
         self.config = configuration
         self.is_simulation = None
-        self.kill_switch = None
         self.startat = 0
         self.pid = PID(configuration=self.config)
         # heating or not?
@@ -128,9 +127,6 @@ class Oven(Greenlet):
         if self.temperature >= self.config.emergency_shutoff_temp:
             log.error("Emergency!!! Temperature too high.")
             self.abort()
-            if self.kill_switch:
-                log.error("Activating kill switch. System will power off.")
-                self.kill_switch.kill()  # Activate the kill switch as the last action
 
     def reset_if_schedule_ended(self):
         if self.time_stamp > self.total_time:
