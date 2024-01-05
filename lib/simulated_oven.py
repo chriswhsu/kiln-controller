@@ -45,7 +45,7 @@ class SimulatedOven(Oven):
         # Calculate the heating energy based on the proportion of time the heater is on
         self.heat_energy = self.p_heat * self.heat
 
-        log.info(
+        log.debug(
                 f"simulation: -> {self.p_heat * pid:.2f}W heater: {self.element_temperature:.2f} -> "
                 f"{self.element_to_oven_heat_transfer:.2f}W oven: {self.temperature:.2f} -> "
                 f"{self.heat_transfer_rate_to_environ:.2f}W env"
@@ -60,7 +60,7 @@ class SimulatedOven(Oven):
 
     def simulate_temp_changes(self):
         oven_temp = self.temperature
-        log.info(f"Initial oven_temp: {oven_temp}")
+        log.debug(f"Initial oven_temp: {oven_temp}")
         log.debug(f"Initial heat_energy: {self.heat_energy}")
         log.debug(f"Element Heat Capacity: {self.elem_heat_capacity}")
 
@@ -85,4 +85,4 @@ class SimulatedOven(Oven):
         log.debug(f"Oven temperature after adjusting for environment: {oven_temp}")
 
         self.temperature = round(oven_temp, 2)
-        log.info(f"Final simulated oven temperature: {self.temperature}")
+        log.debug(f"Final simulated oven temperature: {self.temperature}")

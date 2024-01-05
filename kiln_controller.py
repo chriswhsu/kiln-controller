@@ -47,13 +47,11 @@ class KilnController:
 
         @self.socketio.on('request_backlog')
         def handle_request_backlog():
-            # Assuming 'oven_watcher' is an instance of OvenWatcher
             self.oven_watcher.send_backlog()  # Or modify to send to specific client
 
         @self.socketio.on('request_profiles')
         def handle_request_profiles():
             log.info('request_profiles.')
-            # Assuming 'oven_watcher' is an instance of OvenWatcher
             emit('profile_list', self.prof_man.get_profiles())
 
         @self.socketio.on('control')

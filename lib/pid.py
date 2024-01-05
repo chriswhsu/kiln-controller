@@ -94,6 +94,6 @@ class PID:
         self._last_time = now  # suggestion 1: update self._last_time immediately after calculating elapsed_time
 
         # suggestion 2: directly use self._proportional, self._integral, and self._derivative
-        log.info(f"Setpoint: {self.setpoint:.2f}, Actual: {actual_temp:.2f}, Output: {output:.2f}, P: {self._proportional:.3f}, I: {self._integral:.3f}, D: {self._derivative:.3f}")
+        log.debug(f"Setpoint: {self.setpoint:.2f}, Actual: {actual_temp:.2f}, Output: {output:.2f}, P: {self._proportional:.3f}, I: {self._integral:.3f}, D: {self._derivative:.3f}")
 
         return output / 100

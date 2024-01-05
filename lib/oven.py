@@ -103,7 +103,7 @@ class Oven(Greenlet):
         heat_on = float(self.time_step * pid_output)
         heat_off = float(self.time_step * (1 - pid_output))
 
-        log.info(
+        log.debug(
                 f"temp={self.temperature:.2f}, target={self.target:.2f}, pid_output={pid_output:.2f}, "
                 f"heat_on={heat_on:.2f}, heat_off={heat_off:.2f}, run_time={self.time_stamp:.1f}"
         )
@@ -153,7 +153,7 @@ class Oven(Greenlet):
             'total_time': self.total_time,
             'profile': self.profile.name if self.profile else None,
             'is_simulation': self.is_simulation}
-        log.info(state)
+        log.debug(state)
         return state
 
     def update_temperature(self):
@@ -199,7 +199,7 @@ class Oven(Greenlet):
     def _run(self):
         while self._running:
             if self.state == "IDLE":
-                log.info(f"timestamp: {self.time_stamp}, state: {self.state}, temperature: {self.temperature}")
+                log.debug(f"timestamp: {self.time_stamp}, state: {self.state}, temperature: {self.temperature}")
                 sleep(self.config.idle_sample_time)
                 self.update_temperature()
             elif self.state == "RUNNING":
@@ -213,7 +213,7 @@ class Oven(Greenlet):
                 self.reset_if_emergency()
                 self.reset_if_schedule_ended()
             elif self.state == "COMPLETE":
-                log.info(f"runtime: {self.time_stamp}, state: {self.state}, temperature: {self.temperature}")
+                log.debug(f"runtime: {self.time_stamp}, state: {self.state}, temperature: {self.temperature}")
                 sleep(self.config.idle_sample_time)
                 self.update_runtime()
                 self.update_temperature()
