@@ -14,6 +14,12 @@ let tempScaleDisplay = "";
 let kwh_rate = 0.0;
 let currency_type = "$";
 
+const RUNNING = "RUNNING";
+const IDLE = "IDLE";
+const COMPLETE = "COMPLETE";
+const ABORTED = "ABORTED";
+
+
 // Graph Setup
 graph.profile = {
     label: "Profile", data: [], points: {show: false}, color: "#75890c", draggable: false
@@ -48,7 +54,7 @@ function formatNumber(number) {
 
 function updateProgress(percentage) {
     let progressBar = $('#progressBar');
-    if (currentState === "RUNNING" || currentState === "COMPLETE") {
+    if (currentState === RUNNING || currentState === COMPLETE) {
         percentage = Math.min(percentage, 100);
         if (percentage === 100) {
             progressBar.addClass('no-animation'); // Add class to stop animation
@@ -57,7 +63,7 @@ function updateProgress(percentage) {
         }
         progressBar.css('width', percentage + '%');
         progressBar.html(Math.floor(percentage) + '%');
-    } else if (currentState === "IDLE") {
+    } else if (currentState === IDLE) {
         progressBar.css('width', '0%');
         progressBar.html('');
         progressBar.removeClass('no-animation'); // Ensure class is removed when idle
@@ -279,7 +285,7 @@ function enterEditMode() {
 }
 
 function showControls() {
-    currentState = "IDLE";
+    currentState = IDLE;
     $('#edit').hide();
     $('#profile_selector').show();
     $('#btn_controls').show();
@@ -416,7 +422,7 @@ function updateRunIndicator(isSimulation, state) {
     const progressBar = document.getElementById('progressBar');
 
     // Clearing styles for non-specific states
-    if (state !== "RUNNING" && state !== "COMPLETE") {
+    if (state !== RUNNING && state !== COMPLETE) {
         icon.innerHTML = '';
         text.innerHTML = '';
         progressBar.style.backgroundColor = '';
@@ -424,7 +430,7 @@ function updateRunIndicator(isSimulation, state) {
     }
 
     // Setting styles specific to RUNNING state
-    if (state === "RUNNING") {
+    if (state === RUNNING) {
         icon.innerHTML = isSimulation ? '🎛️' : '🔥';
         text.innerHTML = isSimulation ? 'Running Simulation' : 'Heating Kiln';
         text.style.color = isSimulation ? '#4aa3c4FF' : '#e70808';
@@ -432,7 +438,7 @@ function updateRunIndicator(isSimulation, state) {
     }
 
     // Setting text for COMPLETE state
-    if (state === "COMPLETE") {
+    if (state === COMPLETE) {
         text.innerHTML = isSimulation ? 'Simulation Complete' : 'Kiln Run Complete';
     }
 }
@@ -444,8 +450,8 @@ function updateUIElements(data) {
 
 function updateProfileSelector() {
     console.log('updateProfileSelector')
-    let e2 = $('#e2');
-    e2.find('option').remove().end();
+    let profileSelector = $('#e2');
+    profileSelector.find('option').remove().end();
 
     let valid_profile_names = profiles.map(function (a) {
         return a.name;
@@ -457,10 +463,10 @@ function updateProfileSelector() {
     }
 
     profiles.forEach(function (profile, i) {
-        e2.append('<option value="' + i + '">' + profile.name + '</option>');
+        profileSelector.append('<option value="' + i + '">' + profile.name + '</option>');
         if (profile.name === selectedProfileName) {
             selectedProfile = i;
-            e2.select2('val', i);
+            profileSelector.select2('val', i);
             updateProfile(i);
         }
     });
@@ -505,7 +511,6 @@ $(document).ready(function () {
     socket.on('oven_update', handleStatusUpdate);
     socket.on('backlog_data', handleBacklogData);
     socket.on('get_config', updateConfigDisplay);
-    socket.on('control_response', updateControlDisplay);
     socket.on('profile_list', handleProfileList);
     socket.on('server_response', handleServerResponse)
     socket.on('error', handleServerResponse)
@@ -575,36 +580,35 @@ $(document).ready(function () {
         socket.emit('control', cmd);
     }
 
-    function handleStatusUpdate(data) {
+    function handleStatusUpdate(statusData) {
         // Parse the incoming data
-        console.log('handleStatusUpdate:' + JSON.stringify(data));
-        let statusData = data;
+        console.log('handleStatusUpdate:' + JSON.stringify(statusData));
 
         // Update global state
         currentState = statusData.state;
 
         // Handle state change
         if (currentState !== lastState) {
-            if (lastState === "RUNNING" && currentState !== "RUNNING") {
+            if (lastState === RUNNING && currentState !== RUNNING) {
                 // Notify completion if the previous state was RUNNING
                 notifyRunCompleted(statusData);
             }
             lastState = currentState;
         }
 
-        updateApplicationState(data);
+        updateApplicationState(statusData);
 
         // Update UI based on the current state
-        if (currentState === "RUNNING" || currentState === "COMPLETE") {
+        if (currentState === RUNNING || currentState === COMPLETE || currentState === ABORTED) {
+            // Update the graph with live data
+            if (statusData.time_stamp && statusData.temperature) {
+                graph.live.data.push([statusData.time_stamp, statusData.temperature]);
+                graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
+            }
             updateForRunningState(statusData);
+
         } else {
             updateForNonRunningState(statusData);
-        }
-
-        // Update the graph with live data
-        if (statusData.time_stamp && statusData.temperature) {
-            graph.live.data.push([statusData.time_stamp, statusData.temperature]);
-            graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
         }
     }
 
@@ -619,7 +623,7 @@ $(document).ready(function () {
 
 
         // Disable or enable profile selector, edit, and new profile button based on the state
-        if (currentState !== "IDLE") {
+        if (currentState !== IDLE) {
             $('#e2, #btn_edit, #btn_new').prop('disabled', true).addClass('disabled-button');
         } else {
             $('#e2, #btn_edit, #btn_new').prop('disabled', false).removeClass('disabled-button');
@@ -630,7 +634,7 @@ $(document).ready(function () {
         // Check if state has changed from the last recorded state
         if (currentState !== lastState) {
             // Specific actions when transitioning out of the RUNNING state
-            if (lastState === "RUNNING") {
+            if (lastState === RUNNING) {
                 notifyRunCompleted(currentState, data.is_simulation);
             }
 
@@ -639,7 +643,7 @@ $(document).ready(function () {
         }
 
         // Perform actions based on the current state
-        if (currentState === "RUNNING" || currentState === "COMPLETE") {
+        if (currentState === RUNNING || currentState === COMPLETE) {
             updateForRunningState(data);
         } else {
             updateForNonRunningState(data);
@@ -664,7 +668,7 @@ $(document).ready(function () {
         graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 
         let timeDisplay;
-        if (data.state === "COMPLETE") {
+        if (data.state === COMPLETE) {
             // Calculate elapsed time since completion
             let elapsedTime = new Date((data.time_stamp - data.total_time) * 1000).toISOString().substr(11, 8);
             timeDisplay = `<span>+${elapsedTime}</span>`;
@@ -691,12 +695,13 @@ $(document).ready(function () {
         $('#state').html('<p class="ds-text">' + currentState + '</p>');
 
         // Reset progress bar if idle
-        if (currentState === "IDLE") {
+        if (currentState === IDLE) {
             updateProgress(0);
         }
     }
 
     function handleBacklogData(data) {
+        console.log("handleBacklogData" + JSON.stringify(data))
         updateSelectedProfile(data.profile);
         updateGraphWithLogData(data.log);
     }
@@ -711,6 +716,14 @@ $(document).ready(function () {
         currency_type = configData.currency_type;
 
         tempScaleDisplay = tempScale === "c" ? "C" : "F";
+
+        console.log("tempScale: ", configData.temp_scale,
+            "\ntimeScaleSlope: ", configData.time_scale_slope,
+            "\ntimeScaleProfile: ", configData.time_scale_profile,
+            "\nkwh_rate: ", configData.kwh_rate,
+            "\ncurrency_type: ", configData.currency_type,
+            "\ntempScaleDisplay: ", tempScale === "c" ? "C" : "F");
+
         $('#act_temp_scale').html('º' + tempScaleDisplay);
         $('#target_temp_scale').html('º' + tempScaleDisplay);
 
@@ -725,13 +738,6 @@ $(document).ready(function () {
                 timeScaleLong = "Hours";
                 break;
         }
-    }
-
-    function updateControlDisplay(controlData) {
-        // Update the display based on control data
-        // For example, updating live graph data
-        graph.live.data.push([controlData.time_stamp, controlData.temperature]);
-        graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
     }
 
     function handleServerResponse(response) {
