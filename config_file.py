@@ -147,8 +147,8 @@ ignore_tc_short_errors = False
 # This just shuts off the profile. If your SSR is working, your kiln will
 # naturally cool off. If your SSR has failed/shorted/closed circuit, this
 # means your kiln receives full power until your house burns down.
-# this should not replace you watching your kiln or use of a kiln-sitter like
-# an optional wemo swtich configured below if you are using a <15 Amp kiln.
+# this should not replace you watching your kiln.
+
 emergency_shutoff_temp = 1200  # don't go above 1200, glass never needs heating higher.
 
 ########################################################################
