@@ -48,12 +48,13 @@ class OvenWatcher(Greenlet):
             elif oven_state == "IDLE":
                 if len(self.temperature_history) > 0:
                     self.reset_temp_history()
+                self.active_profile = None
                 self.socketio.sleep(self.config.idle_sample_time)
             else:
                 self.socketio.sleep(self.config.idle_sample_time)
 
             if self.socketio:
-                log.info("Emit oven_update")
+                log.debug("Emit oven_update")
                 self.socketio.emit('oven_update', oven_status)
 
     def sampled_temp_history(self, max_points=500):
@@ -75,11 +76,6 @@ class OvenWatcher(Greenlet):
         self.active_profile = profile
         log.info(f"Profile set to: {profile.name}")
 
-        profile_data = self.get_profile_data()
-        if self.socketio and profile_data:
-            self.socketio.emit('profile_changed', profile_data)
-            log.debug("Profile change notification sent to clients.")
-
     def get_profile_data(self):
         """Return the current profile data."""
         if self.active_profile:
@@ -100,4 +96,4 @@ class OvenWatcher(Greenlet):
                 'log': self.sampled_temp_history(),
             }
             self.socketio.emit('backlog_data', backlog)
-            log.info("Backlog data sent to requesting client.")
+            log.info(F"Backlog data sent to requesting client:{backlog}")
