@@ -47,11 +47,6 @@ function updateProfile(profileId) {
     graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 }
 
-function formatNumber(number) {
-    return number.toFixed(2);
-}
-
-
 function updateProgress(percentage) {
     let progressBar = $('#progressBar');
     if (currentState === RUNNING || currentState === COMPLETE) {
@@ -126,7 +121,7 @@ function updateProfileTable() {
                 let desiredSlope = parseFloat(this.value);
 
                 // Check if the desiredSlope is not a NaN
-                if (!isNaN(desiredSlope) && desiredSlope != 0) {
+                if (!isNaN(desiredSlope) && desiredSlope !== 0) {
                     let prevTime = graph.profile.data[i - 1][0];
                     let prevTemp = graph.profile.data[i - 1][1];
                     let currTemp = graph.profile.data[i][1];
@@ -182,12 +177,11 @@ function calculateEndTime(desiredSlope, prevTime, prevTemp, currTemp) {
 
     // Calculate time needed for the desired slope
     // Prevent division by zero when desiredSlope is zero by checking it first
-    let deltaTime = desiredSlope != 0 ? deltaTemp / desiredSlope : 0;
+    let deltaTime = desiredSlope !== 0 ? deltaTemp / desiredSlope : 0;
 
     // Calculate end time using previous time and calculated time
-    let endTime = prevTime + timeProfileFormatter(deltaTime, false); // you may round as your need
-
-    return endTime;
+    // you may round as your need
+    return prevTime + timeProfileFormatter(deltaTime, false);
 }
 
 function timeProfileFormatter(val, down) {
@@ -223,14 +217,6 @@ function formatDegreesPerTime(val) {
     return Math.round(degreesPerTime);
 }
 
-function hazardTemp() {
-
-    if (tempScale === "f") {
-        return (1500 * 9 / 5) + 32
-    } else {
-        return 1500
-    }
-}
 
 function timeTickFormatter(val, axis) {
 // hours
@@ -444,10 +430,6 @@ function updateRunIndicator(isSimulation, state) {
 }
 
 
-function updateUIElements(data) {
-}
-
-
 function updateProfileSelector() {
     console.log('updateProfileSelector')
     let profileSelector = $('#e2');
@@ -585,6 +567,14 @@ $(document).ready(function () {
 
         // Handle state change
         if (currentState !== lastState) {
+
+            // Disable or enable profile selector, edit, and new profile button based on the state
+            if (currentState !== IDLE) {
+                $('#e2, #btn_edit, #btn_new').prop('disabled', true).addClass('disabled-button');
+            } else {
+                $('#e2, #btn_edit, #btn_new').prop('disabled', false).removeClass('disabled-button');
+            }
+
             if (lastState === RUNNING && currentState !== RUNNING) {
                 // Notify completion if the previous state was RUNNING
                 notifyRunCompleted(statusData);
@@ -592,59 +582,21 @@ $(document).ready(function () {
             lastState = currentState;
         }
 
-        updateApplicationState(statusData);
+        let heatPercent = (parseFloat(statusData.heat) * 100).toFixed(0)
+        $('#actTemp').html(parseFloat(statusData.temperature).toFixed(1));
+        $('#percentHeat').html(heatPercent);
+
 
         // Update UI based on the current state
         if (currentState === RUNNING || currentState === COMPLETE || currentState === ABORTED) {
             // Update the graph with live data
-            if (statusData.time_stamp && statusData.temperature) {
-                graph.live.data.push([statusData.time_stamp, statusData.temperature]);
-                graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
-            }
-            updateForRunningState(statusData);
+            updateForNonIdleState(statusData);
 
         } else {
-            updateForNonRunningState(statusData);
+            updateForIdleState(statusData);
         }
     }
 
-
-    function updateApplicationState(data) {
-        console.log('heat: ' + data.heat)
-        let heatPercent = (parseFloat(data.heat) * 100).toFixed(0)
-        currentState = data.state;
-        handleStateChange(data);
-        $('#actTemp').html(parseFloat(data.temperature).toFixed(1));
-        $('#percentHeat').html(heatPercent);
-
-
-        // Disable or enable profile selector, edit, and new profile button based on the state
-        if (currentState !== IDLE) {
-            $('#e2, #btn_edit, #btn_new').prop('disabled', true).addClass('disabled-button');
-        } else {
-            $('#e2, #btn_edit, #btn_new').prop('disabled', false).removeClass('disabled-button');
-        }
-    }
-
-    function handleStateChange(data) {
-        // Check if state has changed from the last recorded state
-        if (currentState !== lastState) {
-            // Specific actions when transitioning out of the RUNNING state
-            if (lastState === RUNNING) {
-                notifyRunCompleted(currentState, data.is_simulation);
-            }
-
-            // Update the last known state
-            lastState = currentState;
-        }
-
-        // Perform actions based on the current state
-        if (currentState === RUNNING || currentState === COMPLETE) {
-            updateForRunningState(data);
-        } else {
-            updateForNonRunningState(data);
-        }
-    }
 
     function notifyRunCompleted(data) {
         $('#target_temp').html('---');
@@ -655,7 +607,7 @@ $(document).ready(function () {
         });
     }
 
-    function updateForRunningState(data) {
+    function updateForNonIdleState(data) {
         $("#nav_start").hide();
         $("#nav_stop").show();
 
@@ -683,7 +635,7 @@ $(document).ready(function () {
         $('#cost').html(currency_type + parseFloat(data.cost).toFixed(2));
     }
 
-    function updateForNonRunningState(data) {
+    function updateForIdleState(data) {
         // Update UI for non-running state
         $("#nav_start").show();
         $("#nav_stop").hide();
@@ -784,8 +736,6 @@ $(document).ready(function () {
 
         let profile = {"type": "profile", "data": data, "name": name}
         let put = {"cmd": "PUT", "profile": profile}
-
-        let put_cmd = JSON.stringify(put);
 
         // This call will also push profiles after save.
         socket.emit('save_profile', put);
