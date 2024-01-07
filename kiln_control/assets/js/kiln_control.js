@@ -499,14 +499,13 @@ $(document).ready(function () {
     // Handle connection open
     socket.on('connect', function () {
         console.log("Connected to server via Socket.IO");
+        graph.live.data.length = 0; // Clear the history line
 
         console.log("Request Config Data")
         socket.emit('request_config'); // Request initial config on first connection
         socket.emit('request_backlog'); // Request initial backlog data on first connection
         socket.emit('request_profiles');
-
     });
-
 
     socket.on('oven_update', handleStatusUpdate);
     socket.on('backlog_data', handleBacklogData);
@@ -514,7 +513,6 @@ $(document).ready(function () {
     socket.on('profile_list', handleProfileList);
     socket.on('server_response', handleServerResponse)
     socket.on('error', handleServerResponse)
-
 
     // Handle connection errors
     socket.on('connect_error', function (error) {
@@ -524,7 +522,6 @@ $(document).ready(function () {
     // Handle disconnection
     socket.on('disconnect', function () {
         console.log("Disconnected from server");
-        graph.live.data.length = 0; // Clear the history line
     });
 
     // Bind the click events to the corresponding function
@@ -558,7 +555,7 @@ $(document).ready(function () {
             "cmd": "RUN", "profile": profiles[selectedProfile]
         };
         console.log("Run Profile")
-        graph.live.data = [];
+        graph.live.data.length = 0;
         graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
         socket.emit('control', cmd); // Send command via Socket.IO
     }
@@ -568,7 +565,7 @@ $(document).ready(function () {
             "cmd": "SIMULATE", "profile": profiles[selectedProfile]
         };
 
-        graph.live.data = [];
+        graph.live.data.length = 0;
         graph.plot = $.plot("#graph_container", [graph.profile, graph.live], getOptions());
 
         // Use Socket.IO to emit the command
@@ -581,7 +578,6 @@ $(document).ready(function () {
     }
 
     function handleStatusUpdate(statusData) {
-        // Parse the incoming data
         // console.log('handleStatusUpdate:' + JSON.stringify(statusData));
 
         // Update global state
