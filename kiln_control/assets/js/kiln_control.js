@@ -524,7 +524,7 @@ $(document).ready(function () {
     // Handle disconnection
     socket.on('disconnect', function () {
         console.log("Disconnected from server");
-        previouslyConnected = true; // Mark as previously connected for reconnection logic
+        graph.live.data.length = 0; // Clear the history line
     });
 
     // Bind the click events to the corresponding function
@@ -582,7 +582,7 @@ $(document).ready(function () {
 
     function handleStatusUpdate(statusData) {
         // Parse the incoming data
-        console.log('handleStatusUpdate:' + JSON.stringify(statusData));
+        // console.log('handleStatusUpdate:' + JSON.stringify(statusData));
 
         // Update global state
         currentState = statusData.state;
